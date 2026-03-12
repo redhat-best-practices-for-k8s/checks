@@ -66,4 +66,11 @@ func init() {
 		CatalogID:   "operator-olm-skip-range",
 		Fn:          CheckOperatorOlmSkipRange,
 	})
+	checks.Register(checks.CheckInfo{
+		Name: "operator-multiple-same-operators", Category: "operator",
+		Description: "Verifies no operator is installed more than once in the cluster",
+		Remediation: "Remove duplicate operator installations so each operator is installed only once",
+		CatalogID:   "operator-multiple-same-operators",
+		Fn:          CheckMultipleSameOperators,
+	})
 }

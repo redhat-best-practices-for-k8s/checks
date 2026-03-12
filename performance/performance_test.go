@@ -302,3 +302,77 @@ func TestCheckCPUPinningNoExecProbes_NoCPUPinning_Compliant(t *testing.T) {
 		t.Errorf("expected Compliant (no CPU pinning), got %s", result.ComplianceStatus)
 	}
 }
+
+// --- Max resources exec probes ---
+
+func TestCheckMaxResourcesExecProbes_Compliant(t *testing.T) {
+	resources := &checks.DiscoveredResources{
+		Pods: []corev1.Pod{{
+			ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "ns1"},
+			Spec: corev1.PodSpec{
+				Containers: []corev1.Container{{
+					Name: "c1",
+					LivenessProbe: &corev1.Probe{
+						ProbeHandler:  corev1.ProbeHandler{Exec: &corev1.ExecAction{Command: []string{"true"}}},
+						PeriodSeconds: 15,
+					},
+				}},
+			},
+		}},
+	}
+	result := CheckMaxResourcesExecProbes(resources)
+	if result.ComplianceStatus != "Compliant" {
+		t.Errorf("expected Compliant, got %s", result.ComplianceStatus)
+	}
+}
+
+func TestCheckMaxResourcesExecProbes_NonCompliant(t *testing.T) {
+	resources := &checks.DiscoveredResources{
+		Pods: []corev1.Pod{{
+			ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "ns1"},
+			Spec: corev1.PodSpec{
+				Containers: []corev1.Container{{
+					Name: "c1",
+					LivenessProbe: &corev1.Probe{
+						ProbeHandler:  corev1.ProbeHandler{Exec: &corev1.ExecAction{Command: []string{"true"}}},
+						PeriodSeconds: 5,
+					},
+				}},
+			},
+		}},
+	}
+	result := CheckMaxResourcesExecProbes(resources)
+	if result.ComplianceStatus != "NonCompliant" {
+		t.Errorf("expected NonCompliant, got %s", result.ComplianceStatus)
+	}
+}
+
+func TestCheckMaxResourcesExecProbes_Skipped(t *testing.T) {
+	resources := &checks.DiscoveredResources{}
+	result := CheckMaxResourcesExecProbes(resources)
+	if result.ComplianceStatus != "Skipped" {
+		t.Errorf("expected Skipped, got %s", result.ComplianceStatus)
+	}
+}
+
+func TestCheckMaxResourcesExecProbes_NoExecProbes_Compliant(t *testing.T) {
+	resources := &checks.DiscoveredResources{
+		Pods: []corev1.Pod{{
+			ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "ns1"},
+			Spec: corev1.PodSpec{
+				Containers: []corev1.Container{{
+					Name: "c1",
+					LivenessProbe: &corev1.Probe{
+						ProbeHandler: corev1.ProbeHandler{
+							HTTPGet: &corev1.HTTPGetAction{Path: "/healthz"},
+						},
+					},
+				}},
+			},
+		}},
+	}
+	result := CheckMaxResourcesExecProbes(resources)
+	if result.ComplianceStatus != "Compliant" {
+		t.Errorf("expected Compliant, got %s", result.ComplianceStatus)
+	}
+}

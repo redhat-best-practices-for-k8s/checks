@@ -3,14 +3,20 @@ package operator
 import (
 	"testing"
 
+	"github.com/blang/semver/v4"
+	"github.com/operator-framework/api/pkg/lib/version"
 	"github.com/operator-framework/api/pkg/operators/v1alpha1"
 	"github.com/redhat-best-practices-for-k8s/checks"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
+	apiextv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	apiextv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
 )
+
+func makeVersion(v string) version.OperatorVersion {
+	return version.OperatorVersion{Version: semver.MustParse(v)}
+}
 
 // --- Install Status Succeeded ---
 
@@ -462,5 +468,52 @@ func TestK8sVersionRegex(t *testing.T) {
 		if got != tt.valid {
 			t.Errorf("k8sVersionRegex(%q) = %v, want %v", tt.version, got, tt.valid)
 		}
+	}
+}
+
+// --- Multiple same operators ---
+
+func TestCheckMultipleSameOperators_Compliant(t *testing.T) {
+	resources := &checks.DiscoveredResources{
+		CSVs: []v1alpha1.ClusterServiceVersion{
+			{
+				ObjectMeta: metav1.ObjectMeta{Name: "op-a.v1.0.0", Namespace: "ns1"},
+				Spec:       v1alpha1.ClusterServiceVersionSpec{Version: makeVersion("1.0.0")},
+			},
+			{
+				ObjectMeta: metav1.ObjectMeta{Name: "op-b.v2.0.0", Namespace: "ns1"},
+				Spec:       v1alpha1.ClusterServiceVersionSpec{Version: makeVersion("2.0.0")},
+			},
+		},
+	}
+	result := CheckMultipleSameOperators(resources)
+	if result.ComplianceStatus != "Compliant" {
+		t.Errorf("expected Compliant, got %s", result.ComplianceStatus)
+	}
+}
+
+func TestCheckMultipleSameOperators_NonCompliant(t *testing.T) {
+	resources := &checks.DiscoveredResources{
+		CSVs: []v1alpha1.ClusterServiceVersion{
+			{
+				ObjectMeta: metav1.ObjectMeta{Name: "my-operator.v1.0.0", Namespace: "ns1"},
+				Spec:       v1alpha1.ClusterServiceVersionSpec{Version: makeVersion("1.0.0")},
+			},
+			{
+				ObjectMeta: metav1.ObjectMeta{Name: "my-operator.v2.0.0", Namespace: "ns2"},
+				Spec:       v1alpha1.ClusterServiceVersionSpec{Version: makeVersion("2.0.0")},
+			},
+		},
+	}
+	result := CheckMultipleSameOperators(resources)
+	if result.ComplianceStatus != "NonCompliant" {
+		t.Errorf("expected NonCompliant, got %s", result.ComplianceStatus)
+	}
+}
+
+func TestCheckMultipleSameOperators_Skipped(t *testing.T) {
+	result := CheckMultipleSameOperators(&checks.DiscoveredResources{})
+	if result.ComplianceStatus != "Skipped" {
+		t.Errorf("expected Skipped, got %s", result.ComplianceStatus)
 	}
 }

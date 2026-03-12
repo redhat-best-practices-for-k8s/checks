@@ -4,24 +4,24 @@ import "github.com/redhat-best-practices-for-k8s/checks"
 
 func init() {
 	checks.Register(checks.CheckInfo{
-		Name: "lifecycle-container-startup", Category: "lifecycle",
+		Name: "lifecycle-startup-probe", Category: "lifecycle",
 		Description: "Verifies containers have a startupProbe defined",
 		Remediation: "Add a startupProbe to the container spec",
-		CatalogID:   "lifecycle-container-startup",
+		CatalogID:   "lifecycle-startup-probe",
 		Fn:          CheckStartupProbe,
 	})
 	checks.Register(checks.CheckInfo{
-		Name: "lifecycle-container-readiness", Category: "lifecycle",
+		Name: "lifecycle-readiness-probe", Category: "lifecycle",
 		Description: "Verifies containers have a readinessProbe defined",
 		Remediation: "Add a readinessProbe to the container spec",
-		CatalogID:   "lifecycle-container-readiness",
+		CatalogID:   "lifecycle-readiness-probe",
 		Fn:          CheckReadinessProbe,
 	})
 	checks.Register(checks.CheckInfo{
-		Name: "lifecycle-container-liveness", Category: "lifecycle",
+		Name: "lifecycle-liveness-probe", Category: "lifecycle",
 		Description: "Verifies containers have a livenessProbe defined",
 		Remediation: "Add a livenessProbe to the container spec",
-		CatalogID:   "lifecycle-container-liveness",
+		CatalogID:   "lifecycle-liveness-probe",
 		Fn:          CheckLivenessProbe,
 	})
 	checks.Register(checks.CheckInfo{
@@ -102,10 +102,10 @@ func init() {
 		Fn:          CheckStorageProvisioner,
 	})
 	checks.Register(checks.CheckInfo{
-		Name: "lifecycle-topology-spread-constraints", Category: "lifecycle",
+		Name: "lifecycle-topology-spread-constraint", Category: "lifecycle",
 		Description: "Verifies Deployments with TopologySpreadConstraints include both hostname and zone keys",
 		Remediation: "Add both kubernetes.io/hostname and topology.kubernetes.io/zone topology keys",
-		CatalogID:   "lifecycle-pod-topology-spread-constraints",
+		CatalogID:   "lifecycle-topology-spread-constraint",
 		Fn:          CheckTopologySpreadConstraints,
 	})
 }

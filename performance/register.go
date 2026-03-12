@@ -25,7 +25,7 @@ func init() {
 		Fn:          CheckMemoryLimit,
 	})
 	checks.Register(checks.CheckInfo{
-		Name: "performance-limited-exec-probes", Category: "performance",
+		Name: "performance-limited-use-of-exec-probes", Category: "performance",
 		Description: "Verifies cluster-wide exec probe count is below threshold (10)",
 		Remediation: "Reduce the number of exec probes or use httpGet/tcpSocket probes",
 		CatalogID:   "performance-limited-use-of-exec-probes",
@@ -35,7 +35,14 @@ func init() {
 		Name: "performance-cpu-pinning-no-exec-probes", Category: "performance",
 		Description: "Verifies CPU-pinned pods do not use exec probes",
 		Remediation: "Use httpGet or tcpSocket probes for CPU-pinned workloads",
-		CatalogID:   "performance-cpu-pinning-exec-probes",
+		CatalogID:   "performance-cpu-pinning-no-exec-probes",
 		Fn:          CheckCPUPinningNoExecProbes,
+	})
+	checks.Register(checks.CheckInfo{
+		Name: "performance-max-resources-exec-probes", Category: "performance",
+		Description: "Verifies exec probes have periodSeconds >= 10",
+		Remediation: "Set periodSeconds to at least 10 on exec probes to reduce resource overhead",
+		CatalogID:   "performance-max-resources-exec-probes",
+		Fn:          CheckMaxResourcesExecProbes,
 	})
 }

@@ -32,10 +32,10 @@ func init() {
 		Fn:          CheckOCPReservedPorts,
 	})
 	checks.Register(checks.CheckInfo{
-		Name: "networking-sriov-restart-label", Category: "networking",
+		Name: "networking-restart-on-reboot-sriov-pod", Category: "networking",
 		Description: "Verifies SR-IOV pods have restart-on-reboot=true label",
 		Remediation: "Add label restart-on-reboot=true to SR-IOV pods",
-		CatalogID:   "networking-restart-on-reboot-label-on-pods-using-sriov",
+		CatalogID:   "networking-restart-on-reboot-sriov-pod",
 		Fn:          CheckSRIOVRestartLabel,
 	})
 }

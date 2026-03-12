@@ -918,3 +918,74 @@ func TestCheckCrdRoles_Wildcard_NonCompliant(t *testing.T) {
 		t.Errorf("expected NonCompliant for wildcard, got %s", result.ComplianceStatus)
 	}
 }
+
+// --- SYS_NICE realtime checks ---
+
+func TestCheckSysNiceRealtime_Skipped_NoPods(t *testing.T) {
+	resources := &checks.DiscoveredResources{}
+	result := CheckSysNiceRealtime(resources)
+	if result.ComplianceStatus != "Skipped" {
+		t.Errorf("expected Skipped, got %s", result.ComplianceStatus)
+	}
+}
+
+func TestCheckSysNiceRealtime_Skipped_NoRTNodes(t *testing.T) {
+	resources := &checks.DiscoveredResources{
+		Pods: []corev1.Pod{{
+			ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "ns1"},
+			Spec:       corev1.PodSpec{NodeName: "node1", Containers: []corev1.Container{{Name: "c1"}}},
+		}},
+		Nodes: []corev1.Node{{
+			ObjectMeta: metav1.ObjectMeta{Name: "node1"},
+			Status:     corev1.NodeStatus{NodeInfo: corev1.NodeSystemInfo{KernelVersion: "5.14.0-284.el9.x86_64"}},
+		}},
+	}
+	result := CheckSysNiceRealtime(resources)
+	if result.ComplianceStatus != "Skipped" {
+		t.Errorf("expected Skipped, got %s", result.ComplianceStatus)
+	}
+}
+
+func TestCheckSysNiceRealtime_NonCompliant(t *testing.T) {
+	resources := &checks.DiscoveredResources{
+		Pods: []corev1.Pod{{
+			ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "ns1"},
+			Spec:       corev1.PodSpec{NodeName: "node1", Containers: []corev1.Container{{Name: "c1"}}},
+		}},
+		Nodes: []corev1.Node{{
+			ObjectMeta: metav1.ObjectMeta{Name: "node1"},
+			Status:     corev1.NodeStatus{NodeInfo: corev1.NodeSystemInfo{KernelVersion: "5.14.0-284.rt14.309.el9_2.x86_64"}},
+		}},
+	}
+	result := CheckSysNiceRealtime(resources)
+	if result.ComplianceStatus != "NonCompliant" {
+		t.Errorf("expected NonCompliant, got %s", result.ComplianceStatus)
+	}
+}
+
+func TestCheckSysNiceRealtime_Compliant(t *testing.T) {
+	resources := &checks.DiscoveredResources{
+		Pods: []corev1.Pod{{
+			ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "ns1"},
+			Spec: corev1.PodSpec{
+				NodeName: "node1",
+				Containers: []corev1.Container{{
+					Name: "c1",
+					SecurityContext: &corev1.SecurityContext{
+						Capabilities: &corev1.Capabilities{
+							Add: []corev1.Capability{"SYS_NICE"},
+						},
+					},
+				}},
+			},
+		}},
+		Nodes: []corev1.Node{{
+			ObjectMeta: metav1.ObjectMeta{Name: "node1"},
+			Status:     corev1.NodeStatus{NodeInfo: corev1.NodeSystemInfo{KernelVersion: "5.14.0-284.rt14.309.el9_2.x86_64"}},
+		}},
+	}
+	result := CheckSysNiceRealtime(resources)
+	if result.ComplianceStatus != "Compliant" {
+		t.Errorf("expected Compliant, got %s", result.ComplianceStatus)
+	}
+}
