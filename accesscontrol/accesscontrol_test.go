@@ -1,6 +1,8 @@
 package accesscontrol
 
 import (
+	"context"
+	"fmt"
 	"testing"
 
 	corev1 "k8s.io/api/core/v1"
@@ -11,6 +13,29 @@ import (
 
 	"github.com/redhat-best-practices-for-k8s/checks"
 )
+
+type mockProbeResponse struct {
+	stdout, stderr string
+	err            error
+}
+
+type mockProbeExecutor struct {
+	responses map[string]mockProbeResponse
+}
+
+func (m *mockProbeExecutor) ExecCommand(_ context.Context, _ *corev1.Pod, command string) (string, string, error) {
+	if r, ok := m.responses[command]; ok {
+		return r.stdout, r.stderr, r.err
+	}
+	return "", "", fmt.Errorf("unexpected command: %s", command)
+}
+
+func makeProbePod(nodeName string) *corev1.Pod {
+	return &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{Name: "probe-" + nodeName, Namespace: "debug"},
+		Spec:       corev1.PodSpec{NodeName: nodeName},
+	}
+}
 
 func boolPtr(b bool) *bool    { return &b }
 func int64Ptr(i int64) *int64 { return &i }
@@ -1193,6 +1218,124 @@ func TestCheckNamespace_OpenShiftNS_NonCompliant(t *testing.T) {
 	result := CheckNamespace(resources)
 	if result.ComplianceStatus != "NonCompliant" {
 		t.Errorf("expected NonCompliant for pod in 'openshift-monitoring' namespace, got %s", result.ComplianceStatus)
+	}
+}
+
+// --- Namespace ResourceQuota checks ---
+
+func TestCheckNamespaceResourceQuota_Compliant(t *testing.T) {
+	resources := &checks.DiscoveredResources{
+		Namespaces: []string{"ns1"},
+		ResourceQuotas: []corev1.ResourceQuota{
+			{ObjectMeta: metav1.ObjectMeta{Name: "quota1", Namespace: "ns1"}},
+		},
+	}
+	result := CheckNamespaceResourceQuota(resources)
+	if result.ComplianceStatus != "Compliant" {
+		t.Errorf("expected Compliant, got %s", result.ComplianceStatus)
+	}
+}
+
+func TestCheckNamespaceResourceQuota_NonCompliant(t *testing.T) {
+	resources := &checks.DiscoveredResources{
+		Namespaces: []string{"ns1"},
+	}
+	result := CheckNamespaceResourceQuota(resources)
+	if result.ComplianceStatus != "NonCompliant" {
+		t.Errorf("expected NonCompliant, got %s", result.ComplianceStatus)
+	}
+}
+
+func TestCheckNamespaceResourceQuota_Skipped(t *testing.T) {
+	result := CheckNamespaceResourceQuota(&checks.DiscoveredResources{})
+	if result.ComplianceStatus != "Skipped" {
+		t.Errorf("expected Skipped, got %s", result.ComplianceStatus)
+	}
+}
+
+// --- One process per container checks ---
+
+func TestCheckOneProcess_Compliant(t *testing.T) {
+	resources := &checks.DiscoveredResources{
+		Pods: []corev1.Pod{{
+			ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "ns1"},
+			Spec: corev1.PodSpec{
+				NodeName:   "node1",
+				Containers: []corev1.Container{{Name: "c1"}},
+			},
+		}},
+		ProbePods: map[string]*corev1.Pod{"node1": makeProbePod("node1")},
+		ProbeExecutor: &mockProbeExecutor{
+			responses: map[string]mockProbeResponse{
+				"lsns -t pid -o PID,COMMAND --no-headings | grep -c 'c1'": {stdout: "1"},
+			},
+		},
+	}
+	result := CheckOneProcess(resources)
+	if result.ComplianceStatus != "Compliant" {
+		t.Errorf("expected Compliant, got %s", result.ComplianceStatus)
+	}
+}
+
+func TestCheckOneProcess_NonCompliant(t *testing.T) {
+	resources := &checks.DiscoveredResources{
+		Pods: []corev1.Pod{{
+			ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "ns1"},
+			Spec: corev1.PodSpec{
+				NodeName:   "node1",
+				Containers: []corev1.Container{{Name: "c1"}},
+			},
+		}},
+		ProbePods: map[string]*corev1.Pod{"node1": makeProbePod("node1")},
+		ProbeExecutor: &mockProbeExecutor{
+			responses: map[string]mockProbeResponse{
+				"lsns -t pid -o PID,COMMAND --no-headings | grep -c 'c1'": {stdout: "3"},
+			},
+		},
+	}
+	result := CheckOneProcess(resources)
+	if result.ComplianceStatus != "NonCompliant" {
+		t.Errorf("expected NonCompliant, got %s", result.ComplianceStatus)
+	}
+}
+
+// --- No SSHD checks ---
+
+func TestCheckNoSSHD_Compliant(t *testing.T) {
+	resources := &checks.DiscoveredResources{
+		Pods: []corev1.Pod{{
+			ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "ns1"},
+			Spec:       corev1.PodSpec{NodeName: "node1"},
+		}},
+		ProbePods: map[string]*corev1.Pod{"node1": makeProbePod("node1")},
+		ProbeExecutor: &mockProbeExecutor{
+			responses: map[string]mockProbeResponse{
+				"nsenter --target $(crictl inspect $(crictl ps --name pod1 -q 2>/dev/null | head -1) 2>/dev/null | jq -r '.info.pid' 2>/dev/null) --mount --pid -- pgrep -x sshd 2>/dev/null": {stdout: ""},
+			},
+		},
+	}
+	result := CheckNoSSHD(resources)
+	if result.ComplianceStatus != "Compliant" {
+		t.Errorf("expected Compliant, got %s", result.ComplianceStatus)
+	}
+}
+
+func TestCheckNoSSHD_NonCompliant(t *testing.T) {
+	resources := &checks.DiscoveredResources{
+		Pods: []corev1.Pod{{
+			ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "ns1"},
+			Spec:       corev1.PodSpec{NodeName: "node1"},
+		}},
+		ProbePods: map[string]*corev1.Pod{"node1": makeProbePod("node1")},
+		ProbeExecutor: &mockProbeExecutor{
+			responses: map[string]mockProbeResponse{
+				"nsenter --target $(crictl inspect $(crictl ps --name pod1 -q 2>/dev/null | head -1) 2>/dev/null | jq -r '.info.pid' 2>/dev/null) --mount --pid -- pgrep -x sshd 2>/dev/null": {stdout: "1234"},
+			},
+		},
+	}
+	result := CheckNoSSHD(resources)
+	if result.ComplianceStatus != "NonCompliant" {
+		t.Errorf("expected NonCompliant, got %s", result.ComplianceStatus)
 	}
 }
 

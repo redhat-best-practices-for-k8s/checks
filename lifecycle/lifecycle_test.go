@@ -5,6 +5,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	storagev1 "k8s.io/api/storage/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -505,5 +506,40 @@ func TestCheckTopologySpreadConstraints_MissingZone_NonCompliant(t *testing.T) {
 	result := CheckTopologySpreadConstraints(resources)
 	if result.ComplianceStatus != "NonCompliant" {
 		t.Errorf("expected NonCompliant, got %s", result.ComplianceStatus)
+	}
+}
+
+// --- StorageProvisioner checks ---
+
+func TestCheckStorageProvisioner_Compliant(t *testing.T) {
+	resources := &checks.DiscoveredResources{
+		StorageClasses: []storagev1.StorageClass{{
+			ObjectMeta:  metav1.ObjectMeta{Name: "ebs-sc"},
+			Provisioner: "ebs.csi.aws.com",
+		}},
+	}
+	result := CheckStorageProvisioner(resources)
+	if result.ComplianceStatus != "Compliant" {
+		t.Errorf("expected Compliant, got %s", result.ComplianceStatus)
+	}
+}
+
+func TestCheckStorageProvisioner_NonCompliant(t *testing.T) {
+	resources := &checks.DiscoveredResources{
+		StorageClasses: []storagev1.StorageClass{{
+			ObjectMeta:  metav1.ObjectMeta{Name: "local-sc"},
+			Provisioner: "kubernetes.io/no-provisioner",
+		}},
+	}
+	result := CheckStorageProvisioner(resources)
+	if result.ComplianceStatus != "NonCompliant" {
+		t.Errorf("expected NonCompliant, got %s", result.ComplianceStatus)
+	}
+}
+
+func TestCheckStorageProvisioner_Skipped(t *testing.T) {
+	result := CheckStorageProvisioner(&checks.DiscoveredResources{})
+	if result.ComplianceStatus != "Skipped" {
+		t.Errorf("expected Skipped, got %s", result.ComplianceStatus)
 	}
 }

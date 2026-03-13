@@ -3,12 +3,16 @@ package observability
 import (
 	"testing"
 
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	policyv1 "k8s.io/api/policy/v1"
 	apiextv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/redhat-best-practices-for-k8s/checks"
 )
+
+func int32Ptr(i int32) *int32 { return &i }
 
 func TestCheckCRDStatus_Compliant(t *testing.T) {
 	resources := &checks.DiscoveredResources{
@@ -93,6 +97,59 @@ func TestCheckTerminationPolicy_NonCompliant(t *testing.T) {
 
 func TestCheckTerminationPolicy_NoPods(t *testing.T) {
 	result := CheckTerminationPolicy(&checks.DiscoveredResources{})
+	if result.ComplianceStatus != "Skipped" {
+		t.Errorf("expected Skipped, got %s", result.ComplianceStatus)
+	}
+}
+
+// --- PodDisruptionBudget checks ---
+
+func TestCheckPodDisruptionBudget_Compliant(t *testing.T) {
+	resources := &checks.DiscoveredResources{
+		Deployments: []appsv1.Deployment{{
+			ObjectMeta: metav1.ObjectMeta{Name: "deploy1", Namespace: "ns1"},
+			Spec: appsv1.DeploymentSpec{
+				Replicas: int32Ptr(3),
+				Template: corev1.PodTemplateSpec{
+					ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{"app": "web"}},
+				},
+			},
+		}},
+		PodDisruptionBudgets: []policyv1.PodDisruptionBudget{{
+			ObjectMeta: metav1.ObjectMeta{Name: "pdb1", Namespace: "ns1"},
+			Spec: policyv1.PodDisruptionBudgetSpec{
+				Selector: &metav1.LabelSelector{
+					MatchLabels: map[string]string{"app": "web"},
+				},
+			},
+		}},
+	}
+	result := CheckPodDisruptionBudget(resources)
+	if result.ComplianceStatus != "Compliant" {
+		t.Errorf("expected Compliant, got %s", result.ComplianceStatus)
+	}
+}
+
+func TestCheckPodDisruptionBudget_NonCompliant(t *testing.T) {
+	resources := &checks.DiscoveredResources{
+		Deployments: []appsv1.Deployment{{
+			ObjectMeta: metav1.ObjectMeta{Name: "deploy1", Namespace: "ns1"},
+			Spec: appsv1.DeploymentSpec{
+				Replicas: int32Ptr(3),
+				Template: corev1.PodTemplateSpec{
+					ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{"app": "web"}},
+				},
+			},
+		}},
+	}
+	result := CheckPodDisruptionBudget(resources)
+	if result.ComplianceStatus != "NonCompliant" {
+		t.Errorf("expected NonCompliant, got %s", result.ComplianceStatus)
+	}
+}
+
+func TestCheckPodDisruptionBudget_Skipped(t *testing.T) {
+	result := CheckPodDisruptionBudget(&checks.DiscoveredResources{})
 	if result.ComplianceStatus != "Skipped" {
 		t.Errorf("expected Skipped, got %s", result.ComplianceStatus)
 	}
