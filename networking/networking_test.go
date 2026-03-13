@@ -99,6 +99,79 @@ func TestCheckNetworkPolicyDenyAll_NonCompliant(t *testing.T) {
 	}
 }
 
+// --- NetworkPolicy deny-all additional scenarios (from certsuite policies_test.go) ---
+
+func TestCheckNetworkPolicyDenyAll_NonEmptySelector(t *testing.T) {
+	resources := &checks.DiscoveredResources{
+		Pods: []corev1.Pod{{
+			ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "ns1"},
+		}},
+		NetworkPolicies: []networkingv1.NetworkPolicy{{
+			ObjectMeta: metav1.ObjectMeta{Name: "deny-all", Namespace: "ns1"},
+			Spec: networkingv1.NetworkPolicySpec{
+				PodSelector: metav1.LabelSelector{
+					MatchLabels: map[string]string{"app": "nginx"},
+				},
+				PolicyTypes: []networkingv1.PolicyType{
+					networkingv1.PolicyTypeIngress,
+					networkingv1.PolicyTypeEgress,
+				},
+			},
+		}},
+		Namespaces: []string{"ns1"},
+	}
+	result := CheckNetworkPolicyDenyAll(resources)
+	if result.ComplianceStatus != "NonCompliant" {
+		t.Errorf("expected NonCompliant for non-empty selector (not a deny-all), got %s", result.ComplianceStatus)
+	}
+}
+
+func TestCheckNetworkPolicyDenyAll_IngressOnly(t *testing.T) {
+	resources := &checks.DiscoveredResources{
+		Pods: []corev1.Pod{{
+			ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "ns1"},
+		}},
+		NetworkPolicies: []networkingv1.NetworkPolicy{{
+			ObjectMeta: metav1.ObjectMeta{Name: "deny-ingress", Namespace: "ns1"},
+			Spec: networkingv1.NetworkPolicySpec{
+				PodSelector: metav1.LabelSelector{},
+				PolicyTypes: []networkingv1.PolicyType{
+					networkingv1.PolicyTypeIngress,
+				},
+			},
+		}},
+		Namespaces: []string{"ns1"},
+	}
+	result := CheckNetworkPolicyDenyAll(resources)
+	if result.ComplianceStatus != "NonCompliant" {
+		t.Errorf("expected NonCompliant (missing egress deny-all), got %s", result.ComplianceStatus)
+	}
+}
+
+func TestCheckNetworkPolicyDenyAll_WithEgressRules(t *testing.T) {
+	resources := &checks.DiscoveredResources{
+		Pods: []corev1.Pod{{
+			ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "ns1"},
+		}},
+		NetworkPolicies: []networkingv1.NetworkPolicy{{
+			ObjectMeta: metav1.ObjectMeta{Name: "allow-egress", Namespace: "ns1"},
+			Spec: networkingv1.NetworkPolicySpec{
+				PodSelector: metav1.LabelSelector{},
+				PolicyTypes: []networkingv1.PolicyType{
+					networkingv1.PolicyTypeIngress,
+					networkingv1.PolicyTypeEgress,
+				},
+				Egress: []networkingv1.NetworkPolicyEgressRule{{}},
+			},
+		}},
+		Namespaces: []string{"ns1"},
+	}
+	result := CheckNetworkPolicyDenyAll(resources)
+	if result.ComplianceStatus != "NonCompliant" {
+		t.Errorf("expected NonCompliant (egress rules present, not a deny-all), got %s", result.ComplianceStatus)
+	}
+}
+
 // --- Reserved ports ---
 
 func TestCheckReservedPartnerPorts_NonCompliant(t *testing.T) {

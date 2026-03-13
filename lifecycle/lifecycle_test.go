@@ -228,6 +228,38 @@ func TestCheckPodOwnerType_NonCompliant(t *testing.T) {
 	}
 }
 
+// --- CheckPodOwnerType additional scenarios (from certsuite ownerreference_test.go) ---
+
+func TestCheckPodOwnerType_StatefulSet_Compliant(t *testing.T) {
+	resources := &checks.DiscoveredResources{
+		Pods: []corev1.Pod{{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "pod1", Namespace: "ns1",
+				OwnerReferences: []metav1.OwnerReference{{Kind: "StatefulSet", Name: "sts1"}},
+			},
+		}},
+	}
+	result := CheckPodOwnerType(resources)
+	if result.ComplianceStatus != "Compliant" {
+		t.Errorf("expected Compliant for StatefulSet owner, got %s", result.ComplianceStatus)
+	}
+}
+
+func TestCheckPodOwnerType_DaemonSet_Compliant(t *testing.T) {
+	resources := &checks.DiscoveredResources{
+		Pods: []corev1.Pod{{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "pod1", Namespace: "ns1",
+				OwnerReferences: []metav1.OwnerReference{{Kind: "DaemonSet", Name: "ds1"}},
+			},
+		}},
+	}
+	result := CheckPodOwnerType(resources)
+	if result.ComplianceStatus != "Compliant" {
+		t.Errorf("expected Compliant for DaemonSet owner, got %s", result.ComplianceStatus)
+	}
+}
+
 func TestCheckHighAvailability_Compliant(t *testing.T) {
 	resources := &checks.DiscoveredResources{
 		Deployments: []appsv1.Deployment{{

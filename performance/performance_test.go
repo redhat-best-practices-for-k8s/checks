@@ -120,6 +120,56 @@ func TestCheckExclusiveCPUPool_FractionalCPU_Skipped(t *testing.T) {
 	}
 }
 
+// --- Exclusive CPU pool additional scenarios (from certsuite resources_test.go) ---
+
+func TestCheckExclusiveCPUPool_FractionalEqual(t *testing.T) {
+	resources := &checks.DiscoveredResources{
+		Pods: []corev1.Pod{{
+			ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "ns1"},
+			Spec: corev1.PodSpec{
+				Containers: []corev1.Container{{
+					Name: "c1",
+					Resources: corev1.ResourceRequirements{
+						Requests: corev1.ResourceList{corev1.ResourceCPU: resource.MustParse("500m")},
+						Limits:   corev1.ResourceList{corev1.ResourceCPU: resource.MustParse("500m")},
+					},
+				}},
+			},
+		}},
+	}
+	result := CheckExclusiveCPUPool(resources)
+	if result.ComplianceStatus != "Compliant" {
+		t.Errorf("expected Compliant (fractional CPUs are skipped), got %s", result.ComplianceStatus)
+	}
+}
+
+func TestCheckExclusiveCPUPool_MemoryMismatch(t *testing.T) {
+	resources := &checks.DiscoveredResources{
+		Pods: []corev1.Pod{{
+			ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "ns1"},
+			Spec: corev1.PodSpec{
+				Containers: []corev1.Container{{
+					Name: "c1",
+					Resources: corev1.ResourceRequirements{
+						Requests: corev1.ResourceList{
+							corev1.ResourceCPU:    resource.MustParse("2"),
+							corev1.ResourceMemory: resource.MustParse("512Mi"),
+						},
+						Limits: corev1.ResourceList{
+							corev1.ResourceCPU:    resource.MustParse("2"),
+							corev1.ResourceMemory: resource.MustParse("256Mi"),
+						},
+					},
+				}},
+			},
+		}},
+	}
+	result := CheckExclusiveCPUPool(resources)
+	if result.ComplianceStatus != "Compliant" {
+		t.Errorf("expected Compliant (CPU matches, memory mismatch is irrelevant to this check), got %s", result.ComplianceStatus)
+	}
+}
+
 // --- RT apps no exec probes ---
 
 func TestCheckRTAppsNoExecProbes_NonCompliant(t *testing.T) {
