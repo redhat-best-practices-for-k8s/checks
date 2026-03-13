@@ -79,12 +79,12 @@ Check names link to their corresponding test documentation in the [certsuite CAT
 | [`access-control-pod-automount-service-account-token`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#access-control-pod-automount-service-account-token) | Pods do not automount SA tokens | Yes |
 | [`access-control-service-type`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#access-control-service-type) | Services do not use NodePort | Yes |
 | [`access-control-namespace`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#access-control-namespace) | Pods run in allowed namespaces | Yes |
-| [`access-control-namespace-resource-quota`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#access-control-namespace-resource-quota) | Namespaces have ResourceQuotas | No |
+| [`access-control-namespace-resource-quota`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#access-control-namespace-resource-quota) | Namespaces have ResourceQuotas | Yes |
 | [`access-control-requests`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#access-control-requests) | Containers have CPU and memory requests | Yes |
 | [`access-control-sys-ptrace-capability`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#access-control-sys-ptrace-capability) | Shared PID namespace pods have SYS_PTRACE | Yes |
 | [`access-control-crd-roles`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#access-control-crd-roles) | Roles only grant CRD permissions | Yes |
-| [`access-control-one-process-per-container`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#access-control-one-process-per-container) | Each container runs one process | No |
-| [`access-control-ssh-daemons`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#access-control-ssh-daemons) | No SSH daemons in containers | No |
+| [`access-control-one-process-per-container`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#access-control-one-process-per-container) | Each container runs one process | Yes |
+| [`access-control-ssh-daemons`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#access-control-ssh-daemons) | No SSH daemons in containers | Yes |
 | [`access-control-sys-nice-realtime-capability`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#access-control-sys-nice-realtime-capability) | RT kernel pods have SYS_NICE capability | Yes |
 
 ### lifecycle
@@ -104,7 +104,7 @@ Check names link to their corresponding test documentation in the [certsuite CAT
 | [`lifecycle-affinity-required-pods`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#lifecycle-affinity-required-pods) | Pods have anti-affinity rules | Yes |
 | [`lifecycle-pod-toleration-bypass`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#lifecycle-pod-toleration-bypass) | No unnecessary master taint tolerations | Yes |
 | [`lifecycle-persistent-volume-reclaim-policy`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#lifecycle-persistent-volume-reclaim-policy) | PV reclaimPolicy is not Delete | Yes |
-| [`lifecycle-storage-provisioner`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#lifecycle-storage-provisioner) | StorageClass has valid provisioner | No |
+| [`lifecycle-storage-provisioner`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#lifecycle-storage-provisioner) | StorageClass has valid provisioner | Yes |
 | [`lifecycle-topology-spread-constraint`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#lifecycle-topology-spread-constraint) | TopologySpreadConstraints cover hostname and zone | Yes |
 
 ### networking
@@ -123,7 +123,7 @@ Check names link to their corresponding test documentation in the [certsuite CAT
 |---|---|---|
 | [`observability-crd-status`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#observability-crd-status) | CRDs define status subresource | Yes |
 | [`observability-termination-policy`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#observability-termination-policy) | terminationMessagePolicy is FallbackToLogsOnError | Yes |
-| [`observability-pod-disruption-budget`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#observability-pod-disruption-budget) | PDBs exist for HA workloads | No |
+| [`observability-pod-disruption-budget`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#observability-pod-disruption-budget) | PDBs exist for HA workloads | Yes |
 
 ### performance
 
@@ -140,15 +140,15 @@ Check names link to their corresponding test documentation in the [certsuite CAT
 
 | Check Name | Description | Covered by UT |
 |---|---|---|
-| [`platform-alteration-boot-params`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#platform-alteration-boot-params) | No non-standard kernel boot parameters | No |
-| [`platform-alteration-hugepages-config`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#platform-alteration-hugepages-config) | Hugepage configuration is consistent | No |
-| [`platform-alteration-sysctl-config`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#platform-alteration-sysctl-config) | Sysctl settings managed via MachineConfig | No |
-| [`platform-alteration-tainted-node-kernel`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#platform-alteration-tainted-node-kernel) | Kernel is not tainted | No |
+| [`platform-alteration-boot-params`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#platform-alteration-boot-params) | No non-standard kernel boot parameters | Yes |
+| [`platform-alteration-hugepages-config`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#platform-alteration-hugepages-config) | Hugepage configuration is consistent | Yes |
+| [`platform-alteration-sysctl-config`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#platform-alteration-sysctl-config) | Sysctl settings managed via MachineConfig | Yes |
+| [`platform-alteration-tainted-node-kernel`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#platform-alteration-tainted-node-kernel) | Kernel is not tainted | Yes |
 | [`platform-alteration-service-mesh-usage`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#platform-alteration-service-mesh-usage) | Pods do not use Istio sidecars | Yes |
 | [`platform-alteration-hugepages-2m-only`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#platform-alteration-hugepages-2m-only) | Only 2Mi hugepages used | Yes |
 | `platform-alteration-ocp-node-count` | Minimum worker node count met | Yes |
-| [`platform-alteration-hugepages-1g-only`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#platform-alteration-hugepages-1g-only) | Only 1Gi hugepages used | No |
-| [`platform-alteration-is-selinux-enforcing`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#platform-alteration-is-selinux-enforcing) | SELinux is in Enforcing mode | No |
+| [`platform-alteration-hugepages-1g-only`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#platform-alteration-hugepages-1g-only) | Only 1Gi hugepages used | Yes |
+| [`platform-alteration-is-selinux-enforcing`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#platform-alteration-is-selinux-enforcing) | SELinux is in Enforcing mode | Yes |
 
 ### operator
 
