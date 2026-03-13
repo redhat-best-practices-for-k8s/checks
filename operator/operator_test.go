@@ -139,6 +139,35 @@ func TestCheckNoSCCAccess_NonCompliant_WildcardResource(t *testing.T) {
 	}
 }
 
+// --- No SCC Access additional scenarios (from certsuite access_test.go) ---
+
+func TestCheckNoSCCAccess_MultiplePermissions(t *testing.T) {
+	csv := v1alpha1.ClusterServiceVersion{
+		ObjectMeta: metav1.ObjectMeta{Name: "op1", Namespace: "ns1"},
+	}
+	csv.Spec.InstallStrategy.StrategySpec.ClusterPermissions = []v1alpha1.StrategyDeploymentPermissions{
+		{
+			Rules: []rbacv1.PolicyRule{{
+				APIGroups: []string{"apps"},
+				Resources: []string{"deployments"},
+				Verbs:     []string{"get", "list"},
+			}},
+		},
+		{
+			Rules: []rbacv1.PolicyRule{{
+				APIGroups: []string{"security.openshift.io"},
+				Resources: []string{"securitycontextconstraints"},
+				Verbs:     []string{"use"},
+			}},
+		},
+	}
+	resources := &checks.DiscoveredResources{CSVs: []v1alpha1.ClusterServiceVersion{csv}}
+	result := CheckOperatorNoSCCAccess(resources)
+	if result.ComplianceStatus != "NonCompliant" {
+		t.Errorf("expected NonCompliant (second permission entry has SCC), got %s", result.ComplianceStatus)
+	}
+}
+
 // --- Installed Via OLM ---
 
 func TestCheckInstalledViaOLM_Compliant(t *testing.T) {

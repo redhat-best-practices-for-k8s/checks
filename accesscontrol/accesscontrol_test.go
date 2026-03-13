@@ -963,6 +963,239 @@ func TestCheckSysNiceRealtime_NonCompliant(t *testing.T) {
 	}
 }
 
+// --- CheckSecurityContext additional scenarios (from certsuite securitycontextcontainer_test.go) ---
+
+func TestCheckSecurityContext_AllowPrivilegeEscalation(t *testing.T) {
+	resources := &checks.DiscoveredResources{
+		Pods: []corev1.Pod{
+			{
+				ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "ns1"},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{Name: "c1", SecurityContext: &corev1.SecurityContext{
+							AllowPrivilegeEscalation: boolPtr(true),
+						}},
+					},
+				},
+			},
+		},
+	}
+	result := CheckSecurityContext(resources)
+	if result.ComplianceStatus != "NonCompliant" {
+		t.Errorf("expected NonCompliant for AllowPrivilegeEscalation=true (category 2), got %s", result.ComplianceStatus)
+	}
+}
+
+func TestCheckSecurityContext_DropAll_Compliant(t *testing.T) {
+	resources := &checks.DiscoveredResources{
+		Pods: []corev1.Pod{
+			{
+				ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "ns1"},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{Name: "c1", SecurityContext: &corev1.SecurityContext{
+							RunAsNonRoot: boolPtr(true),
+							Capabilities: &corev1.Capabilities{
+								Drop: []corev1.Capability{"ALL"},
+							},
+						}},
+					},
+				},
+			},
+		},
+	}
+	result := CheckSecurityContext(resources)
+	if result.ComplianceStatus != "Compliant" {
+		t.Errorf("expected Compliant for RunAsNonRoot+Drop ALL (category 1), got %s", result.ComplianceStatus)
+	}
+}
+
+func TestCheckSecurityContext_MultipleContainersMixed(t *testing.T) {
+	resources := &checks.DiscoveredResources{
+		Pods: []corev1.Pod{
+			{
+				ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "ns1"},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{Name: "restricted", SecurityContext: &corev1.SecurityContext{
+							RunAsNonRoot: boolPtr(true),
+						}},
+						{Name: "privileged", SecurityContext: &corev1.SecurityContext{
+							Privileged: boolPtr(true),
+						}},
+					},
+				},
+			},
+		},
+	}
+	result := CheckSecurityContext(resources)
+	if result.ComplianceStatus != "NonCompliant" {
+		t.Errorf("expected NonCompliant, got %s", result.ComplianceStatus)
+	}
+	if len(result.Details) != 1 {
+		t.Errorf("expected exactly 1 detail for the privileged container, got %d", len(result.Details))
+	}
+}
+
+// --- CheckPodRequests additional scenarios (from certsuite resources_test.go) ---
+
+func TestCheckPodRequests_NonCompliant_NoMemory(t *testing.T) {
+	resources := &checks.DiscoveredResources{
+		Pods: []corev1.Pod{{
+			ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "ns1"},
+			Spec: corev1.PodSpec{
+				Containers: []corev1.Container{{
+					Name: "c1",
+					Resources: corev1.ResourceRequirements{
+						Requests: corev1.ResourceList{
+							corev1.ResourceCPU: resource.MustParse("100m"),
+						},
+					},
+				}},
+			},
+		}},
+	}
+	result := CheckPodRequests(resources)
+	if result.ComplianceStatus != "NonCompliant" {
+		t.Errorf("expected NonCompliant for missing memory request, got %s", result.ComplianceStatus)
+	}
+}
+
+// --- CheckAutomountToken additional scenarios (from certsuite rbac/automount_test.go) ---
+
+func TestCheckAutomountToken_PodNil_SAFalse_Compliant(t *testing.T) {
+	resources := &checks.DiscoveredResources{
+		Pods: []corev1.Pod{
+			{
+				ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "ns1"},
+				Spec:       corev1.PodSpec{ServiceAccountName: "my-sa"},
+			},
+		},
+		ServiceAccounts: []corev1.ServiceAccount{
+			{
+				ObjectMeta:                   metav1.ObjectMeta{Name: "my-sa", Namespace: "ns1"},
+				AutomountServiceAccountToken: boolPtr(false),
+			},
+		},
+	}
+	result := CheckAutomountToken(resources)
+	if result.ComplianceStatus != "Compliant" {
+		t.Errorf("expected Compliant (pod nil, SA false), got %s", result.ComplianceStatus)
+	}
+}
+
+func TestCheckAutomountToken_PodNil_SATrue_NonCompliant(t *testing.T) {
+	resources := &checks.DiscoveredResources{
+		Pods: []corev1.Pod{
+			{
+				ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "ns1"},
+				Spec:       corev1.PodSpec{ServiceAccountName: "my-sa"},
+			},
+		},
+		ServiceAccounts: []corev1.ServiceAccount{
+			{
+				ObjectMeta:                   metav1.ObjectMeta{Name: "my-sa", Namespace: "ns1"},
+				AutomountServiceAccountToken: boolPtr(true),
+			},
+		},
+	}
+	result := CheckAutomountToken(resources)
+	if result.ComplianceStatus != "NonCompliant" {
+		t.Errorf("expected NonCompliant (pod nil, SA true), got %s", result.ComplianceStatus)
+	}
+}
+
+func TestCheckAutomountToken_PodTrue_NonCompliant(t *testing.T) {
+	resources := &checks.DiscoveredResources{
+		Pods: []corev1.Pod{
+			{
+				ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "ns1"},
+				Spec: corev1.PodSpec{
+					ServiceAccountName:           "my-sa",
+					AutomountServiceAccountToken: boolPtr(true),
+				},
+			},
+		},
+		ServiceAccounts: []corev1.ServiceAccount{
+			{
+				ObjectMeta:                   metav1.ObjectMeta{Name: "my-sa", Namespace: "ns1"},
+				AutomountServiceAccountToken: boolPtr(false),
+			},
+		},
+	}
+	result := CheckAutomountToken(resources)
+	if result.ComplianceStatus != "NonCompliant" {
+		t.Errorf("expected NonCompliant (pod explicit true overrides SA false), got %s", result.ComplianceStatus)
+	}
+}
+
+// --- CheckCrdRoles additional scenarios (from certsuite rbac/roles_test.go) ---
+
+func TestCheckCrdRoles_MultipleRulesMultipleGroups(t *testing.T) {
+	resources := &checks.DiscoveredResources{
+		CRDs: []apiextv1.CustomResourceDefinition{{
+			ObjectMeta: metav1.ObjectMeta{Name: "widgets.example.com"},
+			Spec: apiextv1.CustomResourceDefinitionSpec{
+				Names: apiextv1.CustomResourceDefinitionNames{Plural: "widgets"},
+			},
+		}},
+		Roles: []rbacv1.Role{{
+			ObjectMeta: metav1.ObjectMeta{Name: "role1", Namespace: "ns1"},
+			Rules: []rbacv1.PolicyRule{
+				{
+					APIGroups: []string{"example.com"},
+					Resources: []string{"widgets"},
+					Verbs:     []string{"get"},
+				},
+				{
+					APIGroups: []string{"apps"},
+					Resources: []string{"deployments"},
+					Verbs:     []string{"get"},
+				},
+			},
+		}},
+	}
+	result := CheckCrdRoles(resources)
+	if result.ComplianceStatus != "NonCompliant" {
+		t.Errorf("expected NonCompliant for non-CRD resource 'deployments', got %s", result.ComplianceStatus)
+	}
+	nonCompliantCount := 0
+	for _, d := range result.Details {
+		if !d.Compliant {
+			nonCompliantCount++
+		}
+	}
+	if nonCompliantCount != 1 {
+		t.Errorf("expected exactly 1 non-compliant detail for 'deployments', got %d", nonCompliantCount)
+	}
+}
+
+// --- CheckNamespace additional scenarios ---
+
+func TestCheckNamespace_DefaultNS_NonCompliant(t *testing.T) {
+	resources := &checks.DiscoveredResources{
+		Pods: []corev1.Pod{
+			{ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "default"}},
+		},
+	}
+	result := CheckNamespace(resources)
+	if result.ComplianceStatus != "NonCompliant" {
+		t.Errorf("expected NonCompliant for pod in 'default' namespace, got %s", result.ComplianceStatus)
+	}
+}
+
+func TestCheckNamespace_OpenShiftNS_NonCompliant(t *testing.T) {
+	resources := &checks.DiscoveredResources{
+		Pods: []corev1.Pod{
+			{ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "openshift-monitoring"}},
+		},
+	}
+	result := CheckNamespace(resources)
+	if result.ComplianceStatus != "NonCompliant" {
+		t.Errorf("expected NonCompliant for pod in 'openshift-monitoring' namespace, got %s", result.ComplianceStatus)
+	}
+}
+
 func TestCheckSysNiceRealtime_Compliant(t *testing.T) {
 	resources := &checks.DiscoveredResources{
 		Pods: []corev1.Pod{{
