@@ -1,4 +1,4 @@
-.PHONY: test lint vet fmt
+.PHONY: test lint vet fmt map-uts
 
 test:
 	go test ./... -coverprofile cover.out
@@ -11,3 +11,6 @@ vet:
 
 fmt:
 	go fmt ./...
+
+map-uts:
+	@./script/map-uts.sh
