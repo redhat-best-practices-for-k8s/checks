@@ -4,7 +4,8 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"time"
+
+	corev1 "k8s.io/api/core/v1"
 
 	"github.com/redhat-best-practices-for-k8s/checks"
 )
@@ -21,49 +22,27 @@ var grubKernelArgs = []string{
 
 // CheckBootParams verifies no non-standard kernel boot parameters are set (probe-based).
 func CheckBootParams(resources *checks.DiscoveredResources) checks.CheckResult {
-	result := checks.CheckResult{ComplianceStatus: "Compliant"}
-	if resources.ProbeExecutor == nil || len(resources.ProbePods) == 0 {
-		result.ComplianceStatus = "Skipped"
-		result.Reason = "Probe pods not available"
-		return result
+	return ExecuteProbeCheck(resources, checkBootParamsNode, "%d non-standard boot parameter(s) found")
+}
+
+func checkBootParamsNode(ctx context.Context, nodeName string, probePod *corev1.Pod, executor checks.ProbeExecutor) NodeCheckResult {
+	stdout, _, err := executor.ExecCommand(ctx, probePod, "cat /host/proc/cmdline")
+	if err != nil {
+		return NodeCheckResult{Failed: true, FailureMessage: err.Error()}
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-
-	var count int
-	var failedNodes []string
-	for nodeName, probePod := range resources.ProbePods {
-		stdout, _, err := resources.ProbeExecutor.ExecCommand(ctx, probePod, "cat /host/proc/cmdline")
-		if err != nil {
-			failedNodes = append(failedNodes, nodeName)
-			result.Details = append(result.Details, checks.ResourceDetail{
-				Kind: "Node", Name: nodeName, Namespace: "",
+	var violations []checks.ResourceDetail
+	for _, arg := range grubKernelArgs {
+		if strings.Contains(stdout, arg) {
+			violations = append(violations, checks.ResourceDetail{
+				Kind:      "Node",
+				Name:      nodeName,
+				Namespace: "",
 				Compliant: false,
-				Message:   fmt.Sprintf("Failed to execute probe command: %v", err),
+				Message:   fmt.Sprintf("Boot parameter %q found in kernel cmdline", arg),
 			})
-			continue
-		}
-		for _, arg := range grubKernelArgs {
-			if strings.Contains(stdout, arg) {
-				count++
-				result.Details = append(result.Details, checks.ResourceDetail{
-					Kind: "Node", Name: nodeName, Namespace: "",
-					Compliant: false,
-					Message:   fmt.Sprintf("Boot parameter %q found in kernel cmdline", arg),
-				})
-			}
 		}
 	}
-	if count > 0 || len(failedNodes) > 0 {
-		result.ComplianceStatus = "NonCompliant"
-		if count > 0 && len(failedNodes) > 0 {
-			result.Reason = fmt.Sprintf("%d non-standard boot parameter(s) found; %d node(s) failed probe execution", count, len(failedNodes))
-		} else if count > 0 {
-			result.Reason = fmt.Sprintf("%d non-standard boot parameter(s) found", count)
-		} else {
-			result.Reason = fmt.Sprintf("%d node(s) failed probe execution", len(failedNodes))
-		}
-	}
-	return result
+
+	return NodeCheckResult{Violations: violations}
 }
