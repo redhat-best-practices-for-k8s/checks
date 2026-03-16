@@ -263,6 +263,24 @@ func TestCheckBootParams_Skipped(t *testing.T) {
 	}
 }
 
+func TestCheckBootParams_ProbeFailure(t *testing.T) {
+	resources := &checks.DiscoveredResources{
+		ProbePods: map[string]*corev1.Pod{"node1": makeProbePod("node1")},
+		ProbeExecutor: &mockProbeExecutor{
+			responses: map[string]mockProbeResponse{
+				"cat /host/proc/cmdline": {stdout: "", stderr: "", err: fmt.Errorf("connection timeout")},
+			},
+		},
+	}
+	result := CheckBootParams(resources)
+	if result.ComplianceStatus != "NonCompliant" {
+		t.Errorf("expected NonCompliant for probe failure, got %s", result.ComplianceStatus)
+	}
+	if len(result.Details) != 1 {
+		t.Errorf("expected 1 detail entry for failed node, got %d", len(result.Details))
+	}
+}
+
 // --- Hugepages (probe-based) ---
 
 func TestCheckHugepages_Compliant(t *testing.T) {
@@ -309,6 +327,24 @@ func TestCheckHugepages_NoHugepagesInCmdline(t *testing.T) {
 	result := CheckHugepages(resources)
 	if result.ComplianceStatus != "Compliant" {
 		t.Errorf("expected Compliant (no hugepage boot params), got %s", result.ComplianceStatus)
+	}
+}
+
+func TestCheckHugepages_ProbeFailure(t *testing.T) {
+	resources := &checks.DiscoveredResources{
+		ProbePods: map[string]*corev1.Pod{"node1": makeProbePod("node1")},
+		ProbeExecutor: &mockProbeExecutor{
+			responses: map[string]mockProbeResponse{
+				"cat /host/proc/cmdline": {stdout: "", stderr: "", err: fmt.Errorf("probe failed")},
+			},
+		},
+	}
+	result := CheckHugepages(resources)
+	if result.ComplianceStatus != "NonCompliant" {
+		t.Errorf("expected NonCompliant for probe failure, got %s", result.ComplianceStatus)
+	}
+	if len(result.Details) != 1 {
+		t.Errorf("expected 1 detail entry for failed node, got %d", len(result.Details))
 	}
 }
 
@@ -375,6 +411,24 @@ func TestCheckSysctl_Skipped(t *testing.T) {
 	}
 }
 
+func TestCheckSysctl_ProbeFailure(t *testing.T) {
+	resources := &checks.DiscoveredResources{
+		ProbePods: map[string]*corev1.Pod{"node1": makeProbePod("node1")},
+		ProbeExecutor: &mockProbeExecutor{
+			responses: map[string]mockProbeResponse{
+				"chroot /host sysctl -n net.ipv4.conf.all.accept_redirects 2>/dev/null": {stdout: "", stderr: "", err: fmt.Errorf("probe failed")},
+			},
+		},
+	}
+	result := CheckSysctl(resources)
+	if result.ComplianceStatus != "NonCompliant" {
+		t.Errorf("expected NonCompliant for probe failure, got %s", result.ComplianceStatus)
+	}
+	if len(result.Details) != 1 {
+		t.Errorf("expected 1 detail entry for failed node, got %d", len(result.Details))
+	}
+}
+
 // --- Tainted kernel checks ---
 
 func TestCheckTainted_Compliant(t *testing.T) {
@@ -414,6 +468,24 @@ func TestCheckTainted_Skipped(t *testing.T) {
 	}
 }
 
+func TestCheckTainted_ProbeFailure(t *testing.T) {
+	resources := &checks.DiscoveredResources{
+		ProbePods: map[string]*corev1.Pod{"node1": makeProbePod("node1")},
+		ProbeExecutor: &mockProbeExecutor{
+			responses: map[string]mockProbeResponse{
+				"cat /host/proc/sys/kernel/tainted": {stdout: "", stderr: "", err: fmt.Errorf("probe failed")},
+			},
+		},
+	}
+	result := CheckTainted(resources)
+	if result.ComplianceStatus != "NonCompliant" {
+		t.Errorf("expected NonCompliant for probe failure, got %s", result.ComplianceStatus)
+	}
+	if len(result.Details) != 1 {
+		t.Errorf("expected 1 detail entry for failed node, got %d", len(result.Details))
+	}
+}
+
 // --- SELinux Enforcing checks ---
 
 func TestCheckSELinuxEnforcing_Compliant(t *testing.T) {
@@ -450,5 +522,23 @@ func TestCheckSELinuxEnforcing_Skipped(t *testing.T) {
 	result := CheckSELinuxEnforcing(&checks.DiscoveredResources{})
 	if result.ComplianceStatus != "Skipped" {
 		t.Errorf("expected Skipped, got %s", result.ComplianceStatus)
+	}
+}
+
+func TestCheckSELinuxEnforcing_ProbeFailure(t *testing.T) {
+	resources := &checks.DiscoveredResources{
+		ProbePods: map[string]*corev1.Pod{"node1": makeProbePod("node1")},
+		ProbeExecutor: &mockProbeExecutor{
+			responses: map[string]mockProbeResponse{
+				"chroot /host getenforce": {stdout: "", stderr: "", err: fmt.Errorf("probe failed")},
+			},
+		},
+	}
+	result := CheckSELinuxEnforcing(resources)
+	if result.ComplianceStatus != "NonCompliant" {
+		t.Errorf("expected NonCompliant for probe failure, got %s", result.ComplianceStatus)
+	}
+	if len(result.Details) != 1 {
+		t.Errorf("expected 1 detail entry for failed node, got %d", len(result.Details))
 	}
 }
