@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/redhat-best-practices-for-k8s/checks"
 )
@@ -24,13 +25,26 @@ func CheckSysctl(resources *checks.DiscoveredResources) checks.CheckResult {
 		return result
 	}
 
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
 	var count int
+	var failedNodes []string
 	for nodeName, probePod := range resources.ProbePods {
+		nodeHasError := false
 		for _, sysctl := range mcSysctls {
 			cmd := fmt.Sprintf("chroot /host sysctl -n %s 2>/dev/null", sysctl)
 			stdout, _, err := resources.ProbeExecutor.ExecCommand(ctx, probePod, cmd)
 			if err != nil {
+				if !nodeHasError {
+					failedNodes = append(failedNodes, nodeName)
+					result.Details = append(result.Details, checks.ResourceDetail{
+						Kind: "Node", Name: nodeName, Namespace: "",
+						Compliant: false,
+						Message:   fmt.Sprintf("Failed to execute probe command: %v", err),
+					})
+					nodeHasError = true
+				}
 				continue
 			}
 			val := strings.TrimSpace(stdout)
@@ -44,9 +58,15 @@ func CheckSysctl(resources *checks.DiscoveredResources) checks.CheckResult {
 			}
 		}
 	}
-	if count > 0 {
+	if count > 0 || len(failedNodes) > 0 {
 		result.ComplianceStatus = "NonCompliant"
-		result.Reason = fmt.Sprintf("%d non-default sysctl setting(s) found", count)
+		if count > 0 && len(failedNodes) > 0 {
+			result.Reason = fmt.Sprintf("%d non-default sysctl setting(s) found; %d node(s) failed probe execution", count, len(failedNodes))
+		} else if count > 0 {
+			result.Reason = fmt.Sprintf("%d non-default sysctl setting(s) found", count)
+		} else {
+			result.Reason = fmt.Sprintf("%d node(s) failed probe execution", len(failedNodes))
+		}
 	}
 	return result
 }
