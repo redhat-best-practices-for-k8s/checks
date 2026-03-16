@@ -10,9 +10,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/redhat-best-practices-for-k8s/checks"
+	"github.com/redhat-best-practices-for-k8s/checks/testutil"
 )
-
-func int32Ptr(i int32) *int32 { return &i }
 
 func TestCheckCRDStatus_Compliant(t *testing.T) {
 	resources := &checks.DiscoveredResources{
@@ -109,7 +108,7 @@ func TestCheckPodDisruptionBudget_Compliant(t *testing.T) {
 		Deployments: []appsv1.Deployment{{
 			ObjectMeta: metav1.ObjectMeta{Name: "deploy1", Namespace: "ns1"},
 			Spec: appsv1.DeploymentSpec{
-				Replicas: int32Ptr(3),
+				Replicas: testutil.Int32Ptr(3),
 				Template: corev1.PodTemplateSpec{
 					ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{"app": "web"}},
 				},
@@ -135,7 +134,7 @@ func TestCheckPodDisruptionBudget_NonCompliant(t *testing.T) {
 		Deployments: []appsv1.Deployment{{
 			ObjectMeta: metav1.ObjectMeta{Name: "deploy1", Namespace: "ns1"},
 			Spec: appsv1.DeploymentSpec{
-				Replicas: int32Ptr(3),
+				Replicas: testutil.Int32Ptr(3),
 				Template: corev1.PodTemplateSpec{
 					ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{"app": "web"}},
 				},

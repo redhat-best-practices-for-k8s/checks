@@ -12,6 +12,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/redhat-best-practices-for-k8s/checks"
+	"github.com/redhat-best-practices-for-k8s/checks/testutil"
 )
 
 type mockProbeResponse struct {
@@ -36,9 +37,6 @@ func makeProbePod(nodeName string) *corev1.Pod {
 		Spec:       corev1.PodSpec{NodeName: nodeName},
 	}
 }
-
-func boolPtr(b bool) *bool    { return &b }
-func int64Ptr(i int64) *int64 { return &i }
 
 // --- Host checks ---
 
@@ -310,7 +308,7 @@ func TestCheckNonRootUser_CompliantViaRunAsNonRoot(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "ns1"},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
-						{Name: "c1", SecurityContext: &corev1.SecurityContext{RunAsNonRoot: boolPtr(true)}},
+						{Name: "c1", SecurityContext: &corev1.SecurityContext{RunAsNonRoot: testutil.BoolPtr(true)}},
 					},
 				},
 			},
@@ -329,7 +327,7 @@ func TestCheckNonRootUser_CompliantViaRunAsUser(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "ns1"},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
-						{Name: "c1", SecurityContext: &corev1.SecurityContext{RunAsUser: int64Ptr(1000)}},
+						{Name: "c1", SecurityContext: &corev1.SecurityContext{RunAsUser: testutil.Int64Ptr(1000)}},
 					},
 				},
 			},
@@ -348,7 +346,7 @@ func TestCheckNonRootUser_NonCompliantRunAsUserZero(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "ns1"},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
-						{Name: "c1", SecurityContext: &corev1.SecurityContext{RunAsUser: int64Ptr(0)}},
+						{Name: "c1", SecurityContext: &corev1.SecurityContext{RunAsUser: testutil.Int64Ptr(0)}},
 					},
 				},
 			},
@@ -366,7 +364,7 @@ func TestCheckNonRootUser_PodLevel(t *testing.T) {
 			{
 				ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "ns1"},
 				Spec: corev1.PodSpec{
-					SecurityContext: &corev1.PodSecurityContext{RunAsNonRoot: boolPtr(true)},
+					SecurityContext: &corev1.PodSecurityContext{RunAsNonRoot: testutil.BoolPtr(true)},
 					Containers:      []corev1.Container{{Name: "c1"}},
 				},
 			},
@@ -385,7 +383,7 @@ func TestCheckPrivilegeEscalation_ExplicitTrue(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "ns1"},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
-						{Name: "c1", SecurityContext: &corev1.SecurityContext{AllowPrivilegeEscalation: boolPtr(true)}},
+						{Name: "c1", SecurityContext: &corev1.SecurityContext{AllowPrivilegeEscalation: testutil.BoolPtr(true)}},
 					},
 				},
 			},
@@ -421,7 +419,7 @@ func TestCheckPrivilegeEscalation_ExplicitFalse(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "ns1"},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
-						{Name: "c1", SecurityContext: &corev1.SecurityContext{AllowPrivilegeEscalation: boolPtr(false)}},
+						{Name: "c1", SecurityContext: &corev1.SecurityContext{AllowPrivilegeEscalation: testutil.BoolPtr(false)}},
 					},
 				},
 			},
@@ -458,7 +456,7 @@ func TestCheck1337UID_PodLevel_NonCompliant(t *testing.T) {
 			{
 				ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "ns1"},
 				Spec: corev1.PodSpec{
-					SecurityContext: &corev1.PodSecurityContext{RunAsUser: int64Ptr(1337)},
+					SecurityContext: &corev1.PodSecurityContext{RunAsUser: testutil.Int64Ptr(1337)},
 					Containers:      []corev1.Container{{Name: "c1"}},
 				},
 			},
@@ -477,7 +475,7 @@ func TestCheck1337UID_ContainerLevel_Compliant(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "ns1"},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
-						{Name: "c1", SecurityContext: &corev1.SecurityContext{RunAsUser: int64Ptr(1337)}},
+						{Name: "c1", SecurityContext: &corev1.SecurityContext{RunAsUser: testutil.Int64Ptr(1337)}},
 					},
 				},
 			},
@@ -495,7 +493,7 @@ func TestCheck1337UID_Compliant(t *testing.T) {
 			{
 				ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "ns1"},
 				Spec: corev1.PodSpec{
-					SecurityContext: &corev1.PodSecurityContext{RunAsUser: int64Ptr(1000)},
+					SecurityContext: &corev1.PodSecurityContext{RunAsUser: testutil.Int64Ptr(1000)},
 					Containers:      []corev1.Container{{Name: "c1"}},
 				},
 			},
@@ -645,7 +643,7 @@ func TestCheckAutomountToken_Compliant(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "ns1"},
 				Spec: corev1.PodSpec{
 					ServiceAccountName:           "my-sa",
-					AutomountServiceAccountToken: boolPtr(false),
+					AutomountServiceAccountToken: testutil.BoolPtr(false),
 				},
 			},
 		},
@@ -697,7 +695,7 @@ func TestCheckSecurityContext_Privileged(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "ns1"},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
-						{Name: "c1", SecurityContext: &corev1.SecurityContext{Privileged: boolPtr(true)}},
+						{Name: "c1", SecurityContext: &corev1.SecurityContext{Privileged: testutil.BoolPtr(true)}},
 					},
 				},
 			},
@@ -739,10 +737,10 @@ func TestCheckSecurityContext_Restricted(t *testing.T) {
 			{
 				ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "ns1"},
 				Spec: corev1.PodSpec{
-					SecurityContext: &corev1.PodSecurityContext{RunAsNonRoot: boolPtr(true)},
+					SecurityContext: &corev1.PodSecurityContext{RunAsNonRoot: testutil.BoolPtr(true)},
 					Containers: []corev1.Container{
 						{Name: "c1", SecurityContext: &corev1.SecurityContext{
-							RunAsNonRoot: boolPtr(true),
+							RunAsNonRoot: testutil.BoolPtr(true),
 						}},
 					},
 				},
@@ -824,7 +822,7 @@ func TestCheckSysPtrace_Compliant(t *testing.T) {
 		Pods: []corev1.Pod{{
 			ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "ns1"},
 			Spec: corev1.PodSpec{
-				ShareProcessNamespace: boolPtr(true),
+				ShareProcessNamespace: testutil.BoolPtr(true),
 				Containers: []corev1.Container{{
 					Name: "c1",
 					SecurityContext: &corev1.SecurityContext{
@@ -847,7 +845,7 @@ func TestCheckSysPtrace_NonCompliant(t *testing.T) {
 		Pods: []corev1.Pod{{
 			ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "ns1"},
 			Spec: corev1.PodSpec{
-				ShareProcessNamespace: boolPtr(true),
+				ShareProcessNamespace: testutil.BoolPtr(true),
 				Containers:            []corev1.Container{{Name: "c1"}},
 			},
 		}},
@@ -998,7 +996,7 @@ func TestCheckSecurityContext_AllowPrivilegeEscalation(t *testing.T) {
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{Name: "c1", SecurityContext: &corev1.SecurityContext{
-							AllowPrivilegeEscalation: boolPtr(true),
+							AllowPrivilegeEscalation: testutil.BoolPtr(true),
 						}},
 					},
 				},
@@ -1019,7 +1017,7 @@ func TestCheckSecurityContext_DropAll_Compliant(t *testing.T) {
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{Name: "c1", SecurityContext: &corev1.SecurityContext{
-							RunAsNonRoot: boolPtr(true),
+							RunAsNonRoot: testutil.BoolPtr(true),
 							Capabilities: &corev1.Capabilities{
 								Drop: []corev1.Capability{"ALL"},
 							},
@@ -1043,10 +1041,10 @@ func TestCheckSecurityContext_MultipleContainersMixed(t *testing.T) {
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{Name: "restricted", SecurityContext: &corev1.SecurityContext{
-							RunAsNonRoot: boolPtr(true),
+							RunAsNonRoot: testutil.BoolPtr(true),
 						}},
 						{Name: "privileged", SecurityContext: &corev1.SecurityContext{
-							Privileged: boolPtr(true),
+							Privileged: testutil.BoolPtr(true),
 						}},
 					},
 				},
@@ -1099,7 +1097,7 @@ func TestCheckAutomountToken_PodNil_SAFalse_Compliant(t *testing.T) {
 		ServiceAccounts: []corev1.ServiceAccount{
 			{
 				ObjectMeta:                   metav1.ObjectMeta{Name: "my-sa", Namespace: "ns1"},
-				AutomountServiceAccountToken: boolPtr(false),
+				AutomountServiceAccountToken: testutil.BoolPtr(false),
 			},
 		},
 	}
@@ -1120,7 +1118,7 @@ func TestCheckAutomountToken_PodNil_SATrue_NonCompliant(t *testing.T) {
 		ServiceAccounts: []corev1.ServiceAccount{
 			{
 				ObjectMeta:                   metav1.ObjectMeta{Name: "my-sa", Namespace: "ns1"},
-				AutomountServiceAccountToken: boolPtr(true),
+				AutomountServiceAccountToken: testutil.BoolPtr(true),
 			},
 		},
 	}
@@ -1137,14 +1135,14 @@ func TestCheckAutomountToken_PodTrue_NonCompliant(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "ns1"},
 				Spec: corev1.PodSpec{
 					ServiceAccountName:           "my-sa",
-					AutomountServiceAccountToken: boolPtr(true),
+					AutomountServiceAccountToken: testutil.BoolPtr(true),
 				},
 			},
 		},
 		ServiceAccounts: []corev1.ServiceAccount{
 			{
 				ObjectMeta:                   metav1.ObjectMeta{Name: "my-sa", Namespace: "ns1"},
-				AutomountServiceAccountToken: boolPtr(false),
+				AutomountServiceAccountToken: testutil.BoolPtr(false),
 			},
 		},
 	}
