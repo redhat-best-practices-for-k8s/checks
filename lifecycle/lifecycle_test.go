@@ -10,9 +10,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/redhat-best-practices-for-k8s/checks"
+	"github.com/redhat-best-practices-for-k8s/checks/testutil"
 )
-
-func int32Ptr(i int32) *int32 { return &i }
 
 // --- Probe checks ---
 
@@ -265,7 +264,7 @@ func TestCheckHighAvailability_Compliant(t *testing.T) {
 	resources := &checks.DiscoveredResources{
 		Deployments: []appsv1.Deployment{{
 			ObjectMeta: metav1.ObjectMeta{Name: "deploy1", Namespace: "ns1"},
-			Spec:       appsv1.DeploymentSpec{Replicas: int32Ptr(3)},
+			Spec:       appsv1.DeploymentSpec{Replicas: testutil.Int32Ptr(3)},
 		}},
 	}
 	result := CheckHighAvailability(resources)
@@ -278,7 +277,7 @@ func TestCheckHighAvailability_NonCompliant(t *testing.T) {
 	resources := &checks.DiscoveredResources{
 		Deployments: []appsv1.Deployment{{
 			ObjectMeta: metav1.ObjectMeta{Name: "deploy1", Namespace: "ns1"},
-			Spec:       appsv1.DeploymentSpec{Replicas: int32Ptr(1)},
+			Spec:       appsv1.DeploymentSpec{Replicas: testutil.Int32Ptr(1)},
 		}},
 	}
 	result := CheckHighAvailability(resources)
