@@ -3,6 +3,8 @@ package lifecycle
 import (
 	"fmt"
 
+	corev1 "k8s.io/api/core/v1"
+
 	"github.com/redhat-best-practices-for-k8s/checks"
 )
 
@@ -16,20 +18,17 @@ func CheckStartupProbe(resources *checks.DiscoveredResources) checks.CheckResult
 	}
 
 	var count int
-	for i := range resources.Pods {
-		pod := &resources.Pods[i]
-		for j := range pod.Spec.Containers {
-			container := &pod.Spec.Containers[j]
-			if container.StartupProbe == nil {
-				count++
-				result.Details = append(result.Details, checks.ResourceDetail{
-					Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
-					Compliant: false,
-					Message:   fmt.Sprintf("Container %q does not have a startupProbe", container.Name),
-				})
-			}
+	checks.ForEachContainer(resources.Pods, func(pod *corev1.Pod, container *corev1.Container) {
+		if container.StartupProbe == nil {
+			count++
+			result.Details = append(result.Details, checks.ResourceDetail{
+				Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
+				Compliant: false,
+				Message:   fmt.Sprintf("Container %q does not have a startupProbe", container.Name),
+			})
 		}
-	}
+	})
+
 	if count > 0 {
 		result.ComplianceStatus = "NonCompliant"
 		result.Reason = fmt.Sprintf("%d container(s) missing startupProbe", count)
@@ -47,20 +46,17 @@ func CheckReadinessProbe(resources *checks.DiscoveredResources) checks.CheckResu
 	}
 
 	var count int
-	for i := range resources.Pods {
-		pod := &resources.Pods[i]
-		for j := range pod.Spec.Containers {
-			container := &pod.Spec.Containers[j]
-			if container.ReadinessProbe == nil {
-				count++
-				result.Details = append(result.Details, checks.ResourceDetail{
-					Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
-					Compliant: false,
-					Message:   fmt.Sprintf("Container %q does not have a readinessProbe", container.Name),
-				})
-			}
+	checks.ForEachContainer(resources.Pods, func(pod *corev1.Pod, container *corev1.Container) {
+		if container.ReadinessProbe == nil {
+			count++
+			result.Details = append(result.Details, checks.ResourceDetail{
+				Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
+				Compliant: false,
+				Message:   fmt.Sprintf("Container %q does not have a readinessProbe", container.Name),
+			})
 		}
-	}
+	})
+
 	if count > 0 {
 		result.ComplianceStatus = "NonCompliant"
 		result.Reason = fmt.Sprintf("%d container(s) missing readinessProbe", count)
@@ -78,20 +74,17 @@ func CheckLivenessProbe(resources *checks.DiscoveredResources) checks.CheckResul
 	}
 
 	var count int
-	for i := range resources.Pods {
-		pod := &resources.Pods[i]
-		for j := range pod.Spec.Containers {
-			container := &pod.Spec.Containers[j]
-			if container.LivenessProbe == nil {
-				count++
-				result.Details = append(result.Details, checks.ResourceDetail{
-					Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
-					Compliant: false,
-					Message:   fmt.Sprintf("Container %q does not have a livenessProbe", container.Name),
-				})
-			}
+	checks.ForEachContainer(resources.Pods, func(pod *corev1.Pod, container *corev1.Container) {
+		if container.LivenessProbe == nil {
+			count++
+			result.Details = append(result.Details, checks.ResourceDetail{
+				Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
+				Compliant: false,
+				Message:   fmt.Sprintf("Container %q does not have a livenessProbe", container.Name),
+			})
 		}
-	}
+	})
+
 	if count > 0 {
 		result.ComplianceStatus = "NonCompliant"
 		result.Reason = fmt.Sprintf("%d container(s) missing livenessProbe", count)

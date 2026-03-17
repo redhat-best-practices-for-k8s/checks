@@ -18,22 +18,17 @@ func CheckTerminationPolicy(resources *checks.DiscoveredResources) checks.CheckR
 	}
 
 	var count int
-	for i := range resources.Pods {
-		pod := &resources.Pods[i]
-		allContainers := append(pod.Spec.InitContainers, pod.Spec.Containers...)
-		for j := range allContainers {
-			container := &allContainers[j]
-			if container.TerminationMessagePolicy != corev1.TerminationMessageFallbackToLogsOnError {
-				count++
-				result.Details = append(result.Details, checks.ResourceDetail{
-					Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
-					Compliant: false,
-					Message: fmt.Sprintf("Container %q terminationMessagePolicy is %q, expected FallbackToLogsOnError",
-						container.Name, container.TerminationMessagePolicy),
-				})
-			}
+	checks.ForEachPodContainer(resources.Pods, func(pod *corev1.Pod, container *corev1.Container) {
+		if container.TerminationMessagePolicy != corev1.TerminationMessageFallbackToLogsOnError {
+			count++
+			result.Details = append(result.Details, checks.ResourceDetail{
+				Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
+				Compliant: false,
+				Message: fmt.Sprintf("Container %q terminationMessagePolicy is %q, expected FallbackToLogsOnError",
+					container.Name, container.TerminationMessagePolicy),
+			})
 		}
-	}
+	})
 	if count > 0 {
 		result.ComplianceStatus = "NonCompliant"
 		result.Reason = fmt.Sprintf("%d container(s) do not use FallbackToLogsOnError termination policy", count)

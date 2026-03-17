@@ -19,21 +19,16 @@ func CheckNonRootUser(resources *checks.DiscoveredResources) checks.CheckResult 
 	}
 
 	var count int
-	for i := range resources.Pods {
-		pod := &resources.Pods[i]
-		allContainers := append(pod.Spec.InitContainers, pod.Spec.Containers...)
-		for j := range allContainers {
-			container := &allContainers[j]
-			if !isContainerRunAsNonRoot(pod, container) && !isContainerRunAsNonRootUserID(pod, container) {
-				count++
-				result.Details = append(result.Details, checks.ResourceDetail{
-					Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
-					Compliant: false,
-					Message:   fmt.Sprintf("Container %q does not have runAsNonRoot=true or runAsUser!=0", container.Name),
-				})
-			}
+	checks.ForEachPodContainer(resources.Pods, func(pod *corev1.Pod, container *corev1.Container) {
+		if !isContainerRunAsNonRoot(pod, container) && !isContainerRunAsNonRootUserID(pod, container) {
+			count++
+			result.Details = append(result.Details, checks.ResourceDetail{
+				Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
+				Compliant: false,
+				Message:   fmt.Sprintf("Container %q does not have runAsNonRoot=true or runAsUser!=0", container.Name),
+			})
 		}
-	}
+	})
 	if count > 0 {
 		result.ComplianceStatus = "NonCompliant"
 		result.Reason = fmt.Sprintf("%d container(s) may run as root", count)
@@ -71,23 +66,18 @@ func CheckPrivilegeEscalation(resources *checks.DiscoveredResources) checks.Chec
 	}
 
 	var count int
-	for i := range resources.Pods {
-		pod := &resources.Pods[i]
-		allContainers := append(pod.Spec.InitContainers, pod.Spec.Containers...)
-		for j := range allContainers {
-			container := &allContainers[j]
-			if container.SecurityContext != nil &&
-				container.SecurityContext.AllowPrivilegeEscalation != nil &&
-				*container.SecurityContext.AllowPrivilegeEscalation {
-				count++
-				result.Details = append(result.Details, checks.ResourceDetail{
-					Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
-					Compliant: false,
-					Message:   fmt.Sprintf("Container %q has allowPrivilegeEscalation set to true", container.Name),
-				})
-			}
+	checks.ForEachPodContainer(resources.Pods, func(pod *corev1.Pod, container *corev1.Container) {
+		if container.SecurityContext != nil &&
+			container.SecurityContext.AllowPrivilegeEscalation != nil &&
+			*container.SecurityContext.AllowPrivilegeEscalation {
+			count++
+			result.Details = append(result.Details, checks.ResourceDetail{
+				Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
+				Compliant: false,
+				Message:   fmt.Sprintf("Container %q has allowPrivilegeEscalation set to true", container.Name),
+			})
 		}
-	}
+	})
 	if count > 0 {
 		result.ComplianceStatus = "NonCompliant"
 		result.Reason = fmt.Sprintf("%d container(s) allow privilege escalation", count)
@@ -105,23 +95,18 @@ func CheckReadOnlyFilesystem(resources *checks.DiscoveredResources) checks.Check
 	}
 
 	var count int
-	for i := range resources.Pods {
-		pod := &resources.Pods[i]
-		allContainers := append(pod.Spec.InitContainers, pod.Spec.Containers...)
-		for j := range allContainers {
-			container := &allContainers[j]
-			if container.SecurityContext == nil ||
-				container.SecurityContext.ReadOnlyRootFilesystem == nil ||
-				!*container.SecurityContext.ReadOnlyRootFilesystem {
-				count++
-				result.Details = append(result.Details, checks.ResourceDetail{
-					Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
-					Compliant: false,
-					Message:   fmt.Sprintf("Container %q does not set readOnlyRootFilesystem to true", container.Name),
-				})
-			}
+	checks.ForEachPodContainer(resources.Pods, func(pod *corev1.Pod, container *corev1.Container) {
+		if container.SecurityContext == nil ||
+			container.SecurityContext.ReadOnlyRootFilesystem == nil ||
+			!*container.SecurityContext.ReadOnlyRootFilesystem {
+			count++
+			result.Details = append(result.Details, checks.ResourceDetail{
+				Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
+				Compliant: false,
+				Message:   fmt.Sprintf("Container %q does not set readOnlyRootFilesystem to true", container.Name),
+			})
 		}
-	}
+	})
 	if count > 0 {
 		result.ComplianceStatus = "NonCompliant"
 		result.Reason = fmt.Sprintf("%d container(s) do not set readOnlyRootFilesystem", count)

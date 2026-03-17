@@ -3,6 +3,8 @@ package accesscontrol
 import (
 	"fmt"
 
+	corev1 "k8s.io/api/core/v1"
+
 	"github.com/redhat-best-practices-for-k8s/checks"
 )
 
@@ -16,23 +18,19 @@ func CheckPodRequests(resources *checks.DiscoveredResources) checks.CheckResult 
 	}
 
 	var count int
-	for i := range resources.Pods {
-		pod := &resources.Pods[i]
-		allContainers := append(pod.Spec.InitContainers, pod.Spec.Containers...)
-		for j := range allContainers {
-			container := &allContainers[j]
-			cpuReq := container.Resources.Requests.Cpu()
-			memReq := container.Resources.Requests.Memory()
-			if cpuReq.IsZero() || memReq.IsZero() {
-				count++
-				result.Details = append(result.Details, checks.ResourceDetail{
-					Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
-					Compliant: false,
-					Message:   fmt.Sprintf("Container %q missing resource requests (cpu: %s, memory: %s)", container.Name, cpuReq.String(), memReq.String()),
-				})
-			}
+	checks.ForEachPodContainer(resources.Pods, func(pod *corev1.Pod, container *corev1.Container) {
+		cpuReq := container.Resources.Requests.Cpu()
+		memReq := container.Resources.Requests.Memory()
+		if cpuReq.IsZero() || memReq.IsZero() {
+			count++
+			result.Details = append(result.Details, checks.ResourceDetail{
+				Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
+				Compliant: false,
+				Message:   fmt.Sprintf("Container %q missing resource requests (cpu: %s, memory: %s)", container.Name, cpuReq.String(), memReq.String()),
+			})
 		}
-	}
+	})
+
 	if count > 0 {
 		result.ComplianceStatus = "NonCompliant"
 		result.Reason = fmt.Sprintf("%d container(s) missing CPU or memory requests", count)
