@@ -18,23 +18,18 @@ func checkForbiddenCapability(resources *checks.DiscoveredResources, capName str
 	}
 
 	var nonCompliant int
-	for i := range resources.Pods {
-		pod := &resources.Pods[i]
-		allContainers := append(pod.Spec.InitContainers, pod.Spec.Containers...)
-		for j := range allContainers {
-			container := &allContainers[j]
-			if containerHasCapability(container, capName) {
-				nonCompliant++
-				result.Details = append(result.Details, checks.ResourceDetail{
-					Kind:      "Pod",
-					Name:      pod.Name,
-					Namespace: pod.Namespace,
-					Compliant: false,
-					Message:   fmt.Sprintf("Container %q has %s capability", container.Name, capName),
-				})
-			}
+	checks.ForEachPodContainer(resources.Pods, func(pod *corev1.Pod, container *corev1.Container) {
+		if containerHasCapability(container, capName) {
+			nonCompliant++
+			result.Details = append(result.Details, checks.ResourceDetail{
+				Kind:      "Pod",
+				Name:      pod.Name,
+				Namespace: pod.Namespace,
+				Compliant: false,
+				Message:   fmt.Sprintf("Container %q has %s capability", container.Name, capName),
+			})
 		}
-	}
+	})
 
 	if nonCompliant > 0 {
 		result.ComplianceStatus = "NonCompliant"
