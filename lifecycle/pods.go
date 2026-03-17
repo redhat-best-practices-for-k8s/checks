@@ -19,25 +19,20 @@ func CheckImagePullPolicy(resources *checks.DiscoveredResources) checks.CheckRes
 	}
 
 	var count int
-	for i := range resources.Pods {
-		pod := &resources.Pods[i]
-		allContainers := append(pod.Spec.InitContainers, pod.Spec.Containers...)
-		for j := range allContainers {
-			container := &allContainers[j]
-			if container.ImagePullPolicy == corev1.PullAlways {
-				continue
-			}
-			if container.ImagePullPolicy == corev1.PullIfNotPresent && strings.Contains(container.Image, "@sha256:") {
-				continue
-			}
-			count++
-			result.Details = append(result.Details, checks.ResourceDetail{
-				Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
-				Compliant: false,
-				Message:   fmt.Sprintf("Container %q has imagePullPolicy %q without digest reference", container.Name, container.ImagePullPolicy),
-			})
+	checks.ForEachPodContainer(resources.Pods, func(pod *corev1.Pod, container *corev1.Container) {
+		if container.ImagePullPolicy == corev1.PullAlways {
+			return
 		}
-	}
+		if container.ImagePullPolicy == corev1.PullIfNotPresent && strings.Contains(container.Image, "@sha256:") {
+			return
+		}
+		count++
+		result.Details = append(result.Details, checks.ResourceDetail{
+			Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
+			Compliant: false,
+			Message:   fmt.Sprintf("Container %q has imagePullPolicy %q without digest reference", container.Name, container.ImagePullPolicy),
+		})
+	})
 	if count > 0 {
 		result.ComplianceStatus = "NonCompliant"
 		result.Reason = fmt.Sprintf("%d container(s) have non-compliant imagePullPolicy", count)
@@ -162,22 +157,18 @@ func CheckCPUIsolation(resources *checks.DiscoveredResources) checks.CheckResult
 	}
 
 	var count int
-	for i := range resources.Pods {
-		pod := &resources.Pods[i]
-		for j := range pod.Spec.Containers {
-			container := &pod.Spec.Containers[j]
-			cpuReq := container.Resources.Requests.Cpu()
-			cpuLim := container.Resources.Limits.Cpu()
-			if cpuReq.IsZero() || cpuLim.IsZero() || !cpuReq.Equal(*cpuLim) {
-				count++
-				result.Details = append(result.Details, checks.ResourceDetail{
-					Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
-					Compliant: false,
-					Message:   fmt.Sprintf("Container %q CPU requests (%s) != limits (%s)", container.Name, cpuReq.String(), cpuLim.String()),
-				})
-			}
+	checks.ForEachContainer(resources.Pods, func(pod *corev1.Pod, container *corev1.Container) {
+		cpuReq := container.Resources.Requests.Cpu()
+		cpuLim := container.Resources.Limits.Cpu()
+		if cpuReq.IsZero() || cpuLim.IsZero() || !cpuReq.Equal(*cpuLim) {
+			count++
+			result.Details = append(result.Details, checks.ResourceDetail{
+				Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
+				Compliant: false,
+				Message:   fmt.Sprintf("Container %q CPU requests (%s) != limits (%s)", container.Name, cpuReq.String(), cpuLim.String()),
+			})
 		}
-	}
+	})
 	if count > 0 {
 		result.ComplianceStatus = "NonCompliant"
 		result.Reason = fmt.Sprintf("%d container(s) do not have CPU requests equal to limits", count)
