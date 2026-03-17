@@ -70,21 +70,18 @@ func checkPortUsage(resources *checks.DiscoveredResources, portSet map[int32]boo
 	}
 
 	var count int
-	for i := range resources.Pods {
-		pod := &resources.Pods[i]
-		for _, container := range pod.Spec.Containers {
-			for _, port := range container.Ports {
-				if portSet[port.ContainerPort] {
-					count++
-					result.Details = append(result.Details, checks.ResourceDetail{
-						Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
-						Compliant: false,
-						Message:   fmt.Sprintf("Container %q uses %s %d", container.Name, label, port.ContainerPort),
-					})
-				}
+	checks.ForEachContainer(resources.Pods, func(pod *corev1.Pod, container *corev1.Container) {
+		for _, port := range container.Ports {
+			if portSet[port.ContainerPort] {
+				count++
+				result.Details = append(result.Details, checks.ResourceDetail{
+					Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
+					Compliant: false,
+					Message:   fmt.Sprintf("Container %q uses %s %d", container.Name, label, port.ContainerPort),
+				})
 			}
 		}
-	}
+	})
 	if count > 0 {
 		result.ComplianceStatus = "NonCompliant"
 		result.Reason = fmt.Sprintf("%d container(s) use %ss", count, label)

@@ -22,24 +22,21 @@ func CheckPortNameFormat(resources *checks.DiscoveredResources) checks.CheckResu
 	}
 
 	var count int
-	for i := range resources.Pods {
-		pod := &resources.Pods[i]
-		for _, container := range pod.Spec.Containers {
-			for _, port := range container.Ports {
-				if port.Name == "" {
-					continue
-				}
-				if !ianaPortNameRegex.MatchString(port.Name) {
-					count++
-					result.Details = append(result.Details, checks.ResourceDetail{
-						Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
-						Compliant: false,
-						Message:   fmt.Sprintf("Container %q port name %q does not follow IANA format", container.Name, port.Name),
-					})
-				}
+	checks.ForEachContainer(resources.Pods, func(pod *corev1.Pod, container *corev1.Container) {
+		for _, port := range container.Ports {
+			if port.Name == "" {
+				continue
+			}
+			if !ianaPortNameRegex.MatchString(port.Name) {
+				count++
+				result.Details = append(result.Details, checks.ResourceDetail{
+					Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
+					Compliant: false,
+					Message:   fmt.Sprintf("Container %q port name %q does not follow IANA format", container.Name, port.Name),
+				})
 			}
 		}
-	}
+	})
 	if count > 0 {
 		result.ComplianceStatus = "NonCompliant"
 		result.Reason = fmt.Sprintf("%d port name(s) do not follow IANA format", count)
