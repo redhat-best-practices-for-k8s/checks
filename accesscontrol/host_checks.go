@@ -3,11 +3,16 @@ package accesscontrol
 import (
 	"fmt"
 
+	corev1 "k8s.io/api/core/v1"
+
 	"github.com/redhat-best-practices-for-k8s/checks"
 )
 
-// CheckHostNetwork verifies pods do not use HostNetwork.
-func CheckHostNetwork(resources *checks.DiscoveredResources) checks.CheckResult {
+// podCheckFunc is a predicate that checks if a pod violates a host-level security constraint.
+type podCheckFunc func(pod *corev1.Pod) bool
+
+// checkPodHostField verifies pods do not enable a specific host-level field.
+func checkPodHostField(resources *checks.DiscoveredResources, checkFunc podCheckFunc, fieldName string) checks.CheckResult {
 	result := checks.CheckResult{ComplianceStatus: "Compliant"}
 	if len(resources.Pods) == 0 {
 		result.ComplianceStatus = "Skipped"
@@ -18,19 +23,26 @@ func CheckHostNetwork(resources *checks.DiscoveredResources) checks.CheckResult 
 	var count int
 	for i := range resources.Pods {
 		pod := &resources.Pods[i]
-		if pod.Spec.HostNetwork {
+		if checkFunc(pod) {
 			count++
 			result.Details = append(result.Details, checks.ResourceDetail{
 				Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
-				Compliant: false, Message: "HostNetwork is set to true",
+				Compliant: false, Message: fmt.Sprintf("%s is set to true", fieldName),
 			})
 		}
 	}
 	if count > 0 {
 		result.ComplianceStatus = "NonCompliant"
-		result.Reason = fmt.Sprintf("%d pod(s) have HostNetwork enabled", count)
+		result.Reason = fmt.Sprintf("%d pod(s) have %s enabled", count, fieldName)
 	}
 	return result
+}
+
+// CheckHostNetwork verifies pods do not use HostNetwork.
+func CheckHostNetwork(resources *checks.DiscoveredResources) checks.CheckResult {
+	return checkPodHostField(resources, func(pod *corev1.Pod) bool {
+		return pod.Spec.HostNetwork
+	}, "HostNetwork")
 }
 
 // CheckHostPath verifies pods do not use HostPath volumes.
@@ -66,56 +78,16 @@ func CheckHostPath(resources *checks.DiscoveredResources) checks.CheckResult {
 
 // CheckHostIPC verifies pods do not use HostIPC.
 func CheckHostIPC(resources *checks.DiscoveredResources) checks.CheckResult {
-	result := checks.CheckResult{ComplianceStatus: "Compliant"}
-	if len(resources.Pods) == 0 {
-		result.ComplianceStatus = "Skipped"
-		result.Reason = "No pods found"
-		return result
-	}
-
-	var count int
-	for i := range resources.Pods {
-		pod := &resources.Pods[i]
-		if pod.Spec.HostIPC {
-			count++
-			result.Details = append(result.Details, checks.ResourceDetail{
-				Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
-				Compliant: false, Message: "HostIPC is set to true",
-			})
-		}
-	}
-	if count > 0 {
-		result.ComplianceStatus = "NonCompliant"
-		result.Reason = fmt.Sprintf("%d pod(s) have HostIPC enabled", count)
-	}
-	return result
+	return checkPodHostField(resources, func(pod *corev1.Pod) bool {
+		return pod.Spec.HostIPC
+	}, "HostIPC")
 }
 
 // CheckHostPID verifies pods do not use HostPID.
 func CheckHostPID(resources *checks.DiscoveredResources) checks.CheckResult {
-	result := checks.CheckResult{ComplianceStatus: "Compliant"}
-	if len(resources.Pods) == 0 {
-		result.ComplianceStatus = "Skipped"
-		result.Reason = "No pods found"
-		return result
-	}
-
-	var count int
-	for i := range resources.Pods {
-		pod := &resources.Pods[i]
-		if pod.Spec.HostPID {
-			count++
-			result.Details = append(result.Details, checks.ResourceDetail{
-				Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
-				Compliant: false, Message: "HostPID is set to true",
-			})
-		}
-	}
-	if count > 0 {
-		result.ComplianceStatus = "NonCompliant"
-		result.Reason = fmt.Sprintf("%d pod(s) have HostPID enabled", count)
-	}
-	return result
+	return checkPodHostField(resources, func(pod *corev1.Pod) bool {
+		return pod.Spec.HostPID
+	}, "HostPID")
 }
 
 // CheckContainerHostPort verifies containers do not use HostPort.
@@ -128,21 +100,18 @@ func CheckContainerHostPort(resources *checks.DiscoveredResources) checks.CheckR
 	}
 
 	var count int
-	for i := range resources.Pods {
-		pod := &resources.Pods[i]
-		for _, container := range pod.Spec.Containers {
-			for _, port := range container.Ports {
-				if port.HostPort != 0 {
-					count++
-					result.Details = append(result.Details, checks.ResourceDetail{
-						Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
-						Compliant: false,
-						Message:   fmt.Sprintf("Container %q uses HostPort %d", container.Name, port.HostPort),
-					})
-				}
+	checks.ForEachContainer(resources.Pods, func(pod *corev1.Pod, container *corev1.Container) {
+		for _, port := range container.Ports {
+			if port.HostPort != 0 {
+				count++
+				result.Details = append(result.Details, checks.ResourceDetail{
+					Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
+					Compliant: false,
+					Message:   fmt.Sprintf("Container %q uses HostPort %d", container.Name, port.HostPort),
+				})
 			}
 		}
-	}
+	})
 	if count > 0 {
 		result.ComplianceStatus = "NonCompliant"
 		result.Reason = fmt.Sprintf("%d container(s) use HostPort", count)
