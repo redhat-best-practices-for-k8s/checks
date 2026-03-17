@@ -3,6 +3,8 @@ package lifecycle
 import (
 	"fmt"
 
+	corev1 "k8s.io/api/core/v1"
+
 	"github.com/redhat-best-practices-for-k8s/checks"
 )
 
@@ -16,20 +18,16 @@ func CheckPreStop(resources *checks.DiscoveredResources) checks.CheckResult {
 	}
 
 	var count int
-	for i := range resources.Pods {
-		pod := &resources.Pods[i]
-		for j := range pod.Spec.Containers {
-			container := &pod.Spec.Containers[j]
-			if container.Lifecycle == nil || container.Lifecycle.PreStop == nil {
-				count++
-				result.Details = append(result.Details, checks.ResourceDetail{
-					Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
-					Compliant: false,
-					Message:   fmt.Sprintf("Container %q does not have a preStop lifecycle hook", container.Name),
-				})
-			}
+	checks.ForEachContainer(resources.Pods, func(pod *corev1.Pod, container *corev1.Container) {
+		if container.Lifecycle == nil || container.Lifecycle.PreStop == nil {
+			count++
+			result.Details = append(result.Details, checks.ResourceDetail{
+				Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
+				Compliant: false,
+				Message:   fmt.Sprintf("Container %q does not have a preStop lifecycle hook", container.Name),
+			})
 		}
-	}
+	})
 	if count > 0 {
 		result.ComplianceStatus = "NonCompliant"
 		result.Reason = fmt.Sprintf("%d container(s) missing preStop hook", count)
@@ -47,20 +45,16 @@ func CheckPostStart(resources *checks.DiscoveredResources) checks.CheckResult {
 	}
 
 	var count int
-	for i := range resources.Pods {
-		pod := &resources.Pods[i]
-		for j := range pod.Spec.Containers {
-			container := &pod.Spec.Containers[j]
-			if container.Lifecycle == nil || container.Lifecycle.PostStart == nil {
-				count++
-				result.Details = append(result.Details, checks.ResourceDetail{
-					Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
-					Compliant: false,
-					Message:   fmt.Sprintf("Container %q does not have a postStart lifecycle hook", container.Name),
-				})
-			}
+	checks.ForEachContainer(resources.Pods, func(pod *corev1.Pod, container *corev1.Container) {
+		if container.Lifecycle == nil || container.Lifecycle.PostStart == nil {
+			count++
+			result.Details = append(result.Details, checks.ResourceDetail{
+				Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
+				Compliant: false,
+				Message:   fmt.Sprintf("Container %q does not have a postStart lifecycle hook", container.Name),
+			})
 		}
-	}
+	})
 	if count > 0 {
 		result.ComplianceStatus = "NonCompliant"
 		result.Reason = fmt.Sprintf("%d container(s) missing postStart hook", count)
