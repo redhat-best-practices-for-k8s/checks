@@ -50,6 +50,7 @@ func CheckRoleBindings(resources *checks.DiscoveredResources) checks.CheckResult
 	}
 
 	var count int
+	// Check each pod for default SA usage and cross-namespace role bindings
 	for i := range resources.Pods {
 		pod := &resources.Pods[i]
 
@@ -63,34 +64,62 @@ func CheckRoleBindings(resources *checks.DiscoveredResources) checks.CheckResult
 			continue
 		}
 
-		for j := range resources.RoleBindings {
-			rb := &resources.RoleBindings[j]
-			if rb.Namespace == pod.Namespace {
-				continue
-			}
-			for _, subject := range rb.Subjects {
-				if subject.Kind != rbacv1.ServiceAccountKind {
-					continue
-				}
-				if subject.Namespace == pod.Namespace && subject.Name == pod.Spec.ServiceAccountName {
-					if !targetNS[rb.Namespace] {
-						count++
-						result.Details = append(result.Details, checks.ResourceDetail{
-							Kind: "RoleBinding", Name: rb.Name, Namespace: rb.Namespace,
-							Compliant: false,
-							Message: fmt.Sprintf("RoleBinding in non-target namespace %q references ServiceAccount %s/%s",
-								rb.Namespace, pod.Namespace, pod.Spec.ServiceAccountName),
-						})
-					}
-				}
-			}
-		}
+		// Find cross-namespace role bindings for this service account
+		violations := findCrossNamespaceRoleBindings(pod, resources.RoleBindings, targetNS)
+		count += len(violations)
+		result.Details = append(result.Details, violations...)
 	}
+
 	if count > 0 {
 		result.ComplianceStatus = "NonCompliant"
 		result.Reason = fmt.Sprintf("%d role binding issue(s) found", count)
 	}
 	return result
+}
+
+// findCrossNamespaceRoleBindings finds role bindings that reference the pod's service account
+// from a namespace different than the pod's namespace and not in the target namespace set.
+func findCrossNamespaceRoleBindings(pod *corev1.Pod, roleBindings []rbacv1.RoleBinding, targetNS map[string]bool) []checks.ResourceDetail {
+	var violations []checks.ResourceDetail
+
+	for j := range roleBindings {
+		rb := &roleBindings[j]
+
+		// Skip role bindings in the same namespace as the pod
+		if rb.Namespace == pod.Namespace {
+			continue
+		}
+
+		// Check if this role binding references the pod's service account
+		if roleBindingReferencesServiceAccount(rb, pod.Namespace, pod.Spec.ServiceAccountName) {
+			// Violation: role binding is in a non-target namespace
+			if !targetNS[rb.Namespace] {
+				violations = append(violations, checks.ResourceDetail{
+					Kind:      "RoleBinding",
+					Name:      rb.Name,
+					Namespace: rb.Namespace,
+					Compliant: false,
+					Message: fmt.Sprintf("RoleBinding in non-target namespace %q references ServiceAccount %s/%s",
+						rb.Namespace, pod.Namespace, pod.Spec.ServiceAccountName),
+				})
+			}
+		}
+	}
+
+	return violations
+}
+
+// roleBindingReferencesServiceAccount checks if a RoleBinding has a subject that matches
+// the given service account namespace and name.
+func roleBindingReferencesServiceAccount(rb *rbacv1.RoleBinding, namespace, name string) bool {
+	for _, subject := range rb.Subjects {
+		if subject.Kind == rbacv1.ServiceAccountKind &&
+			subject.Namespace == namespace &&
+			subject.Name == name {
+			return true
+		}
+	}
+	return false
 }
 
 // CheckClusterRoleBindings verifies pods are not linked to ClusterRoleBindings.
