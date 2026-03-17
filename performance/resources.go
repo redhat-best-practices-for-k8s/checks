@@ -63,17 +63,7 @@ func CheckRTAppsNoExecProbes(resources *checks.DiscoveredResources) checks.Check
 
 		for j := range pod.Spec.Containers {
 			container := &pod.Spec.Containers[j]
-			hasExecProbe := false
-			if container.LivenessProbe != nil && container.LivenessProbe.Exec != nil {
-				hasExecProbe = true
-			}
-			if container.ReadinessProbe != nil && container.ReadinessProbe.Exec != nil {
-				hasExecProbe = true
-			}
-			if container.StartupProbe != nil && container.StartupProbe.Exec != nil {
-				hasExecProbe = true
-			}
-			if hasExecProbe {
+			if countExecProbes(container) > 0 {
 				count++
 				result.Details = append(result.Details, checks.ResourceDetail{
 					Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
