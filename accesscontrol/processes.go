@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/redhat-best-practices-for-k8s/checks"
 )
@@ -24,7 +25,9 @@ func CheckOneProcess(resources *checks.DiscoveredResources) checks.CheckResult {
 	}
 
 	var count int
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
 	for i := range resources.Pods {
 		pod := &resources.Pods[i]
 		probePod, ok := resources.ProbePods[pod.Spec.NodeName]
@@ -72,7 +75,9 @@ func CheckNoSSHD(resources *checks.DiscoveredResources) checks.CheckResult {
 	}
 
 	var count int
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
 	for i := range resources.Pods {
 		pod := &resources.Pods[i]
 		probePod, ok := resources.ProbePods[pod.Spec.NodeName]
