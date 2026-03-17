@@ -38,4 +38,12 @@ func init() {
 		CatalogID:   "networking-restart-on-reboot-sriov-pod",
 		Fn:          CheckSRIOVRestartLabel,
 	})
+	checks.Register(checks.CheckInfo{
+		Name:        "networking-undeclared-container-ports-usage",
+		Category:    "networking",
+		Description: "Verifies all listening ports are declared in container specs",
+		Remediation: "Declare all listening ports in container port specifications",
+		CatalogID:   "networking-undeclared-container-ports-usage",
+		Fn:          CheckUndeclaredContainerPorts,
+	})
 }
