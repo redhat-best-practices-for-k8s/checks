@@ -108,4 +108,25 @@ func init() {
 		CatalogID:   "lifecycle-topology-spread-constraint",
 		Fn:          CheckTopologySpreadConstraints,
 	})
+	checks.Register(checks.CheckInfo{
+		Name: "lifecycle-deployment-scaling", Category: "lifecycle",
+		Description: "Verifies Deployments can scale up and down",
+		Remediation: "Ensure the Deployment controller and scheduler can handle replica changes",
+		CatalogID:   "lifecycle-deployment-scaling",
+		Fn:          CheckDeploymentScaling,
+	})
+	checks.Register(checks.CheckInfo{
+		Name: "lifecycle-statefulset-scaling", Category: "lifecycle",
+		Description: "Verifies StatefulSets can scale up and down",
+		Remediation: "Ensure the StatefulSet controller and scheduler can handle replica changes",
+		CatalogID:   "lifecycle-statefulset-scaling",
+		Fn:          CheckStatefulSetScaling,
+	})
+	checks.Register(checks.CheckInfo{
+		Name: "lifecycle-pod-recreation", Category: "lifecycle",
+		Description: "Verifies pods are recreated after node cordon and pod deletion",
+		Remediation: "Deploy pods via Deployments or StatefulSets to ensure automatic recreation",
+		CatalogID:   "lifecycle-pod-recreation",
+		Fn:          CheckPodRecreation,
+	})
 }
