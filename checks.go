@@ -19,6 +19,7 @@ import (
 	storagev1 "k8s.io/api/storage/v1"
 	apiextv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 // DiscoveredResources holds all resources discovered in the target namespace.
@@ -65,14 +66,26 @@ type DiscoveredResources struct {
 	OpenshiftVersion string
 	OCPStatus        string // Lifecycle status: "GA", "MS", "EOL", "PreGA"
 
+	// Scalable custom resources (CRDs with scale subresource)
+	ScalableResources []ScalableResource
+
 	// Execution helpers (injected by certsuite adapter)
 	ProbeExecutor ProbeExecutor
 	K8sClientset  interface{} // kubernetes.Interface - avoid import
+	ScaleClient   interface{} // scale.ScalesGetter - avoid import
 
 	// ScannerPodNodeName is the node where the scanner pod runs.
 	// Mutation checks (cordon/drain) will skip this node to avoid self-eviction.
 	// Empty when the scanner runs outside the cluster.
 	ScannerPodNodeName string
+}
+
+// ScalableResource represents a custom resource that supports the scale subresource.
+type ScalableResource struct {
+	Name          string
+	Namespace     string
+	Replicas      int32
+	GroupResource schema.GroupResource
 }
 
 // ProbeExecutor allows checks to exec commands in containers.
