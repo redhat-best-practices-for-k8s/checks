@@ -73,4 +73,20 @@ func init() {
 		CatalogID:   "operator-multiple-same-operators",
 		Fn:          CheckMultipleSameOperators,
 	})
+	checks.Register(checks.CheckInfo{
+		Name:        "operator-catalogsource-bundle-count",
+		Category:    "operator",
+		Description: "Verifies catalog sources have fewer than 1000 bundles",
+		Remediation: "Use filtered catalog sources or reduce bundle count",
+		CatalogID:   "catalogsource-bundle-count",
+		Fn:          CheckCatalogSourceBundleCount,
+	})
+	checks.Register(checks.CheckInfo{
+		Name:        "operator-single-or-multi-namespaced-allowed-in-tenant-namespaces",
+		Category:    "operator",
+		Description: "Verifies only single/multi namespaced operators in tenant namespaces",
+		Remediation: "Use OwnNamespace, SingleNamespace, or MultiNamespace install modes for operators in tenant namespaces",
+		CatalogID:   "single-or-multi-namespaced-allowed-in-tenant-namespaces",
+		Fn:          CheckSingleOrMultiNamespacedOperators,
+	})
 }

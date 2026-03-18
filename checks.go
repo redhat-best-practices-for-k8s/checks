@@ -6,7 +6,11 @@ package checks
 import (
 	"context"
 
+	netattdefv1 "github.com/k8snetworkplumbingwg/network-attachment-definition-client/pkg/apis/k8s.cni.cncf.io/v1"
 	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
+	olmpackagev1 "github.com/operator-framework/operator-lifecycle-manager/pkg/package-server/apis/operators/v1"
+	apiserverv1 "github.com/openshift/api/apiserver/v1"
+	configv1 "github.com/openshift/api/config/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -14,6 +18,7 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	storagev1 "k8s.io/api/storage/v1"
 	apiextv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
 // DiscoveredResources holds all resources discovered in the target namespace.
@@ -38,6 +43,28 @@ type DiscoveredResources struct {
 	StorageClasses       []storagev1.StorageClass
 	PodDisruptionBudgets []policyv1.PodDisruptionBudget
 	CSVs                 []olmv1alpha1.ClusterServiceVersion
+
+	// OpenShift-specific resources
+	ClusterVersion   *configv1.ClusterVersion
+	ClusterOperators []configv1.ClusterOperator
+
+	// OLM resources
+	CatalogSources   []olmv1alpha1.CatalogSource
+	PackageManifests []olmpackagev1.PackageManifest
+	Subscriptions    []olmv1alpha1.Subscription
+
+	// API monitoring
+	APIRequestCounts []apiserverv1.APIRequestCount
+
+	// Networking
+	NetworkAttachmentDefinitions []netattdefv1.NetworkAttachmentDefinition
+	SriovNetworks                []unstructured.Unstructured
+	SriovNetworkNodePolicies     []unstructured.Unstructured
+
+	// Cluster metadata
+	K8sVersion       string
+	OpenshiftVersion string
+	OCPStatus        string // Lifecycle status: "GA", "MS", "EOL", "PreGA"
 }
 
 // ProbeExecutor allows checks to exec commands on probe pods.

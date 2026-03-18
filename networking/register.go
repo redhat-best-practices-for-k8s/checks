@@ -46,4 +46,12 @@ func init() {
 		CatalogID:   "networking-undeclared-container-ports-usage",
 		Fn:          CheckUndeclaredContainerPorts,
 	})
+	checks.Register(checks.CheckInfo{
+		Name:        "networking-network-attachment-definition-sriov-mtu",
+		Category:    "networking",
+		Description: "Verifies SR-IOV network attachment definitions have MTU configured",
+		Remediation: "Set MTU explicitly in NetworkAttachmentDefinition or SriovNetwork specs",
+		CatalogID:   "network-attachment-definition-sriov-mtu",
+		Fn:          CheckSRIOVNetworkAttachmentDefinitionMTU,
+	})
 }
