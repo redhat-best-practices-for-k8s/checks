@@ -1,0 +1,199 @@
+package networking
+
+import (
+	"context"
+	"fmt"
+	"regexp"
+	"strconv"
+	"time"
+
+	"github.com/redhat-best-practices-for-k8s/checks"
+	corev1 "k8s.io/api/core/v1"
+)
+
+const (
+	defaultPingCount = 5
+	// SuccessfulOutputRegex matches a successfully run "ping" command.
+	successfulOutputRegex = `(?m)(\d+) packets transmitted, (\d+)( packets){0,1} received, (?:\+(\d+) errors)?.*$`
+)
+
+var (
+	pingOutputRegex = regexp.MustCompile(successfulOutputRegex)
+	ipv6Regex       = regexp.MustCompile(`:`)
+)
+
+type pingResult struct {
+	transmitted int
+	received    int
+	errors      int
+	success     bool
+}
+
+// CheckICMPv4Connectivity verifies IPv4 ICMP connectivity between pods on default network.
+func CheckICMPv4Connectivity(resources *checks.DiscoveredResources) checks.CheckResult {
+	return checkICMPConnectivity(resources, "4", false)
+}
+
+// CheckICMPv6Connectivity verifies IPv6 ICMP connectivity between pods on default network.
+func CheckICMPv6Connectivity(resources *checks.DiscoveredResources) checks.CheckResult {
+	return checkICMPConnectivity(resources, "6", false)
+}
+
+// CheckICMPv4ConnectivityMultus verifies IPv4 ICMP connectivity between pods on Multus networks.
+func CheckICMPv4ConnectivityMultus(resources *checks.DiscoveredResources) checks.CheckResult {
+	return checkICMPConnectivity(resources, "4", true)
+}
+
+// CheckICMPv6ConnectivityMultus verifies IPv6 ICMP connectivity between pods on Multus networks.
+func CheckICMPv6ConnectivityMultus(resources *checks.DiscoveredResources) checks.CheckResult {
+	return checkICMPConnectivity(resources, "6", true)
+}
+
+func checkICMPConnectivity(resources *checks.DiscoveredResources, ipVersion string, multus bool) checks.CheckResult {
+	result := checks.CheckResult{ComplianceStatus: "Compliant"}
+
+	if resources.ProbeExecutor == nil {
+		result.ComplianceStatus = "Error"
+		result.Reason = "ProbeExecutor not available for ICMP connectivity checks"
+		return result
+	}
+
+	if len(resources.Pods) < 2 {
+		result.ComplianceStatus = "Skipped"
+		result.Reason = "At least 2 pods required for ICMP connectivity testing"
+		return result
+	}
+
+	// Build test pairs: source pod -> target pod IPs
+	testPairs := buildICMPTestPairs(resources.Pods, ipVersion, multus)
+
+	if len(testPairs) == 0 {
+		result.ComplianceStatus = "Skipped"
+		result.Reason = fmt.Sprintf("No IPv%s addresses found for testing", ipVersion)
+		return result
+	}
+
+	var failures int
+
+	for _, pair := range testPairs {
+		pingCmd := fmt.Sprintf("ping -%s -c %d %s", ipVersion, defaultPingCount, pair.targetIP)
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		stdout, stderr, err := resources.ProbeExecutor.ExecCommand(ctx, pair.sourcePod, pingCmd)
+		cancel()
+
+		if err != nil || stderr != "" {
+			failures++
+			result.Details = append(result.Details, checks.ResourceDetail{
+				Kind:      "ICMPTest",
+				Name:      fmt.Sprintf("%s->%s", pair.sourcePod.Name, pair.targetPod.Name),
+				Namespace: pair.sourcePod.Namespace,
+				Compliant: false,
+				Message:   fmt.Sprintf("Ping failed: %v", err),
+			})
+			continue
+		}
+
+		pingRes := parsePingOutput(stdout)
+		if !pingRes.success {
+			failures++
+			result.Details = append(result.Details, checks.ResourceDetail{
+				Kind:      "ICMPTest",
+				Name:      fmt.Sprintf("%s->%s", pair.sourcePod.Name, pair.targetPod.Name),
+				Namespace: pair.sourcePod.Namespace,
+				Compliant: false,
+				Message:   fmt.Sprintf("Ping unsuccessful: %d/%d packets received", pingRes.received, pingRes.transmitted),
+			})
+		} else {
+			result.Details = append(result.Details, checks.ResourceDetail{
+				Kind:      "ICMPTest",
+				Name:      fmt.Sprintf("%s->%s", pair.sourcePod.Name, pair.targetPod.Name),
+				Namespace: pair.sourcePod.Namespace,
+				Compliant: true,
+				Message:   "ICMP connectivity successful",
+			})
+		}
+	}
+
+	if failures > 0 {
+		result.ComplianceStatus = "NonCompliant"
+		result.Reason = fmt.Sprintf("%d ICMP connectivity test(s) failed", failures)
+	}
+
+	return result
+}
+
+type icmpTestPair struct {
+	sourcePod *corev1.Pod
+	targetPod *corev1.Pod
+	targetIP  string
+}
+
+func buildICMPTestPairs(pods []corev1.Pod, ipVersion string, multus bool) []icmpTestPair {
+	var pairs []icmpTestPair
+
+	// Use first pod as source
+	if len(pods) == 0 {
+		return pairs
+	}
+
+	sourcePod := &pods[0]
+
+	// Ping all other pods from the first pod
+	for i := 1; i < len(pods); i++ {
+		targetPod := &pods[i]
+
+		// Get appropriate IP address
+		var targetIP string
+		if multus {
+			// TODO: Extract Multus network IPs when available in DiscoveredResources
+			continue
+		} else {
+			// Use pod IP from status
+			for _, podIP := range targetPod.Status.PodIPs {
+				if ipVersion == "4" && isIPv4(podIP.IP) {
+					targetIP = podIP.IP
+					break
+				} else if ipVersion == "6" && !isIPv4(podIP.IP) {
+					targetIP = podIP.IP
+					break
+				}
+			}
+		}
+
+		if targetIP != "" {
+			pairs = append(pairs, icmpTestPair{
+				sourcePod: sourcePod,
+				targetPod: targetPod,
+				targetIP:  targetIP,
+			})
+		}
+	}
+
+	return pairs
+}
+
+func parsePingOutput(stdout string) pingResult {
+	result := pingResult{}
+
+	matches := pingOutputRegex.FindStringSubmatch(stdout)
+
+	if matches == nil {
+		return result
+	}
+
+	result.transmitted, _ = strconv.Atoi(matches[1])
+	result.received, _ = strconv.Atoi(matches[2])
+	if len(matches) > 4 {
+		result.errors, _ = strconv.Atoi(matches[4])
+	}
+
+	// Success if we received responses and packet loss is acceptable (<=1 packet lost)
+	result.success = result.received > 0 && (result.transmitted-result.received) <= 1 && result.errors == 0
+
+	return result
+}
+
+func isIPv4(ip string) bool {
+	// Simple check: IPv4 addresses don't contain colons
+	return !ipv6Regex.MatchString(ip)
+}

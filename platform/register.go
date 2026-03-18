@@ -90,4 +90,28 @@ func init() {
 		CatalogID:   "cluster-operator-health",
 		Fn:          CheckClusterOperatorHealth,
 	})
+	checks.Register(checks.CheckInfo{
+		Name:        "platform-alteration-isredhat-release",
+		Category:    "platform",
+		Description: "Verifies containers are based on Red Hat Enterprise Linux",
+		Remediation: "Use RHEL-based container images",
+		CatalogID:   "isredhat-release",
+		Fn:          CheckIsRedHatRelease,
+	})
+	checks.Register(checks.CheckInfo{
+		Name:        "platform-alteration-hyperthread-enable",
+		Category:    "platform",
+		Description: "Verifies bare metal nodes have hyperthreading enabled",
+		Remediation: "Enable hyperthreading in BIOS settings",
+		CatalogID:   "hyperthread-enable",
+		Fn:          CheckHyperthreadEnable,
+	})
+	checks.Register(checks.CheckInfo{
+		Name:        "platform-alteration-base-image",
+		Category:    "platform",
+		Description: "Verifies containers have not modified their base image by installing packages",
+		Remediation: "Build packages into the container image rather than installing at runtime",
+		CatalogID:   "base-image",
+		Fn:          CheckUnalteredBaseImage,
+	})
 }

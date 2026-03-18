@@ -45,4 +45,28 @@ func init() {
 		CatalogID:   "performance-max-resources-exec-probes",
 		Fn:          CheckMaxResourcesExecProbes,
 	})
+	checks.Register(checks.CheckInfo{
+		Name:        "performance-shared-cpu-pool-non-rt-scheduling-policy",
+		Category:    "performance",
+		Description: "Verifies shared CPU pool containers use non-RT scheduling (SCHED_OTHER)",
+		Remediation: "Use SCHED_OTHER scheduling policy for non-guaranteed pods",
+		CatalogID:   "shared-cpu-pool-non-rt-scheduling-policy",
+		Fn:          CheckSharedCPUPoolSchedulingPolicy,
+	})
+	checks.Register(checks.CheckInfo{
+		Name:        "performance-exclusive-cpu-pool-rt-scheduling-policy",
+		Category:    "performance",
+		Description: "Verifies exclusive CPU pool containers use RT scheduling (SCHED_FIFO/RR)",
+		Remediation: "Configure RT scheduling policy for guaranteed pods with exclusive CPUs",
+		CatalogID:   "exclusive-cpu-pool-rt-scheduling-policy",
+		Fn:          CheckExclusiveCPUPoolSchedulingPolicy,
+	})
+	checks.Register(checks.CheckInfo{
+		Name:        "performance-isolated-cpu-pool-rt-scheduling-policy",
+		Category:    "performance",
+		Description: "Verifies isolated CPU pool containers use RT scheduling (SCHED_FIFO/RR)",
+		Remediation: "Configure RT scheduling policy for pods with isolated CPUs",
+		CatalogID:   "isolated-cpu-pool-rt-scheduling-policy",
+		Fn:          CheckIsolatedCPUPoolSchedulingPolicy,
+	})
 }

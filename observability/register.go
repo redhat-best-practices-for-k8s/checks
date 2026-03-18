@@ -32,4 +32,12 @@ func init() {
 		CatalogID:   "compatibility-with-next-ocp-release",
 		Fn:          CheckAPICompatibilityWithNextOCPRelease,
 	})
+	checks.Register(checks.CheckInfo{
+		Name:        "observability-container-logging",
+		Category:    "observability",
+		Description: "Verifies containers produce logging output to stdout/stderr",
+		Remediation: "Ensure containers log to stdout or stderr",
+		CatalogID:   "container-logging",
+		Fn:          CheckContainerLogging,
+	})
 }
