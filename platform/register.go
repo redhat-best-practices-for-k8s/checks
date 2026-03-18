@@ -66,4 +66,28 @@ func init() {
 		CatalogID:   "platform-alteration-is-selinux-enforcing",
 		Fn:          CheckSELinuxEnforcing,
 	})
+	checks.Register(checks.CheckInfo{
+		Name:        "platform-alteration-ocp-lifecycle",
+		Category:    "platform",
+		Description: "Verifies OpenShift version is not end-of-life",
+		Remediation: "Upgrade to a supported OpenShift version",
+		CatalogID:   "ocp-lifecycle",
+		Fn:          CheckOCPLifecycle,
+	})
+	checks.Register(checks.CheckInfo{
+		Name:        "platform-alteration-ocp-node-os-lifecycle",
+		Category:    "platform",
+		Description: "Verifies node operating systems are compatible with OCP version",
+		Remediation: "Ensure control plane nodes run RHCOS and all nodes are compatible",
+		CatalogID:   "ocp-node-os-lifecycle",
+		Fn:          CheckOCPNodeOSLifecycle,
+	})
+	checks.Register(checks.CheckInfo{
+		Name:        "platform-alteration-cluster-operator-health",
+		Category:    "platform",
+		Description: "Verifies all cluster operators are in Available state",
+		Remediation: "Investigate and fix cluster operators that are not Available",
+		CatalogID:   "cluster-operator-health",
+		Fn:          CheckClusterOperatorHealth,
+	})
 }

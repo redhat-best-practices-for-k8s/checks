@@ -24,4 +24,12 @@ func init() {
 		CatalogID:   "observability-pod-disruption-budget",
 		Fn:          CheckPodDisruptionBudget,
 	})
+	checks.Register(checks.CheckInfo{
+		Name:        "observability-compatibility-with-next-ocp-release",
+		Category:    "observability",
+		Description: "Verifies APIs used by workload are compatible with next OCP version",
+		Remediation: "Migrate from deprecated APIs to supported alternatives",
+		CatalogID:   "compatibility-with-next-ocp-release",
+		Fn:          CheckAPICompatibilityWithNextOCPRelease,
+	})
 }
