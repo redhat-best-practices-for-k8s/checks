@@ -66,6 +66,12 @@ type DiscoveredResources struct {
 	OpenshiftVersion string
 	OCPStatus        string // Lifecycle status: "GA", "MS", "EOL", "PreGA"
 
+	// Helm chart releases discovered in the cluster
+	HelmChartReleases []HelmChartRelease
+
+	// Certification validator (backed by oct library)
+	CertValidator CertificationValidator
+
 	// Scalable custom resources (CRDs with scale subresource)
 	ScalableResources []ScalableResource
 
@@ -91,6 +97,22 @@ type ScalableResource struct {
 // ProbeExecutor allows checks to exec commands in containers.
 type ProbeExecutor interface {
 	ExecCommand(ctx context.Context, pod *corev1.Pod, command string) (stdout, stderr string, err error)
+}
+
+// HelmChartRelease represents a Helm chart release discovered in the cluster.
+type HelmChartRelease struct {
+	Name      string
+	Namespace string
+	Version   string // Chart version (e.g., "1.2.3")
+}
+
+// CertificationValidator checks certification status of containers, operators, and Helm charts.
+// This is a simplified interface that avoids importing helm.sh/helm/v3 into the checks library.
+// The certsuite adapter wraps oct's CertificationStatusValidator to implement this interface.
+type CertificationValidator interface {
+	IsContainerCertified(registry, repository, tag, digest string) bool
+	IsOperatorCertified(csvName, ocpVersion string) bool
+	IsHelmChartCertified(chartName, chartVersion, kubeVersion string) bool
 }
 
 // CheckFunc is the signature for a best practice check function.
