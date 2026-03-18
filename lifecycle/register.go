@@ -129,4 +129,11 @@ func init() {
 		CatalogID:   "lifecycle-pod-recreation",
 		Fn:          CheckPodRecreation,
 	})
+	checks.Register(checks.CheckInfo{
+		Name: "lifecycle-crd-scaling", Category: "lifecycle",
+		Description: "Verifies custom resources with scale subresource can scale up and down",
+		Remediation: "Ensure the CRD controller handles replica changes via the scale subresource",
+		CatalogID:   "lifecycle-crd-scaling",
+		Fn:          CheckCRDScaling,
+	})
 }
