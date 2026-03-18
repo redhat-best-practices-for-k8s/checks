@@ -68,6 +68,11 @@ type DiscoveredResources struct {
 	// Execution helpers (injected by certsuite adapter)
 	ProbeExecutor ProbeExecutor
 	K8sClientset  interface{} // kubernetes.Interface - avoid import
+
+	// ScannerPodNodeName is the node where the scanner pod runs.
+	// Mutation checks (cordon/drain) will skip this node to avoid self-eviction.
+	// Empty when the scanner runs outside the cluster.
+	ScannerPodNodeName string
 }
 
 // ProbeExecutor allows checks to exec commands in containers.
