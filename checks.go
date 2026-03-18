@@ -32,7 +32,6 @@ type DiscoveredResources struct {
 	CRDs                 []apiextv1.CustomResourceDefinition
 	Namespaces           []string
 	ProbePods            map[string]*corev1.Pod // node name -> probe pod
-	ProbeExecutor        ProbeExecutor
 	Deployments          []appsv1.Deployment
 	StatefulSets         []appsv1.StatefulSet
 	DaemonSets           []appsv1.DaemonSet
@@ -65,9 +64,13 @@ type DiscoveredResources struct {
 	K8sVersion       string
 	OpenshiftVersion string
 	OCPStatus        string // Lifecycle status: "GA", "MS", "EOL", "PreGA"
+
+	// Execution helpers (injected by certsuite adapter)
+	ProbeExecutor ProbeExecutor
+	K8sClientset  interface{} // kubernetes.Interface - avoid import
 }
 
-// ProbeExecutor allows checks to exec commands on probe pods.
+// ProbeExecutor allows checks to exec commands in containers.
 type ProbeExecutor interface {
 	ExecCommand(ctx context.Context, pod *corev1.Pod, command string) (stdout, stderr string, err error)
 }

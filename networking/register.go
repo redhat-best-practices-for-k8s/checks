@@ -54,4 +54,36 @@ func init() {
 		CatalogID:   "network-attachment-definition-sriov-mtu",
 		Fn:          CheckSRIOVNetworkAttachmentDefinitionMTU,
 	})
+	checks.Register(checks.CheckInfo{
+		Name:        "networking-icmpv4-connectivity",
+		Category:    "networking",
+		Description: "Verifies IPv4 ICMP connectivity between pods",
+		Remediation: "Ensure network policies and firewall rules allow ICMP traffic",
+		CatalogID:   "icmpv4-connectivity",
+		Fn:          CheckICMPv4Connectivity,
+	})
+	checks.Register(checks.CheckInfo{
+		Name:        "networking-icmpv6-connectivity",
+		Category:    "networking",
+		Description: "Verifies IPv6 ICMP connectivity between pods",
+		Remediation: "Ensure network policies and firewall rules allow ICMPv6 traffic",
+		CatalogID:   "icmpv6-connectivity",
+		Fn:          CheckICMPv6Connectivity,
+	})
+	checks.Register(checks.CheckInfo{
+		Name:        "networking-icmpv4-connectivity-multus",
+		Category:    "networking",
+		Description: "Verifies IPv4 ICMP connectivity between pods on Multus networks",
+		Remediation: "Check Multus network configuration and ICMP policies",
+		CatalogID:   "icmpv4-connectivity-multus",
+		Fn:          CheckICMPv4ConnectivityMultus,
+	})
+	checks.Register(checks.CheckInfo{
+		Name:        "networking-icmpv6-connectivity-multus",
+		Category:    "networking",
+		Description: "Verifies IPv6 ICMP connectivity between pods on Multus networks",
+		Remediation: "Check Multus network configuration and ICMPv6 policies",
+		CatalogID:   "icmpv6-connectivity-multus",
+		Fn:          CheckICMPv6ConnectivityMultus,
+	})
 }
