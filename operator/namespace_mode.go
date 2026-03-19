@@ -11,10 +11,10 @@ import (
 // CheckSingleOrMultiNamespacedOperators verifies only single/multi namespaced operators
 // are installed in tenant-dedicated namespaces.
 func CheckSingleOrMultiNamespacedOperators(resources *checks.DiscoveredResources) checks.CheckResult {
-	result := checks.CheckResult{ComplianceStatus: "Compliant"}
+	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 
 	if len(resources.CSVs) == 0 {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "No operators found"
 		return result
 	}
@@ -73,7 +73,7 @@ func CheckSingleOrMultiNamespacedOperators(resources *checks.DiscoveredResources
 				Compliant: false,
 				Message:   msg,
 			})
-			result.ComplianceStatus = "NonCompliant"
+			result.ComplianceStatus = checks.StatusNonCompliant
 			result.Reason = "One or more namespaces contain operators with AllNamespaces install mode"
 		}
 	}

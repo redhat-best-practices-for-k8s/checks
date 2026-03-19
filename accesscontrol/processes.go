@@ -11,15 +11,15 @@ import (
 
 // CheckOneProcess verifies each container runs only one process (probe-based).
 func CheckOneProcess(resources *checks.DiscoveredResources) checks.CheckResult {
-	result := checks.CheckResult{ComplianceStatus: "Compliant"}
+	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if resources.ProbeExecutor == nil || len(resources.ProbePods) == 0 {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "Probe pods not available"
 		return result
 	}
 
 	if len(resources.Pods) == 0 {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "No pods found"
 		return result
 	}
@@ -53,7 +53,7 @@ func CheckOneProcess(resources *checks.DiscoveredResources) checks.CheckResult {
 		}
 	}
 	if count > 0 {
-		result.ComplianceStatus = "NonCompliant"
+		result.ComplianceStatus = checks.StatusNonCompliant
 		result.Reason = fmt.Sprintf("%d container(s) have multiple processes", count)
 	}
 	return result
@@ -61,15 +61,15 @@ func CheckOneProcess(resources *checks.DiscoveredResources) checks.CheckResult {
 
 // CheckNoSSHD verifies no SSH daemons are running (probe-based).
 func CheckNoSSHD(resources *checks.DiscoveredResources) checks.CheckResult {
-	result := checks.CheckResult{ComplianceStatus: "Compliant"}
+	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if resources.ProbeExecutor == nil || len(resources.ProbePods) == 0 {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "Probe pods not available"
 		return result
 	}
 
 	if len(resources.Pods) == 0 {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "No pods found"
 		return result
 	}
@@ -99,7 +99,7 @@ func CheckNoSSHD(resources *checks.DiscoveredResources) checks.CheckResult {
 		}
 	}
 	if count > 0 {
-		result.ComplianceStatus = "NonCompliant"
+		result.ComplianceStatus = checks.StatusNonCompliant
 		result.Reason = fmt.Sprintf("%d pod(s) have SSH daemons running", count)
 	}
 	return result

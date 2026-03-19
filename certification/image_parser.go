@@ -3,7 +3,7 @@ package certification
 import "regexp"
 
 var (
-	reImageWithTag = regexp.MustCompile(`^([^/]*)/*([^@]*):(.*)`  )
+	reImageWithTag = regexp.MustCompile(`^([^/]*)/*([^@]*):(.*)`)
 	reImageDigest  = regexp.MustCompile(`^([^/]*)/(.*)@(.*:.*)`)
 )
 

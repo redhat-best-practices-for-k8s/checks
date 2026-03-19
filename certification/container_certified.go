@@ -11,14 +11,14 @@ import (
 func CheckContainerCertified(resources *checks.DiscoveredResources) checks.CheckResult {
 	if resources.CertValidator == nil {
 		return checks.CheckResult{
-			ComplianceStatus: "Skipped",
+			ComplianceStatus: checks.StatusSkipped,
 			Reason:           "No certification validator available",
 		}
 	}
 
 	if len(resources.Pods) == 0 {
 		return checks.CheckResult{
-			ComplianceStatus: "Skipped",
+			ComplianceStatus: checks.StatusSkipped,
 			Reason:           "No pods to check",
 		}
 	}
@@ -79,7 +79,7 @@ func CheckContainerCertified(resources *checks.DiscoveredResources) checks.Check
 
 	if len(details) == 0 {
 		return checks.CheckResult{
-			ComplianceStatus: "Skipped",
+			ComplianceStatus: checks.StatusSkipped,
 			Reason:           "No containers to check",
 		}
 	}

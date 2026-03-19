@@ -13,22 +13,22 @@ import (
 // CheckUnalteredBaseImage verifies containers have not modified their filesystem
 // by installing packages post-deployment.
 func CheckUnalteredBaseImage(resources *checks.DiscoveredResources) checks.CheckResult {
-	result := checks.CheckResult{ComplianceStatus: "Compliant"}
+	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 
 	if resources.OpenshiftVersion == "" {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "Not an OpenShift cluster (base image check requires OCP)"
 		return result
 	}
 
 	if resources.ProbeExecutor == nil {
-		result.ComplianceStatus = "Error"
+		result.ComplianceStatus = checks.StatusError
 		result.Reason = "ProbeExecutor not available for base image checks"
 		return result
 	}
 
 	if len(resources.Pods) == 0 {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "No pods found"
 		return result
 	}
@@ -77,7 +77,7 @@ func CheckUnalteredBaseImage(resources *checks.DiscoveredResources) checks.Check
 	}
 
 	if failures > 0 {
-		result.ComplianceStatus = "NonCompliant"
+		result.ComplianceStatus = checks.StatusNonCompliant
 		result.Reason = fmt.Sprintf("%d container(s) have modified filesystems", failures)
 	}
 

@@ -15,17 +15,17 @@ import (
 // CheckCRDScaling verifies that custom resources with the scale subresource
 // can scale up and down.
 func CheckCRDScaling(resources *checks.DiscoveredResources) checks.CheckResult {
-	result := checks.CheckResult{ComplianceStatus: "Compliant"}
+	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 
 	scaleClient, err := getScaleClient(resources)
 	if err != nil {
-		result.ComplianceStatus = "Error"
+		result.ComplianceStatus = checks.StatusError
 		result.Reason = err.Error()
 		return result
 	}
 
 	if len(resources.ScalableResources) == 0 {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "No scalable custom resources found"
 		return result
 	}
@@ -56,7 +56,7 @@ func CheckCRDScaling(resources *checks.DiscoveredResources) checks.CheckResult {
 	}
 
 	if failures > 0 {
-		result.ComplianceStatus = "NonCompliant"
+		result.ComplianceStatus = checks.StatusNonCompliant
 		result.Reason = fmt.Sprintf("%d custom resource(s) failed to scale", failures)
 	}
 

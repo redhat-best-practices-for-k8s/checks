@@ -10,9 +10,9 @@ import (
 )
 
 func checkForbiddenCapability(resources *checks.DiscoveredResources, capName string) checks.CheckResult {
-	result := checks.CheckResult{ComplianceStatus: "Compliant"}
+	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.Pods) == 0 {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "No pods found"
 		return result
 	}
@@ -32,7 +32,7 @@ func checkForbiddenCapability(resources *checks.DiscoveredResources, capName str
 	})
 
 	if nonCompliant > 0 {
-		result.ComplianceStatus = "NonCompliant"
+		result.ComplianceStatus = checks.StatusNonCompliant
 		result.Reason = fmt.Sprintf("%d container(s) have %s capability", nonCompliant, capName)
 	}
 	return result

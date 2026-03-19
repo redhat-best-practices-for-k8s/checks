@@ -10,9 +10,9 @@ import (
 
 // CheckTerminationPolicy verifies containers set terminationMessagePolicy to FallbackToLogsOnError.
 func CheckTerminationPolicy(resources *checks.DiscoveredResources) checks.CheckResult {
-	result := checks.CheckResult{ComplianceStatus: "Compliant"}
+	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.Pods) == 0 {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "No pods found"
 		return result
 	}
@@ -30,7 +30,7 @@ func CheckTerminationPolicy(resources *checks.DiscoveredResources) checks.CheckR
 		}
 	})
 	if count > 0 {
-		result.ComplianceStatus = "NonCompliant"
+		result.ComplianceStatus = checks.StatusNonCompliant
 		result.Reason = fmt.Sprintf("%d container(s) do not use FallbackToLogsOnError termination policy", count)
 	}
 	return result

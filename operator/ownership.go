@@ -11,7 +11,7 @@ import (
 // CheckSingleCrdOwner verifies that each CRD is owned by exactly one operator CSV.
 func CheckSingleCrdOwner(resources *checks.DiscoveredResources) checks.CheckResult {
 	if len(resources.CSVs) == 0 {
-		return checks.CheckResult{ComplianceStatus: "Skipped", Reason: "No CSVs found"}
+		return checks.CheckResult{ComplianceStatus: checks.StatusSkipped, Reason: "No CSVs found"}
 	}
 
 	// Map each CRD name to operators that own it
@@ -28,7 +28,7 @@ func CheckSingleCrdOwner(resources *checks.DiscoveredResources) checks.CheckResu
 	}
 
 	if len(crdOwners) == 0 {
-		return checks.CheckResult{ComplianceStatus: "Skipped", Reason: "No owned CRDs found in CSVs"}
+		return checks.CheckResult{ComplianceStatus: checks.StatusSkipped, Reason: "No owned CRDs found in CSVs"}
 	}
 
 	var details []checks.ResourceDetail
@@ -50,16 +50,16 @@ func CheckSingleCrdOwner(resources *checks.DiscoveredResources) checks.CheckResu
 	}
 
 	if allCompliant {
-		return checks.CheckResult{ComplianceStatus: "Compliant", Details: details}
+		return checks.CheckResult{ComplianceStatus: checks.StatusCompliant, Details: details}
 	}
-	return checks.CheckResult{ComplianceStatus: "NonCompliant", Reason: "One or more CRDs owned by multiple operators", Details: details}
+	return checks.CheckResult{ComplianceStatus: checks.StatusNonCompliant, Reason: "One or more CRDs owned by multiple operators", Details: details}
 }
 
 // CheckOperatorPodsNoHugepages verifies that pods associated with operators
 // do not request hugepages resources.
 func CheckOperatorPodsNoHugepages(resources *checks.DiscoveredResources) checks.CheckResult {
 	if len(resources.Pods) == 0 {
-		return checks.CheckResult{ComplianceStatus: "Skipped", Reason: "No pods found"}
+		return checks.CheckResult{ComplianceStatus: checks.StatusSkipped, Reason: "No pods found"}
 	}
 
 	var details []checks.ResourceDetail
@@ -82,9 +82,9 @@ func CheckOperatorPodsNoHugepages(resources *checks.DiscoveredResources) checks.
 	}
 
 	if allCompliant {
-		return checks.CheckResult{ComplianceStatus: "Compliant", Details: details}
+		return checks.CheckResult{ComplianceStatus: checks.StatusCompliant, Details: details}
 	}
-	return checks.CheckResult{ComplianceStatus: "NonCompliant", Reason: "One or more pods have hugepages", Details: details}
+	return checks.CheckResult{ComplianceStatus: checks.StatusNonCompliant, Reason: "One or more pods have hugepages", Details: details}
 }
 
 func podHasHugepages(pod *corev1.Pod) bool {

@@ -40,9 +40,9 @@ var defaultNamespaces = map[string]bool{
 
 // CheckNamespace verifies pods run in allowed namespaces.
 func CheckNamespace(resources *checks.DiscoveredResources) checks.CheckResult {
-	result := checks.CheckResult{ComplianceStatus: "Compliant"}
+	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.Pods) == 0 {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "No pods found"
 		return result
 	}
@@ -60,7 +60,7 @@ func CheckNamespace(resources *checks.DiscoveredResources) checks.CheckResult {
 		}
 	}
 	if count > 0 {
-		result.ComplianceStatus = "NonCompliant"
+		result.ComplianceStatus = checks.StatusNonCompliant
 		result.Reason = fmt.Sprintf("%d pod(s) are running in system namespaces", count)
 	}
 	return result
@@ -68,15 +68,15 @@ func CheckNamespace(resources *checks.DiscoveredResources) checks.CheckResult {
 
 // CheckNamespaceResourceQuota verifies the namespace has a ResourceQuota defined.
 func CheckNamespaceResourceQuota(resources *checks.DiscoveredResources) checks.CheckResult {
-	result := checks.CheckResult{ComplianceStatus: "Compliant"}
+	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.Namespaces) == 0 {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "No namespaces found"
 		return result
 	}
 
 	if len(resources.ResourceQuotas) == 0 {
-		result.ComplianceStatus = "NonCompliant"
+		result.ComplianceStatus = checks.StatusNonCompliant
 		result.Reason = "No ResourceQuota found in namespace"
 		if len(resources.Namespaces) > 0 {
 			result.Details = append(result.Details, checks.ResourceDetail{

@@ -10,9 +10,9 @@ import (
 
 // CheckStartupProbe verifies containers have a startupProbe defined.
 func CheckStartupProbe(resources *checks.DiscoveredResources) checks.CheckResult {
-	result := checks.CheckResult{ComplianceStatus: "Compliant"}
+	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.Pods) == 0 {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "No pods found"
 		return result
 	}
@@ -30,7 +30,7 @@ func CheckStartupProbe(resources *checks.DiscoveredResources) checks.CheckResult
 	})
 
 	if count > 0 {
-		result.ComplianceStatus = "NonCompliant"
+		result.ComplianceStatus = checks.StatusNonCompliant
 		result.Reason = fmt.Sprintf("%d container(s) missing startupProbe", count)
 	}
 	return result
@@ -38,9 +38,9 @@ func CheckStartupProbe(resources *checks.DiscoveredResources) checks.CheckResult
 
 // CheckReadinessProbe verifies containers have a readinessProbe defined.
 func CheckReadinessProbe(resources *checks.DiscoveredResources) checks.CheckResult {
-	result := checks.CheckResult{ComplianceStatus: "Compliant"}
+	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.Pods) == 0 {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "No pods found"
 		return result
 	}
@@ -58,7 +58,7 @@ func CheckReadinessProbe(resources *checks.DiscoveredResources) checks.CheckResu
 	})
 
 	if count > 0 {
-		result.ComplianceStatus = "NonCompliant"
+		result.ComplianceStatus = checks.StatusNonCompliant
 		result.Reason = fmt.Sprintf("%d container(s) missing readinessProbe", count)
 	}
 	return result
@@ -66,9 +66,9 @@ func CheckReadinessProbe(resources *checks.DiscoveredResources) checks.CheckResu
 
 // CheckLivenessProbe verifies containers have a livenessProbe defined.
 func CheckLivenessProbe(resources *checks.DiscoveredResources) checks.CheckResult {
-	result := checks.CheckResult{ComplianceStatus: "Compliant"}
+	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.Pods) == 0 {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "No pods found"
 		return result
 	}
@@ -86,7 +86,7 @@ func CheckLivenessProbe(resources *checks.DiscoveredResources) checks.CheckResul
 	})
 
 	if count > 0 {
-		result.ComplianceStatus = "NonCompliant"
+		result.ComplianceStatus = checks.StatusNonCompliant
 		result.Reason = fmt.Sprintf("%d container(s) missing livenessProbe", count)
 	}
 	return result

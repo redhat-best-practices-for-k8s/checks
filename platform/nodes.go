@@ -11,9 +11,9 @@ import (
 
 // CheckServiceMeshUsage verifies pods are not injected with Istio/service mesh sidecars.
 func CheckServiceMeshUsage(resources *checks.DiscoveredResources) checks.CheckResult {
-	result := checks.CheckResult{ComplianceStatus: "Compliant"}
+	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.Pods) == 0 {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "No pods found"
 		return result
 	}
@@ -43,7 +43,7 @@ func CheckServiceMeshUsage(resources *checks.DiscoveredResources) checks.CheckRe
 		}
 	}
 	if count > 0 {
-		result.ComplianceStatus = "NonCompliant"
+		result.ComplianceStatus = checks.StatusNonCompliant
 		result.Reason = fmt.Sprintf("%d pod(s) use service mesh sidecars", count)
 	}
 	return result
@@ -51,9 +51,9 @@ func CheckServiceMeshUsage(resources *checks.DiscoveredResources) checks.CheckRe
 
 // CheckHugepages2MiOnly verifies only 2Mi hugepages are used (not 1Gi).
 func CheckHugepages2MiOnly(resources *checks.DiscoveredResources) checks.CheckResult {
-	result := checks.CheckResult{ComplianceStatus: "Compliant"}
+	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.Pods) == 0 {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "No pods found"
 		return result
 	}
@@ -86,7 +86,7 @@ func CheckHugepages2MiOnly(resources *checks.DiscoveredResources) checks.CheckRe
 		}
 	}
 	if count > 0 {
-		result.ComplianceStatus = "NonCompliant"
+		result.ComplianceStatus = checks.StatusNonCompliant
 		result.Reason = fmt.Sprintf("%d container(s) use 1Gi hugepages (only 2Mi allowed)", count)
 	}
 	return result
@@ -94,10 +94,10 @@ func CheckHugepages2MiOnly(resources *checks.DiscoveredResources) checks.CheckRe
 
 // CheckNodeCount verifies the cluster has a minimum number of nodes.
 func CheckNodeCount(resources *checks.DiscoveredResources) checks.CheckResult {
-	result := checks.CheckResult{ComplianceStatus: "Compliant"}
+	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 
 	if len(resources.Nodes) == 0 {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "No nodes found"
 		return result
 	}
@@ -113,7 +113,7 @@ func CheckNodeCount(resources *checks.DiscoveredResources) checks.CheckResult {
 	}
 
 	if workerCount < 3 {
-		result.ComplianceStatus = "NonCompliant"
+		result.ComplianceStatus = checks.StatusNonCompliant
 		result.Reason = fmt.Sprintf("Cluster has %d worker node(s), minimum 3 recommended", workerCount)
 		result.Details = append(result.Details, checks.ResourceDetail{
 			Kind: "Cluster", Name: "nodes",

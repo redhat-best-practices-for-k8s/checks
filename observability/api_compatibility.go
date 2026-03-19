@@ -10,22 +10,22 @@ import (
 // CheckAPICompatibilityWithNextOCPRelease verifies APIs used by workload are compatible
 // with the next OCP/Kubernetes version.
 func CheckAPICompatibilityWithNextOCPRelease(resources *checks.DiscoveredResources) checks.CheckResult {
-	result := checks.CheckResult{ComplianceStatus: "Compliant"}
+	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 
 	if resources.OpenshiftVersion == "" {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "Not an OpenShift cluster"
 		return result
 	}
 
 	if len(resources.APIRequestCounts) == 0 {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "No API request count data available"
 		return result
 	}
 
 	// Extract unique service account names
-	workloadServiceAccounts := make(map[string]struct{})
+	workloadServiceAccounts := make(map[string]struct{}, len(resources.ServiceAccounts))
 	for i := range resources.ServiceAccounts {
 		sa := &resources.ServiceAccounts[i]
 		workloadServiceAccounts[sa.Name] = struct{}{}
@@ -37,7 +37,7 @@ func CheckAPICompatibilityWithNextOCPRelease(resources *checks.DiscoveredResourc
 	// Parse Kubernetes version
 	version, err := semver.Parse(resources.K8sVersion)
 	if err != nil {
-		result.ComplianceStatus = "Error"
+		result.ComplianceStatus = checks.StatusError
 		result.Reason = fmt.Sprintf("Failed to parse Kubernetes version %q: %v", resources.K8sVersion, err)
 		return result
 	}
@@ -92,7 +92,7 @@ func CheckAPICompatibilityWithNextOCPRelease(resources *checks.DiscoveredResourc
 	}
 
 	if nonCompliantCount > 0 {
-		result.ComplianceStatus = "NonCompliant"
+		result.ComplianceStatus = checks.StatusNonCompliant
 		result.Reason = fmt.Sprintf("%d deprecated API(s) will be removed in next Kubernetes version", nonCompliantCount)
 	}
 

@@ -9,9 +9,9 @@ import (
 // CheckTopologySpreadConstraints verifies Deployments have proper TopologySpreadConstraints.
 // If defined, constraints must include both hostname and zone topology keys.
 func CheckTopologySpreadConstraints(resources *checks.DiscoveredResources) checks.CheckResult {
-	result := checks.CheckResult{ComplianceStatus: "Compliant"}
+	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.Deployments) == 0 {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "No deployments found"
 		return result
 	}
@@ -44,7 +44,7 @@ func CheckTopologySpreadConstraints(resources *checks.DiscoveredResources) check
 		}
 	}
 	if count > 0 {
-		result.ComplianceStatus = "NonCompliant"
+		result.ComplianceStatus = checks.StatusNonCompliant
 		result.Reason = fmt.Sprintf("%d deployment(s) have incomplete TopologySpreadConstraints", count)
 	}
 	return result

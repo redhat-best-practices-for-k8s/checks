@@ -13,9 +13,9 @@ type podCheckFunc func(pod *corev1.Pod) bool
 
 // checkPodHostField verifies pods do not enable a specific host-level field.
 func checkPodHostField(resources *checks.DiscoveredResources, checkFunc podCheckFunc, fieldName string) checks.CheckResult {
-	result := checks.CheckResult{ComplianceStatus: "Compliant"}
+	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.Pods) == 0 {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "No pods found"
 		return result
 	}
@@ -32,7 +32,7 @@ func checkPodHostField(resources *checks.DiscoveredResources, checkFunc podCheck
 		}
 	}
 	if count > 0 {
-		result.ComplianceStatus = "NonCompliant"
+		result.ComplianceStatus = checks.StatusNonCompliant
 		result.Reason = fmt.Sprintf("%d pod(s) have %s enabled", count, fieldName)
 	}
 	return result
@@ -47,9 +47,9 @@ func CheckHostNetwork(resources *checks.DiscoveredResources) checks.CheckResult 
 
 // CheckHostPath verifies pods do not use HostPath volumes.
 func CheckHostPath(resources *checks.DiscoveredResources) checks.CheckResult {
-	result := checks.CheckResult{ComplianceStatus: "Compliant"}
+	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.Pods) == 0 {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "No pods found"
 		return result
 	}
@@ -70,7 +70,7 @@ func CheckHostPath(resources *checks.DiscoveredResources) checks.CheckResult {
 		}
 	}
 	if count > 0 {
-		result.ComplianceStatus = "NonCompliant"
+		result.ComplianceStatus = checks.StatusNonCompliant
 		result.Reason = fmt.Sprintf("%d pod(s) use HostPath volumes", count)
 	}
 	return result
@@ -92,9 +92,9 @@ func CheckHostPID(resources *checks.DiscoveredResources) checks.CheckResult {
 
 // CheckContainerHostPort verifies containers do not use HostPort.
 func CheckContainerHostPort(resources *checks.DiscoveredResources) checks.CheckResult {
-	result := checks.CheckResult{ComplianceStatus: "Compliant"}
+	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.Pods) == 0 {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "No pods found"
 		return result
 	}
@@ -113,7 +113,7 @@ func CheckContainerHostPort(resources *checks.DiscoveredResources) checks.CheckR
 		}
 	})
 	if count > 0 {
-		result.ComplianceStatus = "NonCompliant"
+		result.ComplianceStatus = checks.StatusNonCompliant
 		result.Reason = fmt.Sprintf("%d container(s) use HostPort", count)
 	}
 	return result

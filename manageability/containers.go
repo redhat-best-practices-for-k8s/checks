@@ -14,9 +14,9 @@ var ianaPortNameRegex = regexp.MustCompile(`^[a-z0-9]([a-z0-9-]{0,13}[a-z0-9])?$
 
 // CheckPortNameFormat verifies container port names follow IANA naming conventions.
 func CheckPortNameFormat(resources *checks.DiscoveredResources) checks.CheckResult {
-	result := checks.CheckResult{ComplianceStatus: "Compliant"}
+	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.Pods) == 0 {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "No pods found"
 		return result
 	}
@@ -38,7 +38,7 @@ func CheckPortNameFormat(resources *checks.DiscoveredResources) checks.CheckResu
 		}
 	})
 	if count > 0 {
-		result.ComplianceStatus = "NonCompliant"
+		result.ComplianceStatus = checks.StatusNonCompliant
 		result.Reason = fmt.Sprintf("%d port name(s) do not follow IANA format", count)
 	}
 	return result
@@ -46,9 +46,9 @@ func CheckPortNameFormat(resources *checks.DiscoveredResources) checks.CheckResu
 
 // CheckImageTag verifies container images use a digest or specific tag, not :latest.
 func CheckImageTag(resources *checks.DiscoveredResources) checks.CheckResult {
-	result := checks.CheckResult{ComplianceStatus: "Compliant"}
+	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.Pods) == 0 {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "No pods found"
 		return result
 	}
@@ -65,7 +65,7 @@ func CheckImageTag(resources *checks.DiscoveredResources) checks.CheckResult {
 		}
 	})
 	if count > 0 {
-		result.ComplianceStatus = "NonCompliant"
+		result.ComplianceStatus = checks.StatusNonCompliant
 		result.Reason = fmt.Sprintf("%d container(s) use :latest or untagged images", count)
 	}
 	return result

@@ -11,9 +11,9 @@ import (
 
 // CheckSRIOVRestartLabel verifies pods using SR-IOV have the restart-on-reboot label.
 func CheckSRIOVRestartLabel(resources *checks.DiscoveredResources) checks.CheckResult {
-	result := checks.CheckResult{ComplianceStatus: "Compliant"}
+	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.Pods) == 0 {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "No pods found"
 		return result
 	}
@@ -37,12 +37,12 @@ func CheckSRIOVRestartLabel(resources *checks.DiscoveredResources) checks.CheckR
 		}
 	}
 	if sriovCount == 0 {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "No SR-IOV pods found"
 		return result
 	}
 	if count > 0 {
-		result.ComplianceStatus = "NonCompliant"
+		result.ComplianceStatus = checks.StatusNonCompliant
 		result.Reason = fmt.Sprintf("%d SR-IOV pod(s) missing restart-on-reboot label", count)
 	}
 	return result

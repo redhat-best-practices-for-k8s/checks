@@ -13,9 +13,9 @@ type lifecycleHookCheckFunc func(container *corev1.Container) bool
 
 // checkLifecycleHook verifies containers have a specific lifecycle hook.
 func checkLifecycleHook(resources *checks.DiscoveredResources, checkFunc lifecycleHookCheckFunc, hookName string) checks.CheckResult {
-	result := checks.CheckResult{ComplianceStatus: "Compliant"}
+	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.Pods) == 0 {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "No pods found"
 		return result
 	}
@@ -32,7 +32,7 @@ func checkLifecycleHook(resources *checks.DiscoveredResources, checkFunc lifecyc
 		}
 	})
 	if count > 0 {
-		result.ComplianceStatus = "NonCompliant"
+		result.ComplianceStatus = checks.StatusNonCompliant
 		result.Reason = fmt.Sprintf("%d container(s) missing %s hook", count, hookName)
 	}
 	return result

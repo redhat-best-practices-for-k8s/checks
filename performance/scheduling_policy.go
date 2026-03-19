@@ -15,12 +15,11 @@ import (
 var schedPolicyRegex = regexp.MustCompile(`scheduling policy: (SCHED_\w+)`)
 
 const (
-	schedOther     = "SCHED_OTHER"
-	schedFIFO      = "SCHED_FIFO"
-	schedRR        = "SCHED_RR"
-	schedBatch     = "SCHED_BATCH"
-	schedIdle      = "SCHED_IDLE"
-	schedDeadline  = "SCHED_DEADLINE"
+	schedOther = "SCHED_OTHER"
+	schedFIFO  = "SCHED_FIFO"
+	schedRR    = "SCHED_RR"
+	schedBatch = "SCHED_BATCH"
+	schedIdle  = "SCHED_IDLE"
 )
 
 // CheckSharedCPUPoolSchedulingPolicy verifies non-guaranteed pods use SCHED_OTHER.
@@ -39,10 +38,10 @@ func CheckIsolatedCPUPoolSchedulingPolicy(resources *checks.DiscoveredResources)
 }
 
 func checkSchedulingPolicy(resources *checks.DiscoveredResources, cpuPool string, expectedPolicy string) checks.CheckResult {
-	result := checks.CheckResult{ComplianceStatus: "Compliant"}
+	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 
 	if resources.ProbeExecutor == nil {
-		result.ComplianceStatus = "Error"
+		result.ComplianceStatus = checks.StatusError
 		result.Reason = "ProbeExecutor not available for scheduling policy checks"
 		return result
 	}
@@ -69,7 +68,7 @@ func checkSchedulingPolicy(resources *checks.DiscoveredResources, cpuPool string
 	}
 
 	if len(podsToCheck) == 0 {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = fmt.Sprintf("No pods found for %s CPU pool", cpuPool)
 		return result
 	}
@@ -145,7 +144,7 @@ func checkSchedulingPolicy(resources *checks.DiscoveredResources, cpuPool string
 	}
 
 	if failures > 0 {
-		result.ComplianceStatus = "NonCompliant"
+		result.ComplianceStatus = checks.StatusNonCompliant
 		result.Reason = fmt.Sprintf("%d container(s) have incorrect scheduling policy for %s CPU pool", failures, cpuPool)
 	}
 
