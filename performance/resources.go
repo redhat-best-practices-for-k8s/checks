@@ -8,9 +8,9 @@ import (
 
 // CheckExclusiveCPUPool verifies containers requesting whole CPUs have Guaranteed QoS.
 func CheckExclusiveCPUPool(resources *checks.DiscoveredResources) checks.CheckResult {
-	result := checks.CheckResult{ComplianceStatus: "Compliant"}
+	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.Pods) == 0 {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "No pods found"
 		return result
 	}
@@ -38,7 +38,7 @@ func CheckExclusiveCPUPool(resources *checks.DiscoveredResources) checks.CheckRe
 		}
 	}
 	if count > 0 {
-		result.ComplianceStatus = "NonCompliant"
+		result.ComplianceStatus = checks.StatusNonCompliant
 		result.Reason = fmt.Sprintf("%d container(s) have mismatched exclusive CPU pool configuration", count)
 	}
 	return result
@@ -46,9 +46,9 @@ func CheckExclusiveCPUPool(resources *checks.DiscoveredResources) checks.CheckRe
 
 // CheckRTAppsNoExecProbes verifies RT containers don't use exec probes.
 func CheckRTAppsNoExecProbes(resources *checks.DiscoveredResources) checks.CheckResult {
-	result := checks.CheckResult{ComplianceStatus: "Compliant"}
+	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.Pods) == 0 {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "No pods found"
 		return result
 	}
@@ -74,7 +74,7 @@ func CheckRTAppsNoExecProbes(resources *checks.DiscoveredResources) checks.Check
 		}
 	}
 	if count > 0 {
-		result.ComplianceStatus = "NonCompliant"
+		result.ComplianceStatus = checks.StatusNonCompliant
 		result.Reason = fmt.Sprintf("%d RT container(s) use exec probes", count)
 	}
 	return result
@@ -82,9 +82,9 @@ func CheckRTAppsNoExecProbes(resources *checks.DiscoveredResources) checks.Check
 
 // CheckMemoryLimit verifies containers have memory limits set.
 func CheckMemoryLimit(resources *checks.DiscoveredResources) checks.CheckResult {
-	result := checks.CheckResult{ComplianceStatus: "Compliant"}
+	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.Pods) == 0 {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "No pods found"
 		return result
 	}
@@ -106,7 +106,7 @@ func CheckMemoryLimit(resources *checks.DiscoveredResources) checks.CheckResult 
 		}
 	}
 	if count > 0 {
-		result.ComplianceStatus = "NonCompliant"
+		result.ComplianceStatus = checks.StatusNonCompliant
 		result.Reason = fmt.Sprintf("%d container(s) missing memory limits", count)
 	}
 	return result

@@ -23,11 +23,11 @@ var (
 // are recreated after their node is cordoned and the pods are deleted.
 // Nodes hosting the scanner or probe pods are skipped to avoid self-eviction.
 func CheckPodRecreation(resources *checks.DiscoveredResources) checks.CheckResult {
-	result := checks.CheckResult{ComplianceStatus: "Compliant"}
+	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 
 	k8sClient, err := getK8sClient(resources)
 	if err != nil {
-		result.ComplianceStatus = "Error"
+		result.ComplianceStatus = checks.StatusError
 		result.Reason = err.Error()
 		return result
 	}
@@ -35,7 +35,7 @@ func CheckPodRecreation(resources *checks.DiscoveredResources) checks.CheckResul
 	// Find nodes that host Deployment/StatefulSet pods
 	targetNodes := getTargetNodes(resources.Pods)
 	if len(targetNodes) == 0 {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "No Deployment or StatefulSet pods found"
 		return result
 	}
@@ -52,7 +52,7 @@ func CheckPodRecreation(resources *checks.DiscoveredResources) checks.CheckResul
 	}
 
 	if len(safeNodes) == 0 {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "All target nodes host scanner or probe pods; cannot safely cordon"
 		return result
 	}
@@ -67,7 +67,7 @@ func CheckPodRecreation(resources *checks.DiscoveredResources) checks.CheckResul
 	}
 
 	if failures > 0 {
-		result.ComplianceStatus = "NonCompliant"
+		result.ComplianceStatus = checks.StatusNonCompliant
 		result.Reason = fmt.Sprintf("%d node(s) failed pod recreation test", failures)
 	}
 

@@ -10,9 +10,9 @@ import (
 
 // CheckHugepages1GiOnly verifies only 1Gi hugepages are used (not 2Mi).
 func CheckHugepages1GiOnly(resources *checks.DiscoveredResources) checks.CheckResult {
-	result := checks.CheckResult{ComplianceStatus: "Compliant"}
+	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.Pods) == 0 {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "No pods found"
 		return result
 	}
@@ -45,7 +45,7 @@ func CheckHugepages1GiOnly(resources *checks.DiscoveredResources) checks.CheckRe
 		}
 	}
 	if count > 0 {
-		result.ComplianceStatus = "NonCompliant"
+		result.ComplianceStatus = checks.StatusNonCompliant
 		result.Reason = fmt.Sprintf("%d container(s) use 2Mi hugepages (only 1Gi allowed)", count)
 	}
 	return result

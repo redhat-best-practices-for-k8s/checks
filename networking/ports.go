@@ -42,16 +42,16 @@ type portInfo struct {
 
 // CheckUndeclaredContainerPorts verifies all listening ports are declared in container specs.
 func CheckUndeclaredContainerPorts(resources *checks.DiscoveredResources) checks.CheckResult {
-	result := checks.CheckResult{ComplianceStatus: "Compliant"}
+	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 
 	if resources.ProbeExecutor == nil || len(resources.ProbePods) == 0 {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "Probe pods not available"
 		return result
 	}
 
 	if len(resources.Pods) == 0 {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "No pods found"
 		return result
 	}
@@ -135,7 +135,7 @@ func CheckUndeclaredContainerPorts(resources *checks.DiscoveredResources) checks
 	}
 
 	if count > 0 {
-		result.ComplianceStatus = "NonCompliant"
+		result.ComplianceStatus = checks.StatusNonCompliant
 		result.Reason = fmt.Sprintf("%d pod(s) have undeclared listening ports", count)
 	}
 

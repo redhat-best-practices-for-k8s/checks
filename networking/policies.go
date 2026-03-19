@@ -8,9 +8,9 @@ import (
 
 // CheckNetworkPolicyDenyAll verifies a default-deny NetworkPolicy exists.
 func CheckNetworkPolicyDenyAll(resources *checks.DiscoveredResources) checks.CheckResult {
-	result := checks.CheckResult{ComplianceStatus: "Compliant"}
+	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.Pods) == 0 {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "No pods found"
 		return result
 	}
@@ -36,7 +36,7 @@ func CheckNetworkPolicyDenyAll(resources *checks.DiscoveredResources) checks.Che
 	}
 
 	if !hasDenyIngress || !hasDenyEgress {
-		result.ComplianceStatus = "NonCompliant"
+		result.ComplianceStatus = checks.StatusNonCompliant
 		result.Reason = "No default-deny NetworkPolicy found for both ingress and egress"
 		if len(resources.Namespaces) > 0 {
 			result.Details = append(result.Details, checks.ResourceDetail{

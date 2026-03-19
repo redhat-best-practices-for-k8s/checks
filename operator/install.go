@@ -13,7 +13,7 @@ type csvCheckFunc func(csv *v1alpha1.ClusterServiceVersion) (compliant bool, mes
 // checkCSVs iterates over CSVs and applies a validation function to each.
 func checkCSVs(resources *checks.DiscoveredResources, checkFunc csvCheckFunc, nonCompliantReason string) checks.CheckResult {
 	if len(resources.CSVs) == 0 {
-		return checks.CheckResult{ComplianceStatus: "Skipped", Reason: "No CSVs found"}
+		return checks.CheckResult{ComplianceStatus: checks.StatusSkipped, Reason: "No CSVs found"}
 	}
 
 	var details []checks.ResourceDetail
@@ -32,9 +32,9 @@ func checkCSVs(resources *checks.DiscoveredResources, checkFunc csvCheckFunc, no
 	}
 
 	if allCompliant {
-		return checks.CheckResult{ComplianceStatus: "Compliant", Details: details}
+		return checks.CheckResult{ComplianceStatus: checks.StatusCompliant, Details: details}
 	}
-	return checks.CheckResult{ComplianceStatus: "NonCompliant", Reason: nonCompliantReason, Details: details}
+	return checks.CheckResult{ComplianceStatus: checks.StatusNonCompliant, Reason: nonCompliantReason, Details: details}
 }
 
 // CheckOperatorInstallStatusSucceeded verifies that all CSVs are in Succeeded phase.

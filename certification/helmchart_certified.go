@@ -10,14 +10,14 @@ import (
 func CheckHelmChartCertified(resources *checks.DiscoveredResources) checks.CheckResult {
 	if resources.CertValidator == nil {
 		return checks.CheckResult{
-			ComplianceStatus: "Skipped",
+			ComplianceStatus: checks.StatusSkipped,
 			Reason:           "No certification validator available",
 		}
 	}
 
 	if len(resources.HelmChartReleases) == 0 {
 		return checks.CheckResult{
-			ComplianceStatus: "Skipped",
+			ComplianceStatus: checks.StatusSkipped,
 			Reason:           "No Helm chart releases to check",
 		}
 	}

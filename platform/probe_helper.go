@@ -40,11 +40,11 @@ func ExecuteProbeCheck(
 	checkFunc NodeCheckFunc,
 	violationReasonTemplate string,
 ) checks.CheckResult {
-	result := checks.CheckResult{ComplianceStatus: "Compliant"}
+	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 
 	// Check probe availability
 	if resources.ProbeExecutor == nil || len(resources.ProbePods) == 0 {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "Probe pods not available"
 		return result
 	}
@@ -83,7 +83,7 @@ func ExecuteProbeCheck(
 
 	// Build final result
 	if violationCount > 0 || len(failedNodes) > 0 {
-		result.ComplianceStatus = "NonCompliant"
+		result.ComplianceStatus = checks.StatusNonCompliant
 		if violationCount > 0 && len(failedNodes) > 0 {
 			result.Reason = fmt.Sprintf(violationReasonTemplate+"; %d node(s) failed probe execution", violationCount, len(failedNodes))
 		} else if violationCount > 0 {

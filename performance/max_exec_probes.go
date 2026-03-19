@@ -13,9 +13,9 @@ const minExecProbePeriodSeconds = 10
 // CheckMaxResourcesExecProbes verifies that exec probes have periodSeconds >= 10
 // to reduce resource overhead from frequent process spawning.
 func CheckMaxResourcesExecProbes(resources *checks.DiscoveredResources) checks.CheckResult {
-	result := checks.CheckResult{ComplianceStatus: "Compliant"}
+	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.Pods) == 0 {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "No pods found"
 		return result
 	}
@@ -40,7 +40,7 @@ func CheckMaxResourcesExecProbes(resources *checks.DiscoveredResources) checks.C
 	}
 
 	if nonCompliant > 0 {
-		result.ComplianceStatus = "NonCompliant"
+		result.ComplianceStatus = checks.StatusNonCompliant
 		result.Reason = fmt.Sprintf("%d exec probe(s) have periodSeconds < %d", nonCompliant, minExecProbePeriodSeconds)
 	}
 	return result

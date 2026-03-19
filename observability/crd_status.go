@@ -10,7 +10,7 @@ import (
 
 // CheckCRDStatus verifies CRDs have a .status subresource defined.
 func CheckCRDStatus(resources *checks.DiscoveredResources) checks.CheckResult {
-	result := checks.CheckResult{ComplianceStatus: "Compliant"}
+	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.CRDs) == 0 {
 		return result
 	}
@@ -28,7 +28,7 @@ func CheckCRDStatus(resources *checks.DiscoveredResources) checks.CheckResult {
 		}
 	}
 	if count > 0 {
-		result.ComplianceStatus = "NonCompliant"
+		result.ComplianceStatus = checks.StatusNonCompliant
 		result.Reason = fmt.Sprintf("%d CRD(s) missing .status subresource", count)
 	}
 	return result

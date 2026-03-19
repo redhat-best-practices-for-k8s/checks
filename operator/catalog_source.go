@@ -10,16 +10,16 @@ const bundleCountLimit = 1000
 
 // CheckCatalogSourceBundleCount verifies catalog sources have fewer than 1000 bundles.
 func CheckCatalogSourceBundleCount(resources *checks.DiscoveredResources) checks.CheckResult {
-	result := checks.CheckResult{ComplianceStatus: "Compliant"}
+	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 
 	if len(resources.CatalogSources) == 0 {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "No catalog sources found"
 		return result
 	}
 
 	if len(resources.CSVs) == 0 {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "No operators found"
 		return result
 	}
@@ -58,7 +58,7 @@ func CheckCatalogSourceBundleCount(resources *checks.DiscoveredResources) checks
 	}
 
 	if nonCompliantCount > 0 {
-		result.ComplianceStatus = "NonCompliant"
+		result.ComplianceStatus = checks.StatusNonCompliant
 		result.Reason = fmt.Sprintf("%d catalog source(s) have too many bundles (>%d)", nonCompliantCount, bundleCountLimit)
 	}
 

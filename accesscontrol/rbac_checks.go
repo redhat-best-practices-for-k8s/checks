@@ -11,9 +11,9 @@ import (
 
 // CheckServiceAccount verifies pods do not use the default service account.
 func CheckServiceAccount(resources *checks.DiscoveredResources) checks.CheckResult {
-	result := checks.CheckResult{ComplianceStatus: "Compliant"}
+	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.Pods) == 0 {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "No pods found"
 		return result
 	}
@@ -30,7 +30,7 @@ func CheckServiceAccount(resources *checks.DiscoveredResources) checks.CheckResu
 		}
 	}
 	if count > 0 {
-		result.ComplianceStatus = "NonCompliant"
+		result.ComplianceStatus = checks.StatusNonCompliant
 		result.Reason = fmt.Sprintf("%d pod(s) use the default service account", count)
 	}
 	return result
@@ -39,7 +39,7 @@ func CheckServiceAccount(resources *checks.DiscoveredResources) checks.CheckResu
 // CheckRoleBindings verifies that role bindings used by pod service accounts
 // live within the target namespaces.
 func CheckRoleBindings(resources *checks.DiscoveredResources) checks.CheckResult {
-	result := checks.CheckResult{ComplianceStatus: "Compliant"}
+	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.Pods) == 0 {
 		return result
 	}
@@ -71,7 +71,7 @@ func CheckRoleBindings(resources *checks.DiscoveredResources) checks.CheckResult
 	}
 
 	if count > 0 {
-		result.ComplianceStatus = "NonCompliant"
+		result.ComplianceStatus = checks.StatusNonCompliant
 		result.Reason = fmt.Sprintf("%d role binding issue(s) found", count)
 	}
 	return result
@@ -124,7 +124,7 @@ func roleBindingReferencesServiceAccount(rb *rbacv1.RoleBinding, namespace, name
 
 // CheckClusterRoleBindings verifies pods are not linked to ClusterRoleBindings.
 func CheckClusterRoleBindings(resources *checks.DiscoveredResources) checks.CheckResult {
-	result := checks.CheckResult{ComplianceStatus: "Compliant"}
+	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.ClusterRoleBindings) == 0 || len(resources.Pods) == 0 {
 		return result
 	}
@@ -155,7 +155,7 @@ func CheckClusterRoleBindings(resources *checks.DiscoveredResources) checks.Chec
 		}
 	}
 	if count > 0 {
-		result.ComplianceStatus = "NonCompliant"
+		result.ComplianceStatus = checks.StatusNonCompliant
 		result.Reason = fmt.Sprintf("%d ClusterRoleBinding(s) bind pod ServiceAccounts", count)
 	}
 	return result
@@ -163,9 +163,9 @@ func CheckClusterRoleBindings(resources *checks.DiscoveredResources) checks.Chec
 
 // CheckAutomountToken verifies pods do not automount service account tokens.
 func CheckAutomountToken(resources *checks.DiscoveredResources) checks.CheckResult {
-	result := checks.CheckResult{ComplianceStatus: "Compliant"}
+	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.Pods) == 0 {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "No pods found"
 		return result
 	}
@@ -198,7 +198,7 @@ func CheckAutomountToken(resources *checks.DiscoveredResources) checks.CheckResu
 		}
 	}
 	if count > 0 {
-		result.ComplianceStatus = "NonCompliant"
+		result.ComplianceStatus = checks.StatusNonCompliant
 		result.Reason = fmt.Sprintf("%d pod(s) have automount token issues", count)
 	}
 	return result

@@ -8,9 +8,9 @@ import (
 
 // CheckCrdRoles verifies that Roles only grant permissions on CRDs under test.
 func CheckCrdRoles(resources *checks.DiscoveredResources) checks.CheckResult {
-	result := checks.CheckResult{ComplianceStatus: "Compliant"}
+	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.Roles) == 0 || len(resources.CRDs) == 0 {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "No roles or CRDs found"
 		return result
 	}
@@ -53,7 +53,7 @@ func CheckCrdRoles(resources *checks.DiscoveredResources) checks.CheckResult {
 		}
 	}
 	if count > 0 {
-		result.ComplianceStatus = "NonCompliant"
+		result.ComplianceStatus = checks.StatusNonCompliant
 		result.Reason = fmt.Sprintf("%d role rule(s) grant access beyond CRD resources", count)
 	}
 	return result

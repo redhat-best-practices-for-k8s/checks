@@ -2,6 +2,7 @@ package platform
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/redhat-best-practices-for-k8s/checks"
 )
@@ -16,16 +17,16 @@ const (
 
 // CheckOCPLifecycle verifies the OCP version is not end-of-life.
 func CheckOCPLifecycle(resources *checks.DiscoveredResources) checks.CheckResult {
-	result := checks.CheckResult{ComplianceStatus: "Compliant"}
+	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 
 	if resources.OpenshiftVersion == "" {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "Not an OpenShift cluster"
 		return result
 	}
 
 	if resources.OCPStatus == OCPStatusEOL {
-		result.ComplianceStatus = "NonCompliant"
+		result.ComplianceStatus = checks.StatusNonCompliant
 		result.Reason = fmt.Sprintf("OCP version %s is end-of-life", resources.OpenshiftVersion)
 		result.Details = append(result.Details, checks.ResourceDetail{
 			Kind:      "ClusterVersion",
@@ -53,16 +54,16 @@ func CheckOCPLifecycle(resources *checks.DiscoveredResources) checks.CheckResult
 
 // CheckOCPNodeOSLifecycle verifies node operating systems are compatible with OCP version.
 func CheckOCPNodeOSLifecycle(resources *checks.DiscoveredResources) checks.CheckResult {
-	result := checks.CheckResult{ComplianceStatus: "Compliant"}
+	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 
 	if resources.OpenshiftVersion == "" {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "Not an OpenShift cluster"
 		return result
 	}
 
 	if len(resources.Nodes) == 0 {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "No nodes found"
 		return result
 	}
@@ -98,7 +99,7 @@ func CheckOCPNodeOSLifecycle(resources *checks.DiscoveredResources) checks.Check
 	}
 
 	if len(failedNodes) > 0 {
-		result.ComplianceStatus = "NonCompliant"
+		result.ComplianceStatus = checks.StatusNonCompliant
 		result.Reason = fmt.Sprintf("%d node(s) have incompatible operating system", len(failedNodes))
 	}
 
@@ -106,23 +107,10 @@ func CheckOCPNodeOSLifecycle(resources *checks.DiscoveredResources) checks.Check
 }
 
 func isRHCOS(osImage string) bool {
-	return contains(osImage, "Red Hat Enterprise Linux CoreOS") ||
-		contains(osImage, "RHCOS")
+	return strings.Contains(osImage, "Red Hat Enterprise Linux CoreOS") ||
+		strings.Contains(osImage, "RHCOS")
 }
 
 func isCSCOS(osImage string) bool {
-	return contains(osImage, "CentOS Stream CoreOS")
-}
-
-func contains(s, substr string) bool {
-	return len(s) >= len(substr) && (s == substr || len(s) > len(substr) && findSubstring(s, substr))
-}
-
-func findSubstring(s, substr string) bool {
-	for i := 0; i <= len(s)-len(substr); i++ {
-		if s[i:i+len(substr)] == substr {
-			return true
-		}
-	}
-	return false
+	return strings.Contains(osImage, "CentOS Stream CoreOS")
 }

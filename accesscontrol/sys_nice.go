@@ -11,9 +11,9 @@ import (
 // kernel have the SYS_NICE capability, which is required for DPDK applications
 // to switch to SCHED_FIFO scheduling.
 func CheckSysNiceRealtime(resources *checks.DiscoveredResources) checks.CheckResult {
-	result := checks.CheckResult{ComplianceStatus: "Compliant"}
+	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.Pods) == 0 {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "No pods found"
 		return result
 	}
@@ -29,7 +29,7 @@ func CheckSysNiceRealtime(resources *checks.DiscoveredResources) checks.CheckRes
 	}
 
 	if len(rtNodes) == 0 {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "No nodes with realtime kernel found"
 		return result
 	}
@@ -58,7 +58,7 @@ func CheckSysNiceRealtime(resources *checks.DiscoveredResources) checks.CheckRes
 	}
 
 	if nonCompliant > 0 {
-		result.ComplianceStatus = "NonCompliant"
+		result.ComplianceStatus = checks.StatusNonCompliant
 		result.Reason = fmt.Sprintf("%d container(s) on RT nodes lack SYS_NICE capability", nonCompliant)
 	}
 	return result

@@ -12,16 +12,16 @@ import (
 
 // CheckHyperthreadEnable verifies bare metal nodes have hyperthreading enabled.
 func CheckHyperthreadEnable(resources *checks.DiscoveredResources) checks.CheckResult {
-	result := checks.CheckResult{ComplianceStatus: "Compliant"}
+	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 
 	if resources.ProbeExecutor == nil {
-		result.ComplianceStatus = "Error"
+		result.ComplianceStatus = checks.StatusError
 		result.Reason = "ProbeExecutor not available for hyperthread checks"
 		return result
 	}
 
 	if len(resources.Nodes) == 0 {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "No nodes found"
 		return result
 	}
@@ -36,7 +36,7 @@ func CheckHyperthreadEnable(resources *checks.DiscoveredResources) checks.CheckR
 	}
 
 	if len(bareMetalNodes) == 0 {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "No bare metal nodes found"
 		return result
 	}
@@ -107,7 +107,7 @@ func CheckHyperthreadEnable(resources *checks.DiscoveredResources) checks.CheckR
 	}
 
 	if failures > 0 {
-		result.ComplianceStatus = "NonCompliant"
+		result.ComplianceStatus = checks.StatusNonCompliant
 		result.Reason = fmt.Sprintf("%d bare metal node(s) do not have hyperthreading enabled", failures)
 	}
 

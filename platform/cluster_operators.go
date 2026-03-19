@@ -8,10 +8,10 @@ import (
 
 // CheckClusterOperatorHealth verifies all cluster operators are in Available state.
 func CheckClusterOperatorHealth(resources *checks.DiscoveredResources) checks.CheckResult {
-	result := checks.CheckResult{ComplianceStatus: "Compliant"}
+	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 
 	if len(resources.ClusterOperators) == 0 {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "No cluster operators found (not an OpenShift cluster)"
 		return result
 	}
@@ -40,7 +40,7 @@ func CheckClusterOperatorHealth(resources *checks.DiscoveredResources) checks.Ch
 	}
 
 	if unavailableCount > 0 {
-		result.ComplianceStatus = "NonCompliant"
+		result.ComplianceStatus = checks.StatusNonCompliant
 		result.Reason = fmt.Sprintf("%d cluster operator(s) not in Available state", unavailableCount)
 	}
 

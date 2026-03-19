@@ -8,9 +8,9 @@ import (
 
 // CheckSysPtrace verifies pods with shareProcessNamespace have SYS_PTRACE capability.
 func CheckSysPtrace(resources *checks.DiscoveredResources) checks.CheckResult {
-	result := checks.CheckResult{ComplianceStatus: "Compliant"}
+	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.Pods) == 0 {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "No pods found"
 		return result
 	}
@@ -40,12 +40,12 @@ func CheckSysPtrace(resources *checks.DiscoveredResources) checks.CheckResult {
 		}
 	}
 	if sharedCount == 0 {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "No pods with shared process namespace found"
 		return result
 	}
 	if count > 0 {
-		result.ComplianceStatus = "NonCompliant"
+		result.ComplianceStatus = checks.StatusNonCompliant
 		result.Reason = fmt.Sprintf("%d pod(s) with shared PID namespace lack SYS_PTRACE capability", count)
 	}
 	return result

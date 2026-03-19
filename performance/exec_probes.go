@@ -11,9 +11,9 @@ import (
 // CheckLimitedExecProbes verifies cluster-wide exec probe count is below threshold.
 // Certsuite limits total exec probes to less than 10.
 func CheckLimitedExecProbes(resources *checks.DiscoveredResources) checks.CheckResult {
-	result := checks.CheckResult{ComplianceStatus: "Compliant"}
+	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.Pods) == 0 {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "No pods found"
 		return result
 	}
@@ -27,7 +27,7 @@ func CheckLimitedExecProbes(resources *checks.DiscoveredResources) checks.CheckR
 		}
 	}
 	if totalExecProbes >= 10 {
-		result.ComplianceStatus = "NonCompliant"
+		result.ComplianceStatus = checks.StatusNonCompliant
 		result.Reason = fmt.Sprintf("%d exec probes found across cluster (max 10 recommended)", totalExecProbes)
 		result.Details = append(result.Details, checks.ResourceDetail{
 			Kind: "Cluster", Name: "exec-probes",
@@ -40,9 +40,9 @@ func CheckLimitedExecProbes(resources *checks.DiscoveredResources) checks.CheckR
 
 // CheckCPUPinningNoExecProbes verifies CPU-pinned pods do not use exec probes.
 func CheckCPUPinningNoExecProbes(resources *checks.DiscoveredResources) checks.CheckResult {
-	result := checks.CheckResult{ComplianceStatus: "Compliant"}
+	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.Pods) == 0 {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "No pods found"
 		return result
 	}
@@ -66,7 +66,7 @@ func CheckCPUPinningNoExecProbes(resources *checks.DiscoveredResources) checks.C
 		}
 	}
 	if count > 0 {
-		result.ComplianceStatus = "NonCompliant"
+		result.ComplianceStatus = checks.StatusNonCompliant
 		result.Reason = fmt.Sprintf("%d CPU-pinned container(s) use exec probes", count)
 	}
 	return result

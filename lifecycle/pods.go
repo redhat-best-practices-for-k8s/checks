@@ -11,9 +11,9 @@ import (
 
 // CheckImagePullPolicy verifies imagePullPolicy is Always or image uses a digest.
 func CheckImagePullPolicy(resources *checks.DiscoveredResources) checks.CheckResult {
-	result := checks.CheckResult{ComplianceStatus: "Compliant"}
+	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.Pods) == 0 {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "No pods found"
 		return result
 	}
@@ -34,7 +34,7 @@ func CheckImagePullPolicy(resources *checks.DiscoveredResources) checks.CheckRes
 		})
 	})
 	if count > 0 {
-		result.ComplianceStatus = "NonCompliant"
+		result.ComplianceStatus = checks.StatusNonCompliant
 		result.Reason = fmt.Sprintf("%d container(s) have non-compliant imagePullPolicy", count)
 	}
 	return result
@@ -49,9 +49,9 @@ var allowedOwnerKinds = map[string]bool{
 
 // CheckPodOwnerType verifies pods are owned by a workload controller.
 func CheckPodOwnerType(resources *checks.DiscoveredResources) checks.CheckResult {
-	result := checks.CheckResult{ComplianceStatus: "Compliant"}
+	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.Pods) == 0 {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "No pods found"
 		return result
 	}
@@ -69,7 +69,7 @@ func CheckPodOwnerType(resources *checks.DiscoveredResources) checks.CheckResult
 		}
 	}
 	if count > 0 {
-		result.ComplianceStatus = "NonCompliant"
+		result.ComplianceStatus = checks.StatusNonCompliant
 		result.Reason = fmt.Sprintf("%d pod(s) are not managed by a workload controller", count)
 	}
 	return result
@@ -86,9 +86,9 @@ func hasAllowedOwner(pod *corev1.Pod) bool {
 
 // CheckPodScheduling verifies pods have scheduling directives.
 func CheckPodScheduling(resources *checks.DiscoveredResources) checks.CheckResult {
-	result := checks.CheckResult{ComplianceStatus: "Compliant"}
+	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.Pods) == 0 {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "No pods found"
 		return result
 	}
@@ -109,7 +109,7 @@ func CheckPodScheduling(resources *checks.DiscoveredResources) checks.CheckResul
 		}
 	}
 	if count > 0 {
-		result.ComplianceStatus = "NonCompliant"
+		result.ComplianceStatus = checks.StatusNonCompliant
 		result.Reason = fmt.Sprintf("%d pod(s) have no scheduling directives", count)
 	}
 	return result
@@ -117,9 +117,9 @@ func CheckPodScheduling(resources *checks.DiscoveredResources) checks.CheckResul
 
 // CheckHighAvailability verifies Deployments have replicas > 1.
 func CheckHighAvailability(resources *checks.DiscoveredResources) checks.CheckResult {
-	result := checks.CheckResult{ComplianceStatus: "Compliant"}
+	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.Deployments) == 0 {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "No deployments found"
 		return result
 	}
@@ -141,7 +141,7 @@ func CheckHighAvailability(resources *checks.DiscoveredResources) checks.CheckRe
 		}
 	}
 	if count > 0 {
-		result.ComplianceStatus = "NonCompliant"
+		result.ComplianceStatus = checks.StatusNonCompliant
 		result.Reason = fmt.Sprintf("%d deployment(s) have fewer than 2 replicas", count)
 	}
 	return result
@@ -149,9 +149,9 @@ func CheckHighAvailability(resources *checks.DiscoveredResources) checks.CheckRe
 
 // CheckCPUIsolation verifies CPU requests equal CPU limits (Guaranteed QoS for CPU).
 func CheckCPUIsolation(resources *checks.DiscoveredResources) checks.CheckResult {
-	result := checks.CheckResult{ComplianceStatus: "Compliant"}
+	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.Pods) == 0 {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "No pods found"
 		return result
 	}
@@ -170,7 +170,7 @@ func CheckCPUIsolation(resources *checks.DiscoveredResources) checks.CheckResult
 		}
 	})
 	if count > 0 {
-		result.ComplianceStatus = "NonCompliant"
+		result.ComplianceStatus = checks.StatusNonCompliant
 		result.Reason = fmt.Sprintf("%d container(s) do not have CPU requests equal to limits", count)
 	}
 	return result
@@ -178,9 +178,9 @@ func CheckCPUIsolation(resources *checks.DiscoveredResources) checks.CheckResult
 
 // CheckAffinityRequired verifies pods have podAntiAffinity for high availability.
 func CheckAffinityRequired(resources *checks.DiscoveredResources) checks.CheckResult {
-	result := checks.CheckResult{ComplianceStatus: "Compliant"}
+	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.Pods) == 0 {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "No pods found"
 		return result
 	}
@@ -198,7 +198,7 @@ func CheckAffinityRequired(resources *checks.DiscoveredResources) checks.CheckRe
 		}
 	}
 	if count > 0 {
-		result.ComplianceStatus = "NonCompliant"
+		result.ComplianceStatus = checks.StatusNonCompliant
 		result.Reason = fmt.Sprintf("%d pod(s) missing podAntiAffinity", count)
 	}
 	return result
@@ -211,9 +211,9 @@ var masterTaintKeys = map[string]bool{
 
 // CheckTolerationBypass verifies pods do not tolerate master/control-plane taints.
 func CheckTolerationBypass(resources *checks.DiscoveredResources) checks.CheckResult {
-	result := checks.CheckResult{ComplianceStatus: "Compliant"}
+	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.Pods) == 0 {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "No pods found"
 		return result
 	}
@@ -234,7 +234,7 @@ func CheckTolerationBypass(resources *checks.DiscoveredResources) checks.CheckRe
 		}
 	}
 	if count > 0 {
-		result.ComplianceStatus = "NonCompliant"
+		result.ComplianceStatus = checks.StatusNonCompliant
 		result.Reason = fmt.Sprintf("%d pod(s) tolerate master/control-plane taints", count)
 	}
 	return result
@@ -242,9 +242,9 @@ func CheckTolerationBypass(resources *checks.DiscoveredResources) checks.CheckRe
 
 // CheckPVReclaimPolicy verifies PersistentVolume reclaimPolicy is not Delete.
 func CheckPVReclaimPolicy(resources *checks.DiscoveredResources) checks.CheckResult {
-	result := checks.CheckResult{ComplianceStatus: "Compliant"}
+	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.PersistentVolumes) == 0 {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "No PersistentVolumes found"
 		return result
 	}
@@ -262,7 +262,7 @@ func CheckPVReclaimPolicy(resources *checks.DiscoveredResources) checks.CheckRes
 		}
 	}
 	if count > 0 {
-		result.ComplianceStatus = "NonCompliant"
+		result.ComplianceStatus = checks.StatusNonCompliant
 		result.Reason = fmt.Sprintf("%d PersistentVolume(s) have reclaimPolicy Delete", count)
 	}
 	return result
@@ -270,9 +270,9 @@ func CheckPVReclaimPolicy(resources *checks.DiscoveredResources) checks.CheckRes
 
 // CheckStorageProvisioner verifies StorageClasses have a non-empty provisioner.
 func CheckStorageProvisioner(resources *checks.DiscoveredResources) checks.CheckResult {
-	result := checks.CheckResult{ComplianceStatus: "Compliant"}
+	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.StorageClasses) == 0 {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "No StorageClasses found"
 		return result
 	}
@@ -290,7 +290,7 @@ func CheckStorageProvisioner(resources *checks.DiscoveredResources) checks.Check
 		}
 	}
 	if count > 0 {
-		result.ComplianceStatus = "NonCompliant"
+		result.ComplianceStatus = checks.StatusNonCompliant
 		result.Reason = fmt.Sprintf("%d StorageClass(es) have invalid provisioner", count)
 	}
 	return result

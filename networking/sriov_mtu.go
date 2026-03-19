@@ -9,10 +9,10 @@ import (
 // CheckSRIOVNetworkAttachmentDefinitionMTU verifies SR-IOV network attachment
 // definitions have MTU explicitly configured.
 func CheckSRIOVNetworkAttachmentDefinitionMTU(resources *checks.DiscoveredResources) checks.CheckResult {
-	result := checks.CheckResult{ComplianceStatus: "Compliant"}
+	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 
 	if len(resources.NetworkAttachmentDefinitions) == 0 {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "No network attachment definitions found"
 		return result
 	}
@@ -51,7 +51,7 @@ func CheckSRIOVNetworkAttachmentDefinitionMTU(resources *checks.DiscoveredResour
 	}
 
 	if nonCompliantCount > 0 {
-		result.ComplianceStatus = "NonCompliant"
+		result.ComplianceStatus = checks.StatusNonCompliant
 		result.Reason = fmt.Sprintf("%d SR-IOV network attachment definition(s) missing MTU configuration", nonCompliantCount)
 	}
 

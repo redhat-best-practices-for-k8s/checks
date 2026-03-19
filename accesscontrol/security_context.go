@@ -11,9 +11,9 @@ import (
 // CheckNonRootUser verifies containers run as non-root.
 // A container is compliant if RunAsNonRoot=true OR RunAsUser is set to a non-zero value.
 func CheckNonRootUser(resources *checks.DiscoveredResources) checks.CheckResult {
-	result := checks.CheckResult{ComplianceStatus: "Compliant"}
+	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.Pods) == 0 {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "No pods found"
 		return result
 	}
@@ -30,7 +30,7 @@ func CheckNonRootUser(resources *checks.DiscoveredResources) checks.CheckResult 
 		}
 	})
 	if count > 0 {
-		result.ComplianceStatus = "NonCompliant"
+		result.ComplianceStatus = checks.StatusNonCompliant
 		result.Reason = fmt.Sprintf("%d container(s) may run as root", count)
 	}
 	return result
@@ -58,9 +58,9 @@ func isContainerRunAsNonRootUserID(pod *corev1.Pod, container *corev1.Container)
 
 // CheckPrivilegeEscalation verifies containers do not allow privilege escalation.
 func CheckPrivilegeEscalation(resources *checks.DiscoveredResources) checks.CheckResult {
-	result := checks.CheckResult{ComplianceStatus: "Compliant"}
+	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.Pods) == 0 {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "No pods found"
 		return result
 	}
@@ -79,7 +79,7 @@ func CheckPrivilegeEscalation(resources *checks.DiscoveredResources) checks.Chec
 		}
 	})
 	if count > 0 {
-		result.ComplianceStatus = "NonCompliant"
+		result.ComplianceStatus = checks.StatusNonCompliant
 		result.Reason = fmt.Sprintf("%d container(s) allow privilege escalation", count)
 	}
 	return result
@@ -87,9 +87,9 @@ func CheckPrivilegeEscalation(resources *checks.DiscoveredResources) checks.Chec
 
 // CheckReadOnlyFilesystem verifies containers set readOnlyRootFilesystem to true.
 func CheckReadOnlyFilesystem(resources *checks.DiscoveredResources) checks.CheckResult {
-	result := checks.CheckResult{ComplianceStatus: "Compliant"}
+	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.Pods) == 0 {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "No pods found"
 		return result
 	}
@@ -108,7 +108,7 @@ func CheckReadOnlyFilesystem(resources *checks.DiscoveredResources) checks.Check
 		}
 	})
 	if count > 0 {
-		result.ComplianceStatus = "NonCompliant"
+		result.ComplianceStatus = checks.StatusNonCompliant
 		result.Reason = fmt.Sprintf("%d container(s) do not set readOnlyRootFilesystem", count)
 	}
 	return result
@@ -116,9 +116,9 @@ func CheckReadOnlyFilesystem(resources *checks.DiscoveredResources) checks.Check
 
 // Check1337UID verifies pods do not run as UID 1337 (Istio conflict).
 func Check1337UID(resources *checks.DiscoveredResources) checks.CheckResult {
-	result := checks.CheckResult{ComplianceStatus: "Compliant"}
+	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.Pods) == 0 {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "No pods found"
 		return result
 	}
@@ -138,7 +138,7 @@ func Check1337UID(resources *checks.DiscoveredResources) checks.CheckResult {
 		}
 	}
 	if count > 0 {
-		result.ComplianceStatus = "NonCompliant"
+		result.ComplianceStatus = checks.StatusNonCompliant
 		result.Reason = fmt.Sprintf("%d pod(s) use UID 1337", count)
 	}
 	return result
@@ -146,9 +146,9 @@ func Check1337UID(resources *checks.DiscoveredResources) checks.CheckResult {
 
 // CheckSecurityContext categorizes container security contexts (SCC check).
 func CheckSecurityContext(resources *checks.DiscoveredResources) checks.CheckResult {
-	result := checks.CheckResult{ComplianceStatus: "Compliant"}
+	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.Pods) == 0 {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "No pods found"
 		return result
 	}
@@ -171,7 +171,7 @@ func CheckSecurityContext(resources *checks.DiscoveredResources) checks.CheckRes
 		}
 	}
 	if count > 0 {
-		result.ComplianceStatus = "NonCompliant"
+		result.ComplianceStatus = checks.StatusNonCompliant
 		result.Reason = fmt.Sprintf("%d container(s) require elevated SCC", count)
 	}
 	return result

@@ -20,17 +20,17 @@ var (
 
 // CheckDeploymentScaling verifies that Deployments can scale up and down.
 func CheckDeploymentScaling(resources *checks.DiscoveredResources) checks.CheckResult {
-	result := checks.CheckResult{ComplianceStatus: "Compliant"}
+	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 
 	k8sClient, err := getK8sClient(resources)
 	if err != nil {
-		result.ComplianceStatus = "Error"
+		result.ComplianceStatus = checks.StatusError
 		result.Reason = err.Error()
 		return result
 	}
 
 	if len(resources.Deployments) == 0 {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "No Deployments found"
 		return result
 	}
@@ -61,7 +61,7 @@ func CheckDeploymentScaling(resources *checks.DiscoveredResources) checks.CheckR
 	}
 
 	if failures > 0 {
-		result.ComplianceStatus = "NonCompliant"
+		result.ComplianceStatus = checks.StatusNonCompliant
 		result.Reason = fmt.Sprintf("%d Deployment(s) failed to scale", failures)
 	}
 
@@ -70,17 +70,17 @@ func CheckDeploymentScaling(resources *checks.DiscoveredResources) checks.CheckR
 
 // CheckStatefulSetScaling verifies that StatefulSets can scale up and down.
 func CheckStatefulSetScaling(resources *checks.DiscoveredResources) checks.CheckResult {
-	result := checks.CheckResult{ComplianceStatus: "Compliant"}
+	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 
 	k8sClient, err := getK8sClient(resources)
 	if err != nil {
-		result.ComplianceStatus = "Error"
+		result.ComplianceStatus = checks.StatusError
 		result.Reason = err.Error()
 		return result
 	}
 
 	if len(resources.StatefulSets) == 0 {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "No StatefulSets found"
 		return result
 	}
@@ -111,7 +111,7 @@ func CheckStatefulSetScaling(resources *checks.DiscoveredResources) checks.Check
 	}
 
 	if failures > 0 {
-		result.ComplianceStatus = "NonCompliant"
+		result.ComplianceStatus = checks.StatusNonCompliant
 		result.Reason = fmt.Sprintf("%d StatefulSet(s) failed to scale", failures)
 	}
 

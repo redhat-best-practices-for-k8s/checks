@@ -10,7 +10,7 @@ import (
 
 // CheckNodePortService verifies no services use NodePort type.
 func CheckNodePortService(resources *checks.DiscoveredResources) checks.CheckResult {
-	result := checks.CheckResult{ComplianceStatus: "Compliant"}
+	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.Services) == 0 {
 		return result
 	}
@@ -27,7 +27,7 @@ func CheckNodePortService(resources *checks.DiscoveredResources) checks.CheckRes
 		}
 	}
 	if count > 0 {
-		result.ComplianceStatus = "NonCompliant"
+		result.ComplianceStatus = checks.StatusNonCompliant
 		result.Reason = fmt.Sprintf("%d service(s) use NodePort type", count)
 	}
 	return result

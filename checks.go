@@ -115,6 +115,14 @@ type CertificationValidator interface {
 	IsHelmChartCertified(chartName, chartVersion, kubeVersion string) bool
 }
 
+// Compliance status constants used by all check functions.
+const (
+	StatusCompliant    = "Compliant"
+	StatusNonCompliant = "NonCompliant"
+	StatusSkipped      = "Skipped"
+	StatusError        = "Error"
+)
+
 // CheckFunc is the signature for a best practice check function.
 type CheckFunc func(resources *DiscoveredResources) CheckResult
 

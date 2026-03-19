@@ -15,7 +15,7 @@ import (
 func CheckHelmVersion(resources *checks.DiscoveredResources) checks.CheckResult {
 	if len(resources.HelmChartReleases) == 0 {
 		return checks.CheckResult{
-			ComplianceStatus: "Skipped",
+			ComplianceStatus: checks.StatusSkipped,
 			Reason:           "No Helm chart releases to check",
 		}
 	}
@@ -23,7 +23,7 @@ func CheckHelmVersion(resources *checks.DiscoveredResources) checks.CheckResult 
 	clientset, ok := resources.K8sClientset.(kubernetes.Interface)
 	if !ok || clientset == nil {
 		return checks.CheckResult{
-			ComplianceStatus: "Skipped",
+			ComplianceStatus: checks.StatusSkipped,
 			Reason:           "K8s clientset not available",
 		}
 	}
@@ -33,7 +33,7 @@ func CheckHelmVersion(resources *checks.DiscoveredResources) checks.CheckResult 
 	})
 	if err != nil {
 		return checks.CheckResult{
-			ComplianceStatus: "NonCompliant",
+			ComplianceStatus: checks.StatusNonCompliant,
 			Reason:           fmt.Sprintf("Could not list Tiller pods: %v", err),
 		}
 	}
@@ -50,7 +50,7 @@ func CheckHelmVersion(resources *checks.DiscoveredResources) checks.CheckResult 
 			})
 		}
 		return checks.CheckResult{
-			ComplianceStatus: "Compliant",
+			ComplianceStatus: checks.StatusCompliant,
 			Reason:           "No Tiller pods found; Helm version is v3",
 			Details:          details,
 		}
@@ -58,7 +58,7 @@ func CheckHelmVersion(resources *checks.DiscoveredResources) checks.CheckResult 
 
 	details := tillerPodDetails(podList.Items)
 	return checks.CheckResult{
-		ComplianceStatus: "NonCompliant",
+		ComplianceStatus: checks.StatusNonCompliant,
 		Reason:           "Tiller pod found; Helm version is v2 but v3 is required",
 		Details:          details,
 	}

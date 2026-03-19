@@ -12,10 +12,10 @@ import (
 
 // CheckContainerLogging verifies that all containers produce logging output to stdout/stderr.
 func CheckContainerLogging(resources *checks.DiscoveredResources) checks.CheckResult {
-	result := checks.CheckResult{ComplianceStatus: "Compliant"}
+	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 
 	if resources.K8sClientset == nil {
-		result.ComplianceStatus = "Error"
+		result.ComplianceStatus = checks.StatusError
 		result.Reason = "Kubernetes client not available"
 		return result
 	}
@@ -23,13 +23,13 @@ func CheckContainerLogging(resources *checks.DiscoveredResources) checks.CheckRe
 	// Type assert the interface to kubernetes.Interface
 	k8sClient, ok := resources.K8sClientset.(kubernetes.Interface)
 	if !ok {
-		result.ComplianceStatus = "Error"
+		result.ComplianceStatus = checks.StatusError
 		result.Reason = "K8sClientset is not a valid kubernetes.Interface"
 		return result
 	}
 
 	if len(resources.Pods) == 0 {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "No pods found"
 		return result
 	}
@@ -77,7 +77,7 @@ func CheckContainerLogging(resources *checks.DiscoveredResources) checks.CheckRe
 	}
 
 	if failedContainers > 0 {
-		result.ComplianceStatus = "NonCompliant"
+		result.ComplianceStatus = checks.StatusNonCompliant
 		result.Reason = fmt.Sprintf("%d container(s) do not produce logging output", failedContainers)
 	}
 

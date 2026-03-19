@@ -12,14 +12,14 @@ import (
 func CheckOperatorCertified(resources *checks.DiscoveredResources) checks.CheckResult {
 	if resources.CertValidator == nil {
 		return checks.CheckResult{
-			ComplianceStatus: "Skipped",
+			ComplianceStatus: checks.StatusSkipped,
 			Reason:           "No certification validator available",
 		}
 	}
 
 	if len(resources.CSVs) == 0 {
 		return checks.CheckResult{
-			ComplianceStatus: "Skipped",
+			ComplianceStatus: checks.StatusSkipped,
 			Reason:           "No operators to check",
 		}
 	}

@@ -9,7 +9,7 @@ import (
 // Security Context Constraints via their clusterPermissions.
 func CheckOperatorNoSCCAccess(resources *checks.DiscoveredResources) checks.CheckResult {
 	if len(resources.CSVs) == 0 {
-		return checks.CheckResult{ComplianceStatus: "Skipped", Reason: "No CSVs found"}
+		return checks.CheckResult{ComplianceStatus: checks.StatusSkipped, Reason: "No CSVs found"}
 	}
 
 	var details []checks.ResourceDetail
@@ -41,9 +41,9 @@ func CheckOperatorNoSCCAccess(resources *checks.DiscoveredResources) checks.Chec
 	}
 
 	if allCompliant {
-		return checks.CheckResult{ComplianceStatus: "Compliant", Details: details}
+		return checks.CheckResult{ComplianceStatus: checks.StatusCompliant, Details: details}
 	}
-	return checks.CheckResult{ComplianceStatus: "NonCompliant", Reason: "One or more CSVs grant SCC access", Details: details}
+	return checks.CheckResult{ComplianceStatus: checks.StatusNonCompliant, Reason: "One or more CSVs grant SCC access", Details: details}
 }
 
 func permissionsHaveSCCAccess(clusterPermissions []v1alpha1.StrategyDeploymentPermissions) bool {

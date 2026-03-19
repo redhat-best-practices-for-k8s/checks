@@ -50,16 +50,16 @@ func CheckICMPv6ConnectivityMultus(resources *checks.DiscoveredResources) checks
 }
 
 func checkICMPConnectivity(resources *checks.DiscoveredResources, ipVersion string, multus bool) checks.CheckResult {
-	result := checks.CheckResult{ComplianceStatus: "Compliant"}
+	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 
 	if resources.ProbeExecutor == nil {
-		result.ComplianceStatus = "Error"
+		result.ComplianceStatus = checks.StatusError
 		result.Reason = "ProbeExecutor not available for ICMP connectivity checks"
 		return result
 	}
 
 	if len(resources.Pods) < 2 {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "At least 2 pods required for ICMP connectivity testing"
 		return result
 	}
@@ -68,7 +68,7 @@ func checkICMPConnectivity(resources *checks.DiscoveredResources, ipVersion stri
 	testPairs := buildICMPTestPairs(resources.Pods, ipVersion, multus)
 
 	if len(testPairs) == 0 {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = fmt.Sprintf("No IPv%s addresses found for testing", ipVersion)
 		return result
 	}
@@ -115,7 +115,7 @@ func checkICMPConnectivity(resources *checks.DiscoveredResources, ipVersion stri
 	}
 
 	if failures > 0 {
-		result.ComplianceStatus = "NonCompliant"
+		result.ComplianceStatus = checks.StatusNonCompliant
 		result.Reason = fmt.Sprintf("%d ICMP connectivity test(s) failed", failures)
 	}
 

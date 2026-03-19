@@ -10,9 +10,9 @@ import (
 // CheckMultipleSameOperators verifies that no operator is installed more than once
 // in the cluster (by comparing CSV base names after stripping version suffixes).
 func CheckMultipleSameOperators(resources *checks.DiscoveredResources) checks.CheckResult {
-	result := checks.CheckResult{ComplianceStatus: "Compliant"}
+	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.CSVs) == 0 {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "No operators (CSVs) found"
 		return result
 	}
@@ -57,7 +57,7 @@ func CheckMultipleSameOperators(resources *checks.DiscoveredResources) checks.Ch
 	}
 
 	if nonCompliant > 0 {
-		result.ComplianceStatus = "NonCompliant"
+		result.ComplianceStatus = checks.StatusNonCompliant
 		result.Reason = fmt.Sprintf("%d operator(s) installed more than once", nonCompliant)
 	}
 	return result

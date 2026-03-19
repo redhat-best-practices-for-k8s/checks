@@ -11,16 +11,16 @@ import (
 
 // CheckIsRedHatRelease verifies that containers are based on Red Hat Enterprise Linux.
 func CheckIsRedHatRelease(resources *checks.DiscoveredResources) checks.CheckResult {
-	result := checks.CheckResult{ComplianceStatus: "Compliant"}
+	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 
 	if resources.ProbeExecutor == nil {
-		result.ComplianceStatus = "Error"
+		result.ComplianceStatus = checks.StatusError
 		result.Reason = "ProbeExecutor not available for probe-based checks"
 		return result
 	}
 
 	if len(resources.Pods) == 0 {
-		result.ComplianceStatus = "Skipped"
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "No pods found"
 		return result
 	}
@@ -74,7 +74,7 @@ func CheckIsRedHatRelease(resources *checks.DiscoveredResources) checks.CheckRes
 	}
 
 	if failedContainers > 0 {
-		result.ComplianceStatus = "NonCompliant"
+		result.ComplianceStatus = checks.StatusNonCompliant
 		result.Reason = fmt.Sprintf("%d container(s) are not based on RHEL", failedContainers)
 	}
 
