@@ -1,139 +1,147 @@
 package lifecycle
 
-import "github.com/redhat-best-practices-for-k8s/checks"
+import (
+	"sync"
 
-func init() {
-	checks.Register(checks.CheckInfo{
-		Name: "lifecycle-startup-probe", Category: "lifecycle",
-		Description: "Verifies containers have a startupProbe defined",
-		Remediation: "Add a startupProbe to the container spec",
-		CatalogID:   "lifecycle-startup-probe",
-		Fn:          CheckStartupProbe,
-	})
-	checks.Register(checks.CheckInfo{
-		Name: "lifecycle-readiness-probe", Category: "lifecycle",
-		Description: "Verifies containers have a readinessProbe defined",
-		Remediation: "Add a readinessProbe to the container spec",
-		CatalogID:   "lifecycle-readiness-probe",
-		Fn:          CheckReadinessProbe,
-	})
-	checks.Register(checks.CheckInfo{
-		Name: "lifecycle-liveness-probe", Category: "lifecycle",
-		Description: "Verifies containers have a livenessProbe defined",
-		Remediation: "Add a livenessProbe to the container spec",
-		CatalogID:   "lifecycle-liveness-probe",
-		Fn:          CheckLivenessProbe,
-	})
-	checks.Register(checks.CheckInfo{
-		Name: "lifecycle-container-prestop", Category: "lifecycle",
-		Description: "Verifies containers have a preStop lifecycle hook",
-		Remediation: "Add a preStop lifecycle hook to the container spec",
-		CatalogID:   "lifecycle-container-prestop",
-		Fn:          CheckPreStop,
-	})
-	checks.Register(checks.CheckInfo{
-		Name: "lifecycle-container-poststart", Category: "lifecycle",
-		Description: "Verifies containers have a postStart lifecycle hook",
-		Remediation: "Add a postStart lifecycle hook to the container spec",
-		CatalogID:   "lifecycle-container-poststart",
-		Fn:          CheckPostStart,
-	})
-	checks.Register(checks.CheckInfo{
-		Name: "lifecycle-image-pull-policy", Category: "lifecycle",
-		Description: "Verifies imagePullPolicy is Always or uses image digest",
-		Remediation: "Set imagePullPolicy to Always or use an image reference with a digest",
-		CatalogID:   "lifecycle-image-pull-policy",
-		Fn:          CheckImagePullPolicy,
-	})
-	checks.Register(checks.CheckInfo{
-		Name: "lifecycle-pod-owner-type", Category: "lifecycle",
-		Description: "Verifies pods are owned by ReplicaSet, StatefulSet, or DaemonSet",
-		Remediation: "Deploy pods via Deployment, StatefulSet, or DaemonSet",
-		CatalogID:   "lifecycle-pod-owner-type",
-		Fn:          CheckPodOwnerType,
-	})
-	checks.Register(checks.CheckInfo{
-		Name: "lifecycle-pod-scheduling", Category: "lifecycle",
-		Description: "Verifies pods have scheduling directives (nodeSelector, affinity, or tolerations)",
-		Remediation: "Add nodeSelector, affinity, or tolerations to the pod spec",
-		CatalogID:   "lifecycle-pod-scheduling",
-		Fn:          CheckPodScheduling,
-	})
-	checks.Register(checks.CheckInfo{
-		Name: "lifecycle-pod-high-availability", Category: "lifecycle",
-		Description: "Verifies Deployments have replicas > 1 for high availability",
-		Remediation: "Set spec.replicas to at least 2",
-		CatalogID:   "lifecycle-pod-high-availability",
-		Fn:          CheckHighAvailability,
-	})
-	checks.Register(checks.CheckInfo{
-		Name: "lifecycle-cpu-isolation", Category: "lifecycle",
-		Description: "Verifies CPU requests equal CPU limits (Guaranteed QoS for CPU)",
-		Remediation: "Set CPU requests equal to CPU limits",
-		CatalogID:   "lifecycle-cpu-isolation",
-		Fn:          CheckCPUIsolation,
-	})
-	checks.Register(checks.CheckInfo{
-		Name: "lifecycle-affinity-required-pods", Category: "lifecycle",
-		Description: "Verifies pods have pod anti-affinity for high availability",
-		Remediation: "Add podAntiAffinity to spread replicas across nodes",
-		CatalogID:   "lifecycle-affinity-required-pods",
-		Fn:          CheckAffinityRequired,
-	})
-	checks.Register(checks.CheckInfo{
-		Name: "lifecycle-pod-toleration-bypass", Category: "lifecycle",
-		Description: "Verifies pods do not tolerate NoExecute/NoSchedule master taints unnecessarily",
-		Remediation: "Remove unnecessary tolerations for master/control-plane taints",
-		CatalogID:   "lifecycle-pod-toleration-bypass",
-		Fn:          CheckTolerationBypass,
-	})
-	checks.Register(checks.CheckInfo{
-		Name: "lifecycle-persistent-volume-reclaim-policy", Category: "lifecycle",
-		Description: "Verifies PersistentVolume reclaimPolicy is not Delete",
-		Remediation: "Set persistentVolumeReclaimPolicy to Retain",
-		CatalogID:   "lifecycle-persistent-volume-reclaim-policy",
-		Fn:          CheckPVReclaimPolicy,
-	})
-	checks.Register(checks.CheckInfo{
-		Name: "lifecycle-storage-provisioner", Category: "lifecycle",
-		Description: "Verifies StorageClass has a valid provisioner",
-		Remediation: "Use a supported StorageClass provisioner",
-		CatalogID:   "lifecycle-storage-provisioner",
-		Fn:          CheckStorageProvisioner,
-	})
-	checks.Register(checks.CheckInfo{
-		Name: "lifecycle-topology-spread-constraint", Category: "lifecycle",
-		Description: "Verifies Deployments with TopologySpreadConstraints include both hostname and zone keys",
-		Remediation: "Add both kubernetes.io/hostname and topology.kubernetes.io/zone topology keys",
-		CatalogID:   "lifecycle-topology-spread-constraint",
-		Fn:          CheckTopologySpreadConstraints,
-	})
-	checks.Register(checks.CheckInfo{
-		Name: "lifecycle-deployment-scaling", Category: "lifecycle",
-		Description: "Verifies Deployments can scale up and down",
-		Remediation: "Ensure the Deployment controller and scheduler can handle replica changes",
-		CatalogID:   "lifecycle-deployment-scaling",
-		Fn:          CheckDeploymentScaling,
-	})
-	checks.Register(checks.CheckInfo{
-		Name: "lifecycle-statefulset-scaling", Category: "lifecycle",
-		Description: "Verifies StatefulSets can scale up and down",
-		Remediation: "Ensure the StatefulSet controller and scheduler can handle replica changes",
-		CatalogID:   "lifecycle-statefulset-scaling",
-		Fn:          CheckStatefulSetScaling,
-	})
-	checks.Register(checks.CheckInfo{
-		Name: "lifecycle-pod-recreation", Category: "lifecycle",
-		Description: "Verifies pods are recreated after node cordon and pod deletion",
-		Remediation: "Deploy pods via Deployments or StatefulSets to ensure automatic recreation",
-		CatalogID:   "lifecycle-pod-recreation",
-		Fn:          CheckPodRecreation,
-	})
-	checks.Register(checks.CheckInfo{
-		Name: "lifecycle-crd-scaling", Category: "lifecycle",
-		Description: "Verifies custom resources with scale subresource can scale up and down",
-		Remediation: "Ensure the CRD controller handles replica changes via the scale subresource",
-		CatalogID:   "lifecycle-crd-scaling",
-		Fn:          CheckCRDScaling,
+	"github.com/redhat-best-practices-for-k8s/checks"
+)
+
+var once sync.Once
+
+func Register() {
+	once.Do(func() {
+		checks.Register(checks.CheckInfo{
+			Name: "lifecycle-startup-probe", Category: "lifecycle",
+			Description: "Verifies containers have a startupProbe defined",
+			Remediation: "Add a startupProbe to the container spec",
+			CatalogID:   "lifecycle-startup-probe",
+			Fn:          CheckStartupProbe,
+		})
+		checks.Register(checks.CheckInfo{
+			Name: "lifecycle-readiness-probe", Category: "lifecycle",
+			Description: "Verifies containers have a readinessProbe defined",
+			Remediation: "Add a readinessProbe to the container spec",
+			CatalogID:   "lifecycle-readiness-probe",
+			Fn:          CheckReadinessProbe,
+		})
+		checks.Register(checks.CheckInfo{
+			Name: "lifecycle-liveness-probe", Category: "lifecycle",
+			Description: "Verifies containers have a livenessProbe defined",
+			Remediation: "Add a livenessProbe to the container spec",
+			CatalogID:   "lifecycle-liveness-probe",
+			Fn:          CheckLivenessProbe,
+		})
+		checks.Register(checks.CheckInfo{
+			Name: "lifecycle-container-prestop", Category: "lifecycle",
+			Description: "Verifies containers have a preStop lifecycle hook",
+			Remediation: "Add a preStop lifecycle hook to the container spec",
+			CatalogID:   "lifecycle-container-prestop",
+			Fn:          CheckPreStop,
+		})
+		checks.Register(checks.CheckInfo{
+			Name: "lifecycle-container-poststart", Category: "lifecycle",
+			Description: "Verifies containers have a postStart lifecycle hook",
+			Remediation: "Add a postStart lifecycle hook to the container spec",
+			CatalogID:   "lifecycle-container-poststart",
+			Fn:          CheckPostStart,
+		})
+		checks.Register(checks.CheckInfo{
+			Name: "lifecycle-image-pull-policy", Category: "lifecycle",
+			Description: "Verifies imagePullPolicy is Always or uses image digest",
+			Remediation: "Set imagePullPolicy to Always or use an image reference with a digest",
+			CatalogID:   "lifecycle-image-pull-policy",
+			Fn:          CheckImagePullPolicy,
+		})
+		checks.Register(checks.CheckInfo{
+			Name: "lifecycle-pod-owner-type", Category: "lifecycle",
+			Description: "Verifies pods are owned by ReplicaSet, StatefulSet, or DaemonSet",
+			Remediation: "Deploy pods via Deployment, StatefulSet, or DaemonSet",
+			CatalogID:   "lifecycle-pod-owner-type",
+			Fn:          CheckPodOwnerType,
+		})
+		checks.Register(checks.CheckInfo{
+			Name: "lifecycle-pod-scheduling", Category: "lifecycle",
+			Description: "Verifies pods have scheduling directives (nodeSelector, affinity, or tolerations)",
+			Remediation: "Add nodeSelector, affinity, or tolerations to the pod spec",
+			CatalogID:   "lifecycle-pod-scheduling",
+			Fn:          CheckPodScheduling,
+		})
+		checks.Register(checks.CheckInfo{
+			Name: "lifecycle-pod-high-availability", Category: "lifecycle",
+			Description: "Verifies Deployments have replicas > 1 for high availability",
+			Remediation: "Set spec.replicas to at least 2",
+			CatalogID:   "lifecycle-pod-high-availability",
+			Fn:          CheckHighAvailability,
+		})
+		checks.Register(checks.CheckInfo{
+			Name: "lifecycle-cpu-isolation", Category: "lifecycle",
+			Description: "Verifies CPU requests equal CPU limits (Guaranteed QoS for CPU)",
+			Remediation: "Set CPU requests equal to CPU limits",
+			CatalogID:   "lifecycle-cpu-isolation",
+			Fn:          CheckCPUIsolation,
+		})
+		checks.Register(checks.CheckInfo{
+			Name: "lifecycle-affinity-required-pods", Category: "lifecycle",
+			Description: "Verifies pods have pod anti-affinity for high availability",
+			Remediation: "Add podAntiAffinity to spread replicas across nodes",
+			CatalogID:   "lifecycle-affinity-required-pods",
+			Fn:          CheckAffinityRequired,
+		})
+		checks.Register(checks.CheckInfo{
+			Name: "lifecycle-pod-toleration-bypass", Category: "lifecycle",
+			Description: "Verifies pods do not tolerate NoExecute/NoSchedule master taints unnecessarily",
+			Remediation: "Remove unnecessary tolerations for master/control-plane taints",
+			CatalogID:   "lifecycle-pod-toleration-bypass",
+			Fn:          CheckTolerationBypass,
+		})
+		checks.Register(checks.CheckInfo{
+			Name: "lifecycle-persistent-volume-reclaim-policy", Category: "lifecycle",
+			Description: "Verifies PersistentVolume reclaimPolicy is not Delete",
+			Remediation: "Set persistentVolumeReclaimPolicy to Retain",
+			CatalogID:   "lifecycle-persistent-volume-reclaim-policy",
+			Fn:          CheckPVReclaimPolicy,
+		})
+		checks.Register(checks.CheckInfo{
+			Name: "lifecycle-storage-provisioner", Category: "lifecycle",
+			Description: "Verifies StorageClass has a valid provisioner",
+			Remediation: "Use a supported StorageClass provisioner",
+			CatalogID:   "lifecycle-storage-provisioner",
+			Fn:          CheckStorageProvisioner,
+		})
+		checks.Register(checks.CheckInfo{
+			Name: "lifecycle-topology-spread-constraint", Category: "lifecycle",
+			Description: "Verifies Deployments with TopologySpreadConstraints include both hostname and zone keys",
+			Remediation: "Add both kubernetes.io/hostname and topology.kubernetes.io/zone topology keys",
+			CatalogID:   "lifecycle-topology-spread-constraint",
+			Fn:          CheckTopologySpreadConstraints,
+		})
+		checks.Register(checks.CheckInfo{
+			Name: "lifecycle-deployment-scaling", Category: "lifecycle",
+			Description: "Verifies Deployments can scale up and down",
+			Remediation: "Ensure the Deployment controller and scheduler can handle replica changes",
+			CatalogID:   "lifecycle-deployment-scaling",
+			Fn:          CheckDeploymentScaling,
+		})
+		checks.Register(checks.CheckInfo{
+			Name: "lifecycle-statefulset-scaling", Category: "lifecycle",
+			Description: "Verifies StatefulSets can scale up and down",
+			Remediation: "Ensure the StatefulSet controller and scheduler can handle replica changes",
+			CatalogID:   "lifecycle-statefulset-scaling",
+			Fn:          CheckStatefulSetScaling,
+		})
+		checks.Register(checks.CheckInfo{
+			Name: "lifecycle-pod-recreation", Category: "lifecycle",
+			Description: "Verifies pods are recreated after node cordon and pod deletion",
+			Remediation: "Deploy pods via Deployments or StatefulSets to ensure automatic recreation",
+			CatalogID:   "lifecycle-pod-recreation",
+			Fn:          CheckPodRecreation,
+		})
+		checks.Register(checks.CheckInfo{
+			Name: "lifecycle-crd-scaling", Category: "lifecycle",
+			Description: "Verifies custom resources with scale subresource can scale up and down",
+			Remediation: "Ensure the CRD controller handles replica changes via the scale subresource",
+			CatalogID:   "lifecycle-crd-scaling",
+			Fn:          CheckCRDScaling,
+		})
 	})
 }
