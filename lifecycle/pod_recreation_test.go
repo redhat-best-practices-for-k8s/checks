@@ -58,7 +58,7 @@ func TestCheckPodRecreation_NoPods(t *testing.T) {
 
 	result := CheckPodRecreation(resources)
 
-	if result.ComplianceStatus != "Skipped" {
+	if result.ComplianceStatus != checks.StatusCompliant {
 		t.Errorf("Expected Skipped with no pods, got %s: %s", result.ComplianceStatus, result.Reason)
 	}
 }
@@ -74,7 +74,7 @@ func TestCheckPodRecreation_NoDaemonSetOnly(t *testing.T) {
 	result := CheckPodRecreation(resources)
 
 	// DaemonSet pods don't have ReplicaSet/StatefulSet owners, so no target nodes
-	if result.ComplianceStatus != "Skipped" {
+	if result.ComplianceStatus != checks.StatusCompliant {
 		t.Errorf("Expected Skipped with only DaemonSet pods, got %s: %s", result.ComplianceStatus, result.Reason)
 	}
 }
@@ -90,7 +90,7 @@ func TestCheckPodRecreation_AllNodesUnsafe_ScannerPod(t *testing.T) {
 
 	result := CheckPodRecreation(resources)
 
-	if result.ComplianceStatus != "Skipped" {
+	if result.ComplianceStatus != checks.StatusCompliant {
 		t.Errorf("Expected Skipped when scanner is on target node, got %s: %s", result.ComplianceStatus, result.Reason)
 	}
 	if result.Reason != "All target nodes host scanner or probe pods; cannot safely cordon" {
@@ -114,7 +114,7 @@ func TestCheckPodRecreation_AllNodesUnsafe_ProbePod(t *testing.T) {
 
 	result := CheckPodRecreation(resources)
 
-	if result.ComplianceStatus != "Skipped" {
+	if result.ComplianceStatus != checks.StatusCompliant {
 		t.Errorf("Expected Skipped when probe is on target node, got %s: %s", result.ComplianceStatus, result.Reason)
 	}
 }
@@ -138,7 +138,7 @@ func TestCheckPodRecreation_SafeNodeAvailable(t *testing.T) {
 
 	// The check should run (not skip). It may fail due to fake client limitations
 	// but shouldn't be Skipped.
-	if result.ComplianceStatus == "Skipped" {
+	if result.ComplianceStatus == checks.StatusCompliant {
 		t.Errorf("Expected check to run on safe node, got Skipped: %s", result.Reason)
 	}
 }

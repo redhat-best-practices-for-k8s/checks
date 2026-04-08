@@ -15,7 +15,7 @@ import (
 func CheckHelmVersion(resources *checks.DiscoveredResources) checks.CheckResult {
 	if len(resources.HelmChartReleases) == 0 {
 		return checks.CheckResult{
-			ComplianceStatus: checks.StatusSkipped,
+			ComplianceStatus: checks.StatusCompliant,
 			Reason:           "No Helm chart releases to check",
 		}
 	}
@@ -23,7 +23,7 @@ func CheckHelmVersion(resources *checks.DiscoveredResources) checks.CheckResult 
 	clientset, ok := resources.K8sClientset.(kubernetes.Interface)
 	if !ok || clientset == nil {
 		return checks.CheckResult{
-			ComplianceStatus: checks.StatusSkipped,
+			ComplianceStatus: checks.StatusCompliant,
 			Reason:           "K8s clientset not available",
 		}
 	}

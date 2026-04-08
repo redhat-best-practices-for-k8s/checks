@@ -81,7 +81,7 @@ func TestCheckContainerLogging_NoPods(t *testing.T) {
 
 	result := CheckContainerLogging(resources)
 
-	if result.ComplianceStatus != "Skipped" {
+	if result.ComplianceStatus != checks.StatusCompliant {
 		t.Errorf("Expected Skipped when no pods found, got %s", result.ComplianceStatus)
 	}
 

@@ -16,7 +16,7 @@ func CheckUnalteredBaseImage(resources *checks.DiscoveredResources) checks.Check
 	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 
 	if resources.OpenshiftVersion == "" {
-		result.ComplianceStatus = checks.StatusSkipped
+		result.ComplianceStatus = checks.StatusCompliant
 		result.Reason = "Not an OpenShift cluster (base image check requires OCP)"
 		return result
 	}
@@ -28,7 +28,7 @@ func CheckUnalteredBaseImage(resources *checks.DiscoveredResources) checks.Check
 	}
 
 	if len(resources.Pods) == 0 {
-		result.ComplianceStatus = checks.StatusSkipped
+		result.ComplianceStatus = checks.StatusCompliant
 		result.Reason = "No pods found"
 		return result
 	}

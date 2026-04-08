@@ -48,7 +48,7 @@ func TestCheckInstallStatusSucceeded_NonCompliant(t *testing.T) {
 
 func TestCheckInstallStatusSucceeded_NoCSVs(t *testing.T) {
 	result := CheckOperatorInstallStatusSucceeded(&checks.DiscoveredResources{})
-	if result.ComplianceStatus != "Skipped" {
+	if result.ComplianceStatus != checks.StatusCompliant {
 		t.Errorf("expected Skipped, got %s", result.ComplianceStatus)
 	}
 }
@@ -265,7 +265,7 @@ func TestCheckCrdVersioning_NonCompliant(t *testing.T) {
 
 func TestCheckCrdVersioning_NoCRDs(t *testing.T) {
 	result := CheckCrdVersioning(&checks.DiscoveredResources{})
-	if result.ComplianceStatus != "Skipped" {
+	if result.ComplianceStatus != checks.StatusCompliant {
 		t.Errorf("expected Skipped, got %s", result.ComplianceStatus)
 	}
 }
@@ -355,7 +355,7 @@ func TestCheckSingleCrdOwner_NonCompliant(t *testing.T) {
 
 func TestCheckSingleCrdOwner_NoCSVs(t *testing.T) {
 	result := CheckSingleCrdOwner(&checks.DiscoveredResources{})
-	if result.ComplianceStatus != "Skipped" {
+	if result.ComplianceStatus != checks.StatusCompliant {
 		t.Errorf("expected Skipped, got %s", result.ComplianceStatus)
 	}
 }
@@ -409,7 +409,7 @@ func TestCheckOperatorPodsNoHugepages_NonCompliant(t *testing.T) {
 
 func TestCheckOperatorPodsNoHugepages_NoPods(t *testing.T) {
 	result := CheckOperatorPodsNoHugepages(&checks.DiscoveredResources{})
-	if result.ComplianceStatus != "Skipped" {
+	if result.ComplianceStatus != checks.StatusCompliant {
 		t.Errorf("expected Skipped, got %s", result.ComplianceStatus)
 	}
 }
@@ -445,7 +445,7 @@ func TestCheckOlmSkipRange_NonCompliant(t *testing.T) {
 
 func TestCheckOlmSkipRange_NoCSVs(t *testing.T) {
 	result := CheckOperatorOlmSkipRange(&checks.DiscoveredResources{})
-	if result.ComplianceStatus != "Skipped" {
+	if result.ComplianceStatus != checks.StatusCompliant {
 		t.Errorf("expected Skipped, got %s", result.ComplianceStatus)
 	}
 }
@@ -542,7 +542,7 @@ func TestCheckMultipleSameOperators_NonCompliant(t *testing.T) {
 
 func TestCheckMultipleSameOperators_Skipped(t *testing.T) {
 	result := CheckMultipleSameOperators(&checks.DiscoveredResources{})
-	if result.ComplianceStatus != "Skipped" {
+	if result.ComplianceStatus != checks.StatusCompliant {
 		t.Errorf("expected Skipped, got %s", result.ComplianceStatus)
 	}
 }

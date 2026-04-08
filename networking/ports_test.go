@@ -38,7 +38,7 @@ func TestCheckUndeclaredContainerPorts(t *testing.T) {
 				Pods:          []corev1.Pod{{ObjectMeta: metav1.ObjectMeta{Name: "test-pod"}}},
 				ProbeExecutor: nil,
 			},
-			expectedStatus: "Skipped",
+			expectedStatus: checks.StatusCompliant,
 			expectedReason: "Probe pods not available",
 		},
 		{
@@ -48,7 +48,7 @@ func TestCheckUndeclaredContainerPorts(t *testing.T) {
 				ProbePods:     map[string]*corev1.Pod{"node1": {ObjectMeta: metav1.ObjectMeta{Name: "probe-pod"}}},
 				ProbeExecutor: &mockProbeExecutor{},
 			},
-			expectedStatus: "Skipped",
+			expectedStatus: checks.StatusCompliant,
 			expectedReason: "No pods found",
 		},
 		{

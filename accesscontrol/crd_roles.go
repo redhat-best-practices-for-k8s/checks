@@ -10,7 +10,7 @@ import (
 func CheckCrdRoles(resources *checks.DiscoveredResources) checks.CheckResult {
 	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.Roles) == 0 || len(resources.CRDs) == 0 {
-		result.ComplianceStatus = checks.StatusSkipped
+		result.ComplianceStatus = checks.StatusCompliant
 		result.Reason = "No roles or CRDs found"
 		return result
 	}

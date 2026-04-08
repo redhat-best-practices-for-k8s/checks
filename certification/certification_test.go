@@ -36,7 +36,7 @@ func (m *mockValidator) IsHelmChartCertified(chartName, chartVersion, kubeVersio
 
 func TestCheckHelmVersion_NoReleases(t *testing.T) {
 	result := CheckHelmVersion(&checks.DiscoveredResources{})
-	if result.ComplianceStatus != "Skipped" {
+	if result.ComplianceStatus != checks.StatusCompliant {
 		t.Errorf("expected Skipped, got %s", result.ComplianceStatus)
 	}
 }
@@ -46,7 +46,7 @@ func TestCheckHelmVersion_NoClientset(t *testing.T) {
 		HelmChartReleases: []checks.HelmChartRelease{{Name: "my-chart", Namespace: "ns1", Version: "1.0.0"}},
 	}
 	result := CheckHelmVersion(resources)
-	if result.ComplianceStatus != "Skipped" {
+	if result.ComplianceStatus != checks.StatusCompliant {
 		t.Errorf("expected Skipped, got %s", result.ComplianceStatus)
 	}
 }
@@ -102,7 +102,7 @@ func TestCheckContainerCertified_NoValidator(t *testing.T) {
 	result := CheckContainerCertified(&checks.DiscoveredResources{
 		Pods: []corev1.Pod{{ObjectMeta: metav1.ObjectMeta{Name: "p1"}}},
 	})
-	if result.ComplianceStatus != "Skipped" {
+	if result.ComplianceStatus != checks.StatusCompliant {
 		t.Errorf("expected Skipped, got %s", result.ComplianceStatus)
 	}
 }
@@ -111,7 +111,7 @@ func TestCheckContainerCertified_NoPods(t *testing.T) {
 	result := CheckContainerCertified(&checks.DiscoveredResources{
 		CertValidator: &mockValidator{},
 	})
-	if result.ComplianceStatus != "Skipped" {
+	if result.ComplianceStatus != checks.StatusCompliant {
 		t.Errorf("expected Skipped, got %s", result.ComplianceStatus)
 	}
 }
@@ -204,7 +204,7 @@ func TestCheckOperatorCertified_NoValidator(t *testing.T) {
 	result := CheckOperatorCertified(&checks.DiscoveredResources{
 		CSVs: []v1alpha1.ClusterServiceVersion{{ObjectMeta: metav1.ObjectMeta{Name: "op1"}}},
 	})
-	if result.ComplianceStatus != "Skipped" {
+	if result.ComplianceStatus != checks.StatusCompliant {
 		t.Errorf("expected Skipped, got %s", result.ComplianceStatus)
 	}
 }
@@ -213,7 +213,7 @@ func TestCheckOperatorCertified_NoCSVs(t *testing.T) {
 	result := CheckOperatorCertified(&checks.DiscoveredResources{
 		CertValidator: &mockValidator{},
 	})
-	if result.ComplianceStatus != "Skipped" {
+	if result.ComplianceStatus != checks.StatusCompliant {
 		t.Errorf("expected Skipped, got %s", result.ComplianceStatus)
 	}
 }
@@ -276,7 +276,7 @@ func TestCheckHelmChartCertified_NoValidator(t *testing.T) {
 	result := CheckHelmChartCertified(&checks.DiscoveredResources{
 		HelmChartReleases: []checks.HelmChartRelease{{Name: "chart1"}},
 	})
-	if result.ComplianceStatus != "Skipped" {
+	if result.ComplianceStatus != checks.StatusCompliant {
 		t.Errorf("expected Skipped, got %s", result.ComplianceStatus)
 	}
 }
@@ -285,7 +285,7 @@ func TestCheckHelmChartCertified_NoReleases(t *testing.T) {
 	result := CheckHelmChartCertified(&checks.DiscoveredResources{
 		CertValidator: &mockValidator{},
 	})
-	if result.ComplianceStatus != "Skipped" {
+	if result.ComplianceStatus != checks.StatusCompliant {
 		t.Errorf("expected Skipped, got %s", result.ComplianceStatus)
 	}
 }

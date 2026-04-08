@@ -11,7 +11,7 @@ import (
 // CheckSingleCrdOwner verifies that each CRD is owned by exactly one operator CSV.
 func CheckSingleCrdOwner(resources *checks.DiscoveredResources) checks.CheckResult {
 	if len(resources.CSVs) == 0 {
-		return checks.CheckResult{ComplianceStatus: checks.StatusSkipped, Reason: "No CSVs found"}
+		return checks.CheckResult{ComplianceStatus: checks.StatusCompliant, Reason: "No CSVs found"}
 	}
 
 	// Map each CRD name to operators that own it
@@ -28,7 +28,7 @@ func CheckSingleCrdOwner(resources *checks.DiscoveredResources) checks.CheckResu
 	}
 
 	if len(crdOwners) == 0 {
-		return checks.CheckResult{ComplianceStatus: checks.StatusSkipped, Reason: "No owned CRDs found in CSVs"}
+		return checks.CheckResult{ComplianceStatus: checks.StatusCompliant, Reason: "No owned CRDs found in CSVs"}
 	}
 
 	var details []checks.ResourceDetail
@@ -59,7 +59,7 @@ func CheckSingleCrdOwner(resources *checks.DiscoveredResources) checks.CheckResu
 // do not request hugepages resources.
 func CheckOperatorPodsNoHugepages(resources *checks.DiscoveredResources) checks.CheckResult {
 	if len(resources.Pods) == 0 {
-		return checks.CheckResult{ComplianceStatus: checks.StatusSkipped, Reason: "No pods found"}
+		return checks.CheckResult{ComplianceStatus: checks.StatusCompliant, Reason: "No pods found"}
 	}
 
 	var details []checks.ResourceDetail

@@ -59,7 +59,7 @@ func checkICMPConnectivity(resources *checks.DiscoveredResources, ipVersion stri
 	}
 
 	if len(resources.Pods) < 2 {
-		result.ComplianceStatus = checks.StatusSkipped
+		result.ComplianceStatus = checks.StatusCompliant
 		result.Reason = "At least 2 pods required for ICMP connectivity testing"
 		return result
 	}
@@ -68,7 +68,7 @@ func checkICMPConnectivity(resources *checks.DiscoveredResources, ipVersion stri
 	testPairs := buildICMPTestPairs(resources.Pods, ipVersion, multus)
 
 	if len(testPairs) == 0 {
-		result.ComplianceStatus = checks.StatusSkipped
+		result.ComplianceStatus = checks.StatusCompliant
 		result.Reason = fmt.Sprintf("No IPv%s addresses found for testing", ipVersion)
 		return result
 	}

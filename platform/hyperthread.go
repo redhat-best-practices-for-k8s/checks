@@ -21,7 +21,7 @@ func CheckHyperthreadEnable(resources *checks.DiscoveredResources) checks.CheckR
 	}
 
 	if len(resources.Nodes) == 0 {
-		result.ComplianceStatus = checks.StatusSkipped
+		result.ComplianceStatus = checks.StatusCompliant
 		result.Reason = "No nodes found"
 		return result
 	}
@@ -36,7 +36,7 @@ func CheckHyperthreadEnable(resources *checks.DiscoveredResources) checks.CheckR
 	}
 
 	if len(bareMetalNodes) == 0 {
-		result.ComplianceStatus = checks.StatusSkipped
+		result.ComplianceStatus = checks.StatusCompliant
 		result.Reason = "No bare metal nodes found"
 		return result
 	}

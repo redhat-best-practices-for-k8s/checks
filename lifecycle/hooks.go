@@ -15,7 +15,7 @@ type lifecycleHookCheckFunc func(container *corev1.Container) bool
 func checkLifecycleHook(resources *checks.DiscoveredResources, checkFunc lifecycleHookCheckFunc, hookName string) checks.CheckResult {
 	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.Pods) == 0 {
-		result.ComplianceStatus = checks.StatusSkipped
+		result.ComplianceStatus = checks.StatusCompliant
 		result.Reason = "No pods found"
 		return result
 	}

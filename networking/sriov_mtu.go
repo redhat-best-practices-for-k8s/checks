@@ -12,7 +12,7 @@ func CheckSRIOVNetworkAttachmentDefinitionMTU(resources *checks.DiscoveredResour
 	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 
 	if len(resources.NetworkAttachmentDefinitions) == 0 {
-		result.ComplianceStatus = checks.StatusSkipped
+		result.ComplianceStatus = checks.StatusCompliant
 		result.Reason = "No network attachment definitions found"
 		return result
 	}

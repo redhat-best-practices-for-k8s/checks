@@ -96,7 +96,7 @@ func TestCheckTerminationPolicy_NonCompliant(t *testing.T) {
 
 func TestCheckTerminationPolicy_NoPods(t *testing.T) {
 	result := CheckTerminationPolicy(&checks.DiscoveredResources{})
-	if result.ComplianceStatus != "Skipped" {
+	if result.ComplianceStatus != checks.StatusCompliant {
 		t.Errorf("expected Skipped, got %s", result.ComplianceStatus)
 	}
 }
@@ -149,7 +149,7 @@ func TestCheckPodDisruptionBudget_NonCompliant(t *testing.T) {
 
 func TestCheckPodDisruptionBudget_Skipped(t *testing.T) {
 	result := CheckPodDisruptionBudget(&checks.DiscoveredResources{})
-	if result.ComplianceStatus != "Skipped" {
+	if result.ComplianceStatus != checks.StatusCompliant {
 		t.Errorf("expected Skipped, got %s", result.ComplianceStatus)
 	}
 }

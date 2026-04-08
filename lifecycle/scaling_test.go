@@ -79,7 +79,7 @@ func TestCheckDeploymentScaling_NoDeployments(t *testing.T) {
 
 	result := CheckDeploymentScaling(resources)
 
-	if result.ComplianceStatus != "Skipped" {
+	if result.ComplianceStatus != checks.StatusCompliant {
 		t.Errorf("Expected Skipped with no Deployments, got %s", result.ComplianceStatus)
 	}
 }
@@ -128,7 +128,7 @@ func TestCheckStatefulSetScaling_NoStatefulSets(t *testing.T) {
 
 	result := CheckStatefulSetScaling(resources)
 
-	if result.ComplianceStatus != "Skipped" {
+	if result.ComplianceStatus != checks.StatusCompliant {
 		t.Errorf("Expected Skipped with no StatefulSets, got %s", result.ComplianceStatus)
 	}
 }

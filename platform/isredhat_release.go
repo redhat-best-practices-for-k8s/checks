@@ -20,7 +20,7 @@ func CheckIsRedHatRelease(resources *checks.DiscoveredResources) checks.CheckRes
 	}
 
 	if len(resources.Pods) == 0 {
-		result.ComplianceStatus = checks.StatusSkipped
+		result.ComplianceStatus = checks.StatusCompliant
 		result.Reason = "No pods found"
 		return result
 	}

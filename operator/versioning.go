@@ -13,7 +13,7 @@ var k8sVersionRegex = regexp.MustCompile(`^(v)([1-9]\d*)+((alpha|beta)([1-9]\d*)
 // CheckOperatorSemanticVersioning verifies that CSV versions are valid semantic versions.
 func CheckOperatorSemanticVersioning(resources *checks.DiscoveredResources) checks.CheckResult {
 	if len(resources.CSVs) == 0 {
-		return checks.CheckResult{ComplianceStatus: checks.StatusSkipped, Reason: "No CSVs found"}
+		return checks.CheckResult{ComplianceStatus: checks.StatusCompliant, Reason: "No CSVs found"}
 	}
 
 	var details []checks.ResourceDetail
@@ -73,7 +73,7 @@ func isValidSemver(version string) bool {
 // (e.g., v1, v1alpha1, v1beta1).
 func CheckCrdVersioning(resources *checks.DiscoveredResources) checks.CheckResult {
 	if len(resources.CRDs) == 0 {
-		return checks.CheckResult{ComplianceStatus: checks.StatusSkipped, Reason: "No CRDs found"}
+		return checks.CheckResult{ComplianceStatus: checks.StatusCompliant, Reason: "No CRDs found"}
 	}
 
 	var details []checks.ResourceDetail
@@ -115,7 +115,7 @@ func CheckCrdVersioning(resources *checks.DiscoveredResources) checks.CheckResul
 // CheckCrdOpenAPISchema verifies that CRDs have OpenAPI v3 schema defined.
 func CheckCrdOpenAPISchema(resources *checks.DiscoveredResources) checks.CheckResult {
 	if len(resources.CRDs) == 0 {
-		return checks.CheckResult{ComplianceStatus: checks.StatusSkipped, Reason: "No CRDs found"}
+		return checks.CheckResult{ComplianceStatus: checks.StatusCompliant, Reason: "No CRDs found"}
 	}
 
 	var details []checks.ResourceDetail

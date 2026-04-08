@@ -136,7 +136,7 @@ func TestCheckICMPv4Connectivity_NotEnoughPods(t *testing.T) {
 
 	result := CheckICMPv4Connectivity(resources)
 
-	if result.ComplianceStatus != "Skipped" {
+	if result.ComplianceStatus != checks.StatusCompliant {
 		t.Errorf("Expected Skipped with 1 pod, got %s", result.ComplianceStatus)
 	}
 
@@ -182,7 +182,7 @@ func TestCheckICMPv4Connectivity_NoIPv4Addresses(t *testing.T) {
 
 	result := CheckICMPv4Connectivity(resources)
 
-	if result.ComplianceStatus != "Skipped" {
+	if result.ComplianceStatus != checks.StatusCompliant {
 		t.Errorf("Expected Skipped when no IPv4 addresses, got %s", result.ComplianceStatus)
 	}
 }

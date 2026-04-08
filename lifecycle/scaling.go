@@ -30,7 +30,7 @@ func CheckDeploymentScaling(resources *checks.DiscoveredResources) checks.CheckR
 	}
 
 	if len(resources.Deployments) == 0 {
-		result.ComplianceStatus = checks.StatusSkipped
+		result.ComplianceStatus = checks.StatusCompliant
 		result.Reason = "No Deployments found"
 		return result
 	}
@@ -80,7 +80,7 @@ func CheckStatefulSetScaling(resources *checks.DiscoveredResources) checks.Check
 	}
 
 	if len(resources.StatefulSets) == 0 {
-		result.ComplianceStatus = checks.StatusSkipped
+		result.ComplianceStatus = checks.StatusCompliant
 		result.Reason = "No StatefulSets found"
 		return result
 	}

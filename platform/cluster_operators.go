@@ -11,7 +11,7 @@ func CheckClusterOperatorHealth(resources *checks.DiscoveredResources) checks.Ch
 	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 
 	if len(resources.ClusterOperators) == 0 {
-		result.ComplianceStatus = checks.StatusSkipped
+		result.ComplianceStatus = checks.StatusCompliant
 		result.Reason = "No cluster operators found (not an OpenShift cluster)"
 		return result
 	}

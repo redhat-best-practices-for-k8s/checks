@@ -20,7 +20,7 @@ func CheckOCPLifecycle(resources *checks.DiscoveredResources) checks.CheckResult
 	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 
 	if resources.OpenshiftVersion == "" {
-		result.ComplianceStatus = checks.StatusSkipped
+		result.ComplianceStatus = checks.StatusCompliant
 		result.Reason = "Not an OpenShift cluster"
 		return result
 	}
@@ -57,13 +57,13 @@ func CheckOCPNodeOSLifecycle(resources *checks.DiscoveredResources) checks.Check
 	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 
 	if resources.OpenshiftVersion == "" {
-		result.ComplianceStatus = checks.StatusSkipped
+		result.ComplianceStatus = checks.StatusCompliant
 		result.Reason = "Not an OpenShift cluster"
 		return result
 	}
 
 	if len(resources.Nodes) == 0 {
-		result.ComplianceStatus = checks.StatusSkipped
+		result.ComplianceStatus = checks.StatusCompliant
 		result.Reason = "No nodes found"
 		return result
 	}

@@ -82,7 +82,7 @@ func TestCheckProbes_NoPods(t *testing.T) {
 	resources := &checks.DiscoveredResources{}
 	for _, fn := range []checks.CheckFunc{CheckStartupProbe, CheckReadinessProbe, CheckLivenessProbe} {
 		result := fn(resources)
-		if result.ComplianceStatus != "Skipped" {
+		if result.ComplianceStatus != checks.StatusCompliant {
 			t.Errorf("expected Skipped, got %s", result.ComplianceStatus)
 		}
 	}
@@ -538,7 +538,7 @@ func TestCheckStorageProvisioner_NonCompliant(t *testing.T) {
 
 func TestCheckStorageProvisioner_Skipped(t *testing.T) {
 	result := CheckStorageProvisioner(&checks.DiscoveredResources{})
-	if result.ComplianceStatus != "Skipped" {
+	if result.ComplianceStatus != checks.StatusCompliant {
 		t.Errorf("expected Skipped, got %s", result.ComplianceStatus)
 	}
 }

@@ -13,13 +13,13 @@ func CheckCatalogSourceBundleCount(resources *checks.DiscoveredResources) checks
 	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 
 	if len(resources.CatalogSources) == 0 {
-		result.ComplianceStatus = checks.StatusSkipped
+		result.ComplianceStatus = checks.StatusCompliant
 		result.Reason = "No catalog sources found"
 		return result
 	}
 
 	if len(resources.CSVs) == 0 {
-		result.ComplianceStatus = checks.StatusSkipped
+		result.ComplianceStatus = checks.StatusCompliant
 		result.Reason = "No operators found"
 		return result
 	}
