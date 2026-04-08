@@ -150,4 +150,12 @@ type CheckInfo struct {
 	Remediation string
 	CatalogID   string // Anchor in certsuite CATALOG.md
 	Fn          CheckFunc
+
+	// Metadata fields (migrated from certsuite identifiers)
+	Tags                   []string          // e.g. ["common"] or ["telco","faredge"]
+	BestPracticeReference  string            // doc link URL
+	ExceptionProcess       string            // exception handling procedure
+	ImpactStatement        string            // consequences of failing this check
+	CategoryClassification map[string]string // FarEdge/Telco/NonTelco/Extended -> Mandatory/Optional
+	Qe                     bool              // whether QE automated test exists
 }

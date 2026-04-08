@@ -43,6 +43,18 @@ func Filtered(names []string) []CheckInfo {
 	return out
 }
 
+// ByName returns the check with the given name, if registered.
+func ByName(name string) (CheckInfo, bool) {
+	mu.RLock()
+	defer mu.RUnlock()
+	for _, c := range registry {
+		if c.Name == name {
+			return c, true
+		}
+	}
+	return CheckInfo{}, false
+}
+
 // ByCategory returns checks matching the given category.
 func ByCategory(category string) []CheckInfo {
 	mu.RLock()

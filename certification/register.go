@@ -11,32 +11,83 @@ var once sync.Once
 func Register() {
 	once.Do(func() {
 		checks.Register(checks.CheckInfo{
-			Name: "affiliated-certification-helm-version", Category: "affiliated-certification",
-			Description: "Verifies Helm charts are deployed with Helm v3 (not v2 Tiller)",
-			Remediation: "Remove Tiller and migrate to Helm v3",
-			CatalogID:   "helm-version",
-			Fn:          CheckHelmVersion,
+			Name:     "affiliated-certification-container-is-certified-digest",
+			Category: "affiliated-certification",
+			CatalogID: "container-is-certified-digest",
+			Fn:       CheckContainerCertified,
+			Description: AffiliatedCertificationContainerIsCertifiedDigestDescription,
+			Remediation: AffiliatedCertificationContainerIsCertifiedDigestRemediation,
+			BestPracticeReference: AffiliatedCertificationContainerIsCertifiedDigestBestPracticeRef,
+			ExceptionProcess: AffiliatedCertificationContainerIsCertifiedDigestExceptionProcess,
+			ImpactStatement: AffiliatedCertificationContainerIsCertifiedDigestImpactStatement,
+			Qe: true,
+			Tags: []string{checks.TagCommon},
+			CategoryClassification: map[string]string{
+				checks.FarEdge: checks.Mandatory,
+				checks.Telco: checks.Mandatory,
+				checks.NonTelco: checks.Mandatory,
+				checks.Extended: checks.Mandatory,
+			},
 		})
+
 		checks.Register(checks.CheckInfo{
-			Name: "affiliated-certification-container-is-certified-digest", Category: "affiliated-certification",
-			Description: "Verifies container images are Red Hat certified by digest",
-			Remediation: "Use container images that are certified in the Red Hat catalog",
-			CatalogID:   "container-is-certified-digest",
-			Fn:          CheckContainerCertified,
+			Name:     "affiliated-certification-helm-version",
+			Category: "affiliated-certification",
+			CatalogID: "helm-version",
+			Fn:       CheckHelmVersion,
+			Description: AffiliatedCertificationHelmVersionDescription,
+			Remediation: AffiliatedCertificationHelmVersionRemediation,
+			BestPracticeReference: AffiliatedCertificationHelmVersionBestPracticeRef,
+			ExceptionProcess: AffiliatedCertificationHelmVersionExceptionProcess,
+			ImpactStatement: AffiliatedCertificationHelmVersionImpactStatement,
+			Qe: true,
+			Tags: []string{checks.TagCommon},
+			CategoryClassification: map[string]string{
+				checks.FarEdge: checks.Mandatory,
+				checks.Telco: checks.Mandatory,
+				checks.NonTelco: checks.Mandatory,
+				checks.Extended: checks.Mandatory,
+			},
 		})
+
 		checks.Register(checks.CheckInfo{
-			Name: "affiliated-certification-operator-is-certified", Category: "affiliated-certification",
-			Description: "Verifies operators are Red Hat certified for the current OpenShift version",
-			Remediation: "Use operators certified in the Red Hat catalog for your OpenShift version",
-			CatalogID:   "operator-is-certified",
-			Fn:          CheckOperatorCertified,
+			Name:     "affiliated-certification-helmchart-is-certified",
+			Category: "affiliated-certification",
+			CatalogID: "helmchart-is-certified",
+			Fn:       CheckHelmChartCertified,
+			Description: AffiliatedCertificationHelmchartIsCertifiedDescription,
+			Remediation: AffiliatedCertificationHelmchartIsCertifiedRemediation,
+			BestPracticeReference: AffiliatedCertificationHelmchartIsCertifiedBestPracticeRef,
+			ExceptionProcess: AffiliatedCertificationHelmchartIsCertifiedExceptionProcess,
+			ImpactStatement: AffiliatedCertificationHelmchartIsCertifiedImpactStatement,
+			Qe: true,
+			Tags: []string{checks.TagCommon},
+			CategoryClassification: map[string]string{
+				checks.FarEdge: checks.Mandatory,
+				checks.Telco: checks.Mandatory,
+				checks.NonTelco: checks.Mandatory,
+				checks.Extended: checks.Mandatory,
+			},
 		})
+
 		checks.Register(checks.CheckInfo{
-			Name: "affiliated-certification-helmchart-is-certified", Category: "affiliated-certification",
-			Description: "Verifies Helm charts are Red Hat certified",
-			Remediation: "Use Helm charts that are certified in the Red Hat catalog",
-			CatalogID:   "helmchart-is-certified",
-			Fn:          CheckHelmChartCertified,
+			Name:     "affiliated-certification-operator-is-certified",
+			Category: "affiliated-certification",
+			CatalogID: "operator-is-certified",
+			Fn:       CheckOperatorCertified,
+			Description: AffiliatedCertificationOperatorIsCertifiedDescription,
+			Remediation: AffiliatedCertificationOperatorIsCertifiedRemediation,
+			BestPracticeReference: AffiliatedCertificationOperatorIsCertifiedBestPracticeRef,
+			ExceptionProcess: AffiliatedCertificationOperatorIsCertifiedExceptionProcess,
+			ImpactStatement: AffiliatedCertificationOperatorIsCertifiedImpactStatement,
+			Qe: true,
+			Tags: []string{checks.TagCommon},
+			CategoryClassification: map[string]string{
+				checks.FarEdge: checks.Mandatory,
+				checks.Telco: checks.Mandatory,
+				checks.NonTelco: checks.Mandatory,
+				checks.Extended: checks.Mandatory,
+			},
 		})
 	})
 }
