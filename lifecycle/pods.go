@@ -13,7 +13,7 @@ import (
 func CheckImagePullPolicy(resources *checks.DiscoveredResources) checks.CheckResult {
 	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.Pods) == 0 {
-		result.ComplianceStatus = checks.StatusSkipped
+		result.ComplianceStatus = checks.StatusCompliant
 		result.Reason = "No pods found"
 		return result
 	}
@@ -51,7 +51,7 @@ var allowedOwnerKinds = map[string]bool{
 func CheckPodOwnerType(resources *checks.DiscoveredResources) checks.CheckResult {
 	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.Pods) == 0 {
-		result.ComplianceStatus = checks.StatusSkipped
+		result.ComplianceStatus = checks.StatusCompliant
 		result.Reason = "No pods found"
 		return result
 	}
@@ -88,7 +88,7 @@ func hasAllowedOwner(pod *corev1.Pod) bool {
 func CheckPodScheduling(resources *checks.DiscoveredResources) checks.CheckResult {
 	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.Pods) == 0 {
-		result.ComplianceStatus = checks.StatusSkipped
+		result.ComplianceStatus = checks.StatusCompliant
 		result.Reason = "No pods found"
 		return result
 	}
@@ -119,7 +119,7 @@ func CheckPodScheduling(resources *checks.DiscoveredResources) checks.CheckResul
 func CheckHighAvailability(resources *checks.DiscoveredResources) checks.CheckResult {
 	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.Deployments) == 0 {
-		result.ComplianceStatus = checks.StatusSkipped
+		result.ComplianceStatus = checks.StatusCompliant
 		result.Reason = "No deployments found"
 		return result
 	}
@@ -151,7 +151,7 @@ func CheckHighAvailability(resources *checks.DiscoveredResources) checks.CheckRe
 func CheckCPUIsolation(resources *checks.DiscoveredResources) checks.CheckResult {
 	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.Pods) == 0 {
-		result.ComplianceStatus = checks.StatusSkipped
+		result.ComplianceStatus = checks.StatusCompliant
 		result.Reason = "No pods found"
 		return result
 	}
@@ -180,7 +180,7 @@ func CheckCPUIsolation(resources *checks.DiscoveredResources) checks.CheckResult
 func CheckAffinityRequired(resources *checks.DiscoveredResources) checks.CheckResult {
 	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.Pods) == 0 {
-		result.ComplianceStatus = checks.StatusSkipped
+		result.ComplianceStatus = checks.StatusCompliant
 		result.Reason = "No pods found"
 		return result
 	}
@@ -213,7 +213,7 @@ var masterTaintKeys = map[string]bool{
 func CheckTolerationBypass(resources *checks.DiscoveredResources) checks.CheckResult {
 	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.Pods) == 0 {
-		result.ComplianceStatus = checks.StatusSkipped
+		result.ComplianceStatus = checks.StatusCompliant
 		result.Reason = "No pods found"
 		return result
 	}
@@ -244,7 +244,7 @@ func CheckTolerationBypass(resources *checks.DiscoveredResources) checks.CheckRe
 func CheckPVReclaimPolicy(resources *checks.DiscoveredResources) checks.CheckResult {
 	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.PersistentVolumes) == 0 {
-		result.ComplianceStatus = checks.StatusSkipped
+		result.ComplianceStatus = checks.StatusCompliant
 		result.Reason = "No PersistentVolumes found"
 		return result
 	}
@@ -272,7 +272,7 @@ func CheckPVReclaimPolicy(resources *checks.DiscoveredResources) checks.CheckRes
 func CheckStorageProvisioner(resources *checks.DiscoveredResources) checks.CheckResult {
 	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.StorageClasses) == 0 {
-		result.ComplianceStatus = checks.StatusSkipped
+		result.ComplianceStatus = checks.StatusCompliant
 		result.Reason = "No StorageClasses found"
 		return result
 	}

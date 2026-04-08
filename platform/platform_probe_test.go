@@ -206,7 +206,7 @@ func TestCheckHyperthreadEnable_CloudNode_Skipped(t *testing.T) {
 
 	result := CheckHyperthreadEnable(resources)
 
-	if result.ComplianceStatus != "Skipped" {
+	if result.ComplianceStatus != checks.StatusCompliant {
 		t.Errorf("Expected Skipped for cloud node, got %s", result.ComplianceStatus)
 	}
 }

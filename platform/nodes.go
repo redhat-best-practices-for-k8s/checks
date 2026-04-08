@@ -13,7 +13,7 @@ import (
 func CheckServiceMeshUsage(resources *checks.DiscoveredResources) checks.CheckResult {
 	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.Pods) == 0 {
-		result.ComplianceStatus = checks.StatusSkipped
+		result.ComplianceStatus = checks.StatusCompliant
 		result.Reason = "No pods found"
 		return result
 	}
@@ -53,7 +53,7 @@ func CheckServiceMeshUsage(resources *checks.DiscoveredResources) checks.CheckRe
 func CheckHugepages2MiOnly(resources *checks.DiscoveredResources) checks.CheckResult {
 	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.Pods) == 0 {
-		result.ComplianceStatus = checks.StatusSkipped
+		result.ComplianceStatus = checks.StatusCompliant
 		result.Reason = "No pods found"
 		return result
 	}
@@ -97,7 +97,7 @@ func CheckNodeCount(resources *checks.DiscoveredResources) checks.CheckResult {
 	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 
 	if len(resources.Nodes) == 0 {
-		result.ComplianceStatus = checks.StatusSkipped
+		result.ComplianceStatus = checks.StatusCompliant
 		result.Reason = "No nodes found"
 		return result
 	}

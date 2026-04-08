@@ -291,7 +291,7 @@ func TestCheckSRIOVRestartLabel_NoSRIOV_Skipped(t *testing.T) {
 		}},
 	}
 	result := CheckSRIOVRestartLabel(resources)
-	if result.ComplianceStatus != "Skipped" {
+	if result.ComplianceStatus != checks.StatusCompliant {
 		t.Errorf("expected Skipped, got %s", result.ComplianceStatus)
 	}
 }

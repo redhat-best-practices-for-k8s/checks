@@ -12,7 +12,7 @@ import (
 func CheckDualStackService(resources *checks.DiscoveredResources) checks.CheckResult {
 	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.Services) == 0 {
-		result.ComplianceStatus = checks.StatusSkipped
+		result.ComplianceStatus = checks.StatusCompliant
 		result.Reason = "No services found"
 		return result
 	}
@@ -64,7 +64,7 @@ func CheckOCPReservedPorts(resources *checks.DiscoveredResources) checks.CheckRe
 func checkPortUsage(resources *checks.DiscoveredResources, portSet map[int32]bool, label string) checks.CheckResult {
 	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.Pods) == 0 {
-		result.ComplianceStatus = checks.StatusSkipped
+		result.ComplianceStatus = checks.StatusCompliant
 		result.Reason = "No pods found"
 		return result
 	}

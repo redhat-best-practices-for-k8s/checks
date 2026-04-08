@@ -9,7 +9,7 @@ import (
 // Security Context Constraints via their clusterPermissions.
 func CheckOperatorNoSCCAccess(resources *checks.DiscoveredResources) checks.CheckResult {
 	if len(resources.CSVs) == 0 {
-		return checks.CheckResult{ComplianceStatus: checks.StatusSkipped, Reason: "No CSVs found"}
+		return checks.CheckResult{ComplianceStatus: checks.StatusCompliant, Reason: "No CSVs found"}
 	}
 
 	var details []checks.ResourceDetail

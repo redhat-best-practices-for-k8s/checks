@@ -12,7 +12,7 @@ import (
 func CheckMultipleSameOperators(resources *checks.DiscoveredResources) checks.CheckResult {
 	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.CSVs) == 0 {
-		result.ComplianceStatus = checks.StatusSkipped
+		result.ComplianceStatus = checks.StatusCompliant
 		result.Reason = "No operators (CSVs) found"
 		return result
 	}

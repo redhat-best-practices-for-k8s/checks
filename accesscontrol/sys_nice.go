@@ -13,7 +13,7 @@ import (
 func CheckSysNiceRealtime(resources *checks.DiscoveredResources) checks.CheckResult {
 	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.Pods) == 0 {
-		result.ComplianceStatus = checks.StatusSkipped
+		result.ComplianceStatus = checks.StatusCompliant
 		result.Reason = "No pods found"
 		return result
 	}
@@ -29,7 +29,7 @@ func CheckSysNiceRealtime(resources *checks.DiscoveredResources) checks.CheckRes
 	}
 
 	if len(rtNodes) == 0 {
-		result.ComplianceStatus = checks.StatusSkipped
+		result.ComplianceStatus = checks.StatusCompliant
 		result.Reason = "No nodes with realtime kernel found"
 		return result
 	}

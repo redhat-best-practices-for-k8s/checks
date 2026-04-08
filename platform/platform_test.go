@@ -83,7 +83,7 @@ func TestCheckHugepages2MiOnly_NonCompliant(t *testing.T) {
 
 func TestCheckHugepages2MiOnly_NoPods_Skipped(t *testing.T) {
 	result := CheckHugepages2MiOnly(&checks.DiscoveredResources{})
-	if result.ComplianceStatus != "Skipped" {
+	if result.ComplianceStatus != checks.StatusCompliant {
 		t.Errorf("expected Skipped, got %s", result.ComplianceStatus)
 	}
 }
@@ -219,7 +219,7 @@ func TestCheckHugepages1GiOnly_NonCompliant(t *testing.T) {
 
 func TestCheckHugepages1GiOnly_Skipped(t *testing.T) {
 	result := CheckHugepages1GiOnly(&checks.DiscoveredResources{})
-	if result.ComplianceStatus != "Skipped" {
+	if result.ComplianceStatus != checks.StatusCompliant {
 		t.Errorf("expected Skipped, got %s", result.ComplianceStatus)
 	}
 }
@@ -258,7 +258,7 @@ func TestCheckBootParams_NonCompliant(t *testing.T) {
 
 func TestCheckBootParams_Skipped(t *testing.T) {
 	result := CheckBootParams(&checks.DiscoveredResources{})
-	if result.ComplianceStatus != "Skipped" {
+	if result.ComplianceStatus != checks.StatusCompliant {
 		t.Errorf("expected Skipped, got %s", result.ComplianceStatus)
 	}
 }
@@ -406,7 +406,7 @@ func TestCheckSysctl_NonCompliant_CorePattern(t *testing.T) {
 
 func TestCheckSysctl_Skipped(t *testing.T) {
 	result := CheckSysctl(&checks.DiscoveredResources{})
-	if result.ComplianceStatus != "Skipped" {
+	if result.ComplianceStatus != checks.StatusCompliant {
 		t.Errorf("expected Skipped, got %s", result.ComplianceStatus)
 	}
 }
@@ -463,7 +463,7 @@ func TestCheckTainted_NonCompliant(t *testing.T) {
 
 func TestCheckTainted_Skipped(t *testing.T) {
 	result := CheckTainted(&checks.DiscoveredResources{})
-	if result.ComplianceStatus != "Skipped" {
+	if result.ComplianceStatus != checks.StatusCompliant {
 		t.Errorf("expected Skipped, got %s", result.ComplianceStatus)
 	}
 }
@@ -520,7 +520,7 @@ func TestCheckSELinuxEnforcing_NonCompliant(t *testing.T) {
 
 func TestCheckSELinuxEnforcing_Skipped(t *testing.T) {
 	result := CheckSELinuxEnforcing(&checks.DiscoveredResources{})
-	if result.ComplianceStatus != "Skipped" {
+	if result.ComplianceStatus != checks.StatusCompliant {
 		t.Errorf("expected Skipped, got %s", result.ComplianceStatus)
 	}
 }

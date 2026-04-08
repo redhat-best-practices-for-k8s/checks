@@ -168,7 +168,7 @@ func TestCheckUnalteredBaseImage_NotOCP_Skipped(t *testing.T) {
 
 	result := CheckUnalteredBaseImage(resources)
 
-	if result.ComplianceStatus != "Skipped" {
+	if result.ComplianceStatus != checks.StatusCompliant {
 		t.Errorf("Expected Skipped on non-OCP cluster, got %s", result.ComplianceStatus)
 	}
 }

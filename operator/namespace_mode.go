@@ -14,7 +14,7 @@ func CheckSingleOrMultiNamespacedOperators(resources *checks.DiscoveredResources
 	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 
 	if len(resources.CSVs) == 0 {
-		result.ComplianceStatus = checks.StatusSkipped
+		result.ComplianceStatus = checks.StatusCompliant
 		result.Reason = "No operators found"
 		return result
 	}

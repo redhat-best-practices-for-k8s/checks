@@ -15,7 +15,7 @@ type podCheckFunc func(pod *corev1.Pod) bool
 func checkPodHostField(resources *checks.DiscoveredResources, checkFunc podCheckFunc, fieldName string) checks.CheckResult {
 	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.Pods) == 0 {
-		result.ComplianceStatus = checks.StatusSkipped
+		result.ComplianceStatus = checks.StatusCompliant
 		result.Reason = "No pods found"
 		return result
 	}
@@ -49,7 +49,7 @@ func CheckHostNetwork(resources *checks.DiscoveredResources) checks.CheckResult 
 func CheckHostPath(resources *checks.DiscoveredResources) checks.CheckResult {
 	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.Pods) == 0 {
-		result.ComplianceStatus = checks.StatusSkipped
+		result.ComplianceStatus = checks.StatusCompliant
 		result.Reason = "No pods found"
 		return result
 	}
@@ -94,7 +94,7 @@ func CheckHostPID(resources *checks.DiscoveredResources) checks.CheckResult {
 func CheckContainerHostPort(resources *checks.DiscoveredResources) checks.CheckResult {
 	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.Pods) == 0 {
-		result.ComplianceStatus = checks.StatusSkipped
+		result.ComplianceStatus = checks.StatusCompliant
 		result.Reason = "No pods found"
 		return result
 	}

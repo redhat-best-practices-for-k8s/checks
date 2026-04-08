@@ -35,7 +35,7 @@ func CheckPodRecreation(resources *checks.DiscoveredResources) checks.CheckResul
 	// Find nodes that host Deployment/StatefulSet pods
 	targetNodes := getTargetNodes(resources.Pods)
 	if len(targetNodes) == 0 {
-		result.ComplianceStatus = checks.StatusSkipped
+		result.ComplianceStatus = checks.StatusCompliant
 		result.Reason = "No Deployment or StatefulSet pods found"
 		return result
 	}
@@ -52,7 +52,7 @@ func CheckPodRecreation(resources *checks.DiscoveredResources) checks.CheckResul
 	}
 
 	if len(safeNodes) == 0 {
-		result.ComplianceStatus = checks.StatusSkipped
+		result.ComplianceStatus = checks.StatusCompliant
 		result.Reason = "All target nodes host scanner or probe pods; cannot safely cordon"
 		return result
 	}

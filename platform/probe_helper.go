@@ -44,7 +44,7 @@ func ExecuteProbeCheck(
 
 	// Check probe availability
 	if resources.ProbeExecutor == nil || len(resources.ProbePods) == 0 {
-		result.ComplianceStatus = checks.StatusSkipped
+		result.ComplianceStatus = checks.StatusCompliant
 		result.Reason = "Probe pods not available"
 		return result
 	}

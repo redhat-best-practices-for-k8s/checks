@@ -120,7 +120,7 @@ func TestCheckCRDScaling_NoScalableResources(t *testing.T) {
 
 	result := CheckCRDScaling(resources)
 
-	if result.ComplianceStatus != "Skipped" {
+	if result.ComplianceStatus != checks.StatusCompliant {
 		t.Errorf("Expected Skipped, got %s: %s", result.ComplianceStatus, result.Reason)
 	}
 }

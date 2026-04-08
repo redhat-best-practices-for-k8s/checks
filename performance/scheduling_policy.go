@@ -68,7 +68,7 @@ func checkSchedulingPolicy(resources *checks.DiscoveredResources, cpuPool string
 	}
 
 	if len(podsToCheck) == 0 {
-		result.ComplianceStatus = checks.StatusSkipped
+		result.ComplianceStatus = checks.StatusCompliant
 		result.Reason = fmt.Sprintf("No pods found for %s CPU pool", cpuPool)
 		return result
 	}

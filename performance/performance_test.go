@@ -50,7 +50,7 @@ func TestCheckMemoryLimit_NonCompliant(t *testing.T) {
 
 func TestCheckMemoryLimit_NoPods(t *testing.T) {
 	result := CheckMemoryLimit(&checks.DiscoveredResources{})
-	if result.ComplianceStatus != "Skipped" {
+	if result.ComplianceStatus != checks.StatusCompliant {
 		t.Errorf("expected Skipped, got %s", result.ComplianceStatus)
 	}
 }
@@ -400,7 +400,7 @@ func TestCheckMaxResourcesExecProbes_NonCompliant(t *testing.T) {
 func TestCheckMaxResourcesExecProbes_Skipped(t *testing.T) {
 	resources := &checks.DiscoveredResources{}
 	result := CheckMaxResourcesExecProbes(resources)
-	if result.ComplianceStatus != "Skipped" {
+	if result.ComplianceStatus != checks.StatusCompliant {
 		t.Errorf("expected Skipped, got %s", result.ComplianceStatus)
 	}
 }

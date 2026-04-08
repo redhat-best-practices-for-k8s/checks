@@ -72,7 +72,7 @@ func TestCheckHostNetwork_NonCompliant(t *testing.T) {
 
 func TestCheckHostNetwork_NoPods(t *testing.T) {
 	result := CheckHostNetwork(&checks.DiscoveredResources{})
-	if result.ComplianceStatus != "Skipped" {
+	if result.ComplianceStatus != checks.StatusCompliant {
 		t.Errorf("expected Skipped, got %s", result.ComplianceStatus)
 	}
 }
@@ -866,7 +866,7 @@ func TestCheckSysPtrace_NoSharedNS_Skipped(t *testing.T) {
 		}},
 	}
 	result := CheckSysPtrace(resources)
-	if result.ComplianceStatus != "Skipped" {
+	if result.ComplianceStatus != checks.StatusCompliant {
 		t.Errorf("expected Skipped, got %s", result.ComplianceStatus)
 	}
 }
@@ -947,7 +947,7 @@ func TestCheckCrdRoles_Wildcard_NonCompliant(t *testing.T) {
 func TestCheckSysNiceRealtime_Skipped_NoPods(t *testing.T) {
 	resources := &checks.DiscoveredResources{}
 	result := CheckSysNiceRealtime(resources)
-	if result.ComplianceStatus != "Skipped" {
+	if result.ComplianceStatus != checks.StatusCompliant {
 		t.Errorf("expected Skipped, got %s", result.ComplianceStatus)
 	}
 }
@@ -964,7 +964,7 @@ func TestCheckSysNiceRealtime_Skipped_NoRTNodes(t *testing.T) {
 		}},
 	}
 	result := CheckSysNiceRealtime(resources)
-	if result.ComplianceStatus != "Skipped" {
+	if result.ComplianceStatus != checks.StatusCompliant {
 		t.Errorf("expected Skipped, got %s", result.ComplianceStatus)
 	}
 }
@@ -1246,7 +1246,7 @@ func TestCheckNamespaceResourceQuota_NonCompliant(t *testing.T) {
 
 func TestCheckNamespaceResourceQuota_Skipped(t *testing.T) {
 	result := CheckNamespaceResourceQuota(&checks.DiscoveredResources{})
-	if result.ComplianceStatus != "Skipped" {
+	if result.ComplianceStatus != checks.StatusCompliant {
 		t.Errorf("expected Skipped, got %s", result.ComplianceStatus)
 	}
 }

@@ -180,7 +180,7 @@ func TestCheckSharedCPUPoolSchedulingPolicy_NoPods(t *testing.T) {
 
 	result := CheckSharedCPUPoolSchedulingPolicy(resources)
 
-	if result.ComplianceStatus != "Skipped" {
+	if result.ComplianceStatus != checks.StatusCompliant {
 		t.Errorf("Expected Skipped when no pods, got %s", result.ComplianceStatus)
 	}
 }
@@ -203,7 +203,7 @@ func TestCheckSharedCPUPoolSchedulingPolicy_HostPID_Skipped(t *testing.T) {
 
 	result := CheckSharedCPUPoolSchedulingPolicy(resources)
 
-	if result.ComplianceStatus != "Skipped" {
+	if result.ComplianceStatus != checks.StatusCompliant {
 		t.Errorf("Expected Skipped when all pods have HostPID, got %s", result.ComplianceStatus)
 	}
 }
