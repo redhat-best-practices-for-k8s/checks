@@ -1,0 +1,135 @@
+package networking
+
+import "github.com/redhat-best-practices-for-k8s/checks"
+
+// Metadata constants migrated from certsuite identifiers.
+
+// Descriptions
+const (
+	NetworkingDualStackServiceDescription = `Checks that all services in namespaces under test are either ipv6 single stack or dual stack. This test case requires the deployment of the probe daemonset.`
+
+	NetworkingIcmpv4ConnectivityDescription = `Checks that each workload Container is able to communicate via ICMPv4 on the Default OpenShift network. This test case requires the Deployment of the probe daemonset and at least 2 pods connected to each network under test(one source and one destination). If no network with more than 2 pods exists this test will be skipped.`
+
+	NetworkingIcmpv4ConnectivityMultusDescription = `Checks that each workload Container is able to communicate via ICMPv4 on the Multus network(s). This test case requires the Deployment of the probe daemonset and at least 2 pods connected to each network under test(one source and one destination). If no network with more than 2 pods exists this test will be skipped.`
+
+	NetworkingIcmpv6ConnectivityDescription = `Checks that each workload Container is able to communicate via ICMPv6 on the Default OpenShift network. This test case requires the Deployment of the probe daemonset and at least 2 pods connected to each network under test(one source and one destination). If no network with more than 2 pods exists this test will be skipped.`
+
+	NetworkingIcmpv6ConnectivityMultusDescription = `Checks that each workload Container is able to communicate via ICMPv6 on the Multus network(s). This test case requires the Deployment of the probe daemonset and at least 2 pods connected to each network under test(one source and one destination). If no network with more than 2 pods exists this test will be skipped.`
+
+	NetworkingNetworkAttachmentDefinitionSriovMtuDescription = `Ensures that MTU values are set correctly in NetworkAttachmentDefinitions for SRIOV network interfaces.`
+
+	NetworkingNetworkPolicyDenyAllDescription = `Check that network policies attached to namespaces running workload pods contain a default deny-all rule for both ingress and egress traffic`
+
+	NetworkingOcpReservedPortsUsageDescription = `Check that containers do not listen on ports that are reserved by OpenShift`
+
+	NetworkingReservedPartnerPortsDescription = `Checks that pods and containers are not consuming ports designated as reserved by partner`
+
+	NetworkingRestartOnRebootSriovPodDescription = `Ensures that the label restart-on-reboot exists on pods that use SRIOV network interfaces.`
+
+	NetworkingUndeclaredContainerPortsUsageDescription = `Check that containers do not listen on ports that weren't declared in their specification. Platforms may be configured to block undeclared ports.`
+
+)
+
+// Remediations
+const (
+	NetworkingDualStackServiceRemediation = `Configure every workload service with either a single stack ipv6 or dual stack (ipv4/ipv6) load balancer.`
+
+	NetworkingIcmpv4ConnectivityRemediation = `Ensure that the workload is able to communicate via the Default OpenShift network. In some rare cases, workloads may require routing table changes in order to communicate over the Default network. To exclude a particular pod from ICMPv4 connectivity tests, add the redhat-best-practices-for-k8s.com/skip_connectivity_tests label to it. The label value is trivial, only its presence.`
+
+	NetworkingIcmpv4ConnectivityMultusRemediation = `Ensure that the workload is able to communicate via the Multus network(s). In some rare cases, workloads may require routing table changes in order to communicate over the Multus network(s). To exclude a particular pod from ICMPv4 connectivity tests, add the redhat-best-practices-for-k8s.com/skip_connectivity_tests label to it. The label value is trivial, only its presence. Not applicable if MULTUS is not supported.`
+
+	NetworkingIcmpv6ConnectivityRemediation = `Ensure that the workload is able to communicate via the Default OpenShift network. In some rare cases, workloads may require routing table changes in order to communicate over the Default network. To exclude a particular pod from ICMPv6 connectivity tests, add the redhat-best-practices-for-k8s.com/skip_connectivity_tests label to it. The label value is trivial, only its presence. Not applicable if IPv6 is not supported.`
+
+	NetworkingIcmpv6ConnectivityMultusRemediation = `Ensure that the workload is able to communicate via the Multus network(s). In some rare cases, workloads may require routing table changes in order to communicate over the Multus network(s). To exclude a particular pod from ICMPv6 connectivity tests, add the redhat-best-practices-for-k8s.com/skip_connectivity_tests label to it.The label value is trivial, only its presence. Not applicable if IPv6/MULTUS is not supported.`
+
+	NetworkingNetworkAttachmentDefinitionSriovMtuRemediation = `Ensure that the MTU of the SR-IOV network attachment definition is set explicitly.`
+
+	NetworkingNetworkPolicyDenyAllRemediation = `Ensure that a NetworkPolicy with a default deny-all is applied. After the default is applied, apply a network policy to allow the traffic your application requires.`
+
+	NetworkingOcpReservedPortsUsageRemediation = `Ensure that workload's apps do not listen on ports that are reserved by OpenShift. The following ports are reserved by OpenShift and must NOT be used by any application: 22623, 22624.`
+
+	NetworkingReservedPartnerPortsRemediation = `Ensure ports are not being used that are reserved by our partner`
+
+	NetworkingRestartOnRebootSriovPodRemediation = `Ensure that the label restart-on-reboot exists on pods that use SRIOV network interfaces.`
+
+	NetworkingUndeclaredContainerPortsUsageRemediation = `Ensure the workload's apps do not listen on undeclared containers' ports.`
+
+)
+
+// Best practice references
+const (
+	NetworkingDualStackServiceBestPracticeRef = `https://redhat-best-practices-for-k8s.github.io/guide/#k8s-best-practices-ipv4-&-ipv6`
+
+	NetworkingIcmpv4ConnectivityBestPracticeRef = `https://redhat-best-practices-for-k8s.github.io/guide/#k8s-best-practices-ipv4-&-ipv6`
+
+	NetworkingIcmpv4ConnectivityMultusBestPracticeRef = `https://redhat-best-practices-for-k8s.github.io/guide/#k8s-best-practices-high-level-cnf-expectations`
+
+	NetworkingIcmpv6ConnectivityBestPracticeRef = `https://redhat-best-practices-for-k8s.github.io/guide/#k8s-best-practices-ipv4-&-ipv6`
+
+	NetworkingIcmpv6ConnectivityMultusBestPracticeRef = `https://redhat-best-practices-for-k8s.github.io/guide/#k8s-best-practices-high-level-cnf-expectations`
+
+	NetworkingNetworkAttachmentDefinitionSriovMtuBestPracticeRef = `https://redhat-best-practices-for-k8s.github.io/guide/#k8s-best-practices-multus-sr-iov---macvlan`
+
+	NetworkingNetworkPolicyDenyAllBestPracticeRef = `https://redhat-best-practices-for-k8s.github.io/guide/#k8s-best-practices-vrfs-aka-routing-instances`
+
+	NetworkingOcpReservedPortsUsageBestPracticeRef = `https://redhat-best-practices-for-k8s.github.io/guide/#k8s-best-practices-ports-reserved-by-openshift`
+
+	NetworkingReservedPartnerPortsBestPracticeRef = checks.NoDocLinkExtended
+
+	NetworkingRestartOnRebootSriovPodBestPracticeRef = checks.NoDocLinkFarEdge
+
+	NetworkingUndeclaredContainerPortsUsageBestPracticeRef = `https://redhat-best-practices-for-k8s.github.io/guide/#k8s-best-practices-requirements-cnf-reqs`
+
+)
+
+// Exception processes
+const (
+	NetworkingDualStackServiceExceptionProcess = checks.NoExceptionProcessExtended
+
+	NetworkingIcmpv4ConnectivityExceptionProcess = `No exceptions - must be able to communicate on default network using IPv4`
+
+	NetworkingIcmpv4ConnectivityMultusExceptionProcess = checks.NoExceptionProcess
+
+	NetworkingIcmpv6ConnectivityExceptionProcess = checks.NoExceptionProcess
+
+	NetworkingIcmpv6ConnectivityMultusExceptionProcess = checks.NoExceptionProcess
+
+	NetworkingNetworkAttachmentDefinitionSriovMtuExceptionProcess = checks.NoExceptionProcess
+
+	NetworkingNetworkPolicyDenyAllExceptionProcess = checks.NoExceptionProcessExtended
+
+	NetworkingOcpReservedPortsUsageExceptionProcess = checks.NoExceptions
+
+	NetworkingReservedPartnerPortsExceptionProcess = checks.NoExceptionProcessExtended
+
+	NetworkingRestartOnRebootSriovPodExceptionProcess = checks.NoExceptionProcess
+
+	NetworkingUndeclaredContainerPortsUsageExceptionProcess = checks.NoExceptionProcessExtended
+
+)
+
+// Impact statements
+const (
+	NetworkingDualStackServiceImpactStatement = `Single-stack IPv4 services limit network architecture flexibility and prevent migration to modern dual-stack infrastructures.`
+
+	NetworkingIcmpv4ConnectivityImpactStatement = `Failure indicates potential network isolation issues that could prevent workload components from communicating, leading to service degradation or complete application failure.`
+
+	NetworkingIcmpv4ConnectivityMultusImpactStatement = `Multus network connectivity issues can isolate workloads from secondary networks, breaking multi-network applications and reducing network redundancy.`
+
+	NetworkingIcmpv6ConnectivityImpactStatement = `IPv6 connectivity failures can prevent dual-stack applications from functioning properly and limit future network architecture flexibility.`
+
+	NetworkingIcmpv6ConnectivityMultusImpactStatement = `IPv6 Multus connectivity problems can prevent dual-stack multi-network scenarios from working, limiting network scalability and future-proofing.`
+
+	NetworkingNetworkAttachmentDefinitionSriovMtuImpactStatement = `Incorrect MTU settings can cause packet fragmentation, network performance issues, and connectivity failures in high-performance networking scenarios.`
+
+	NetworkingNetworkPolicyDenyAllImpactStatement = `Without default deny-all network policies, workloads are exposed to lateral movement attacks and unauthorized network access, compromising security posture and potentially enabling data breaches.`
+
+	NetworkingOcpReservedPortsUsageImpactStatement = `Using OpenShift-reserved ports can cause critical platform services to fail, potentially destabilizing the entire cluster.`
+
+	NetworkingReservedPartnerPortsImpactStatement = `Using reserved ports can cause port conflicts with essential platform services, leading to service startup failures and unpredictable application behavior.`
+
+	NetworkingRestartOnRebootSriovPodImpactStatement = `Without restart-on-reboot labels, SRIOV-enabled pods may fail to recover from a race condition between kubernetes services startup and SR-IOV device plugin configuration on StarlingX AIO systems, causing SR-IOV devices to disappear from running pods when FPGA devices are reset.`
+
+	NetworkingUndeclaredContainerPortsUsageImpactStatement = `Undeclared ports can be blocked by security policies, causing unexpected connectivity issues and making troubleshooting difficult.`
+
+)

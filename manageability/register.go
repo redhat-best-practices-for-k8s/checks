@@ -11,18 +11,43 @@ var once sync.Once
 func Register() {
 	once.Do(func() {
 		checks.Register(checks.CheckInfo{
-			Name: "manageability-container-port-name-format", Category: "manageability",
-			Description: "Verifies container port names follow IANA naming conventions",
-			Remediation: "Use IANA-compliant port names (lowercase, alphanumeric, hyphens, max 15 chars)",
-			CatalogID:   "manageability-container-port-name-format",
-			Fn:          CheckPortNameFormat,
+			Name:     "manageability-container-port-name-format",
+			Category: checks.CategoryManageability,
+			CatalogID: "manageability-container-port-name-format",
+			Fn:       CheckPortNameFormat,
+			Description: ManageabilityContainerPortNameFormatDescription,
+			Remediation: ManageabilityContainerPortNameFormatRemediation,
+			BestPracticeReference: ManageabilityContainerPortNameFormatBestPracticeRef,
+			ExceptionProcess: ManageabilityContainerPortNameFormatExceptionProcess,
+			ImpactStatement: ManageabilityContainerPortNameFormatImpactStatement,
+			Qe: true,
+			Tags: []string{checks.TagExtended},
+			CategoryClassification: map[string]string{
+				checks.FarEdge: checks.Optional,
+				checks.Telco: checks.Optional,
+				checks.NonTelco: checks.Optional,
+				checks.Extended: checks.Mandatory,
+			},
 		})
+
 		checks.Register(checks.CheckInfo{
-			Name: "manageability-containers-image-tag", Category: "manageability",
-			Description: "Verifies container images use a digest or specific tag (not :latest)",
-			Remediation: "Use a specific image tag or digest reference instead of :latest",
-			CatalogID:   "manageability-containers-image-tag",
-			Fn:          CheckImageTag,
+			Name:     "manageability-containers-image-tag",
+			Category: checks.CategoryManageability,
+			CatalogID: "manageability-containers-image-tag",
+			Fn:       CheckImageTag,
+			Description: ManageabilityContainersImageTagDescription,
+			Remediation: ManageabilityContainersImageTagRemediation,
+			BestPracticeReference: ManageabilityContainersImageTagBestPracticeRef,
+			ExceptionProcess: ManageabilityContainersImageTagExceptionProcess,
+			ImpactStatement: ManageabilityContainersImageTagImpactStatement,
+			Qe: true,
+			Tags: []string{checks.TagExtended},
+			CategoryClassification: map[string]string{
+				checks.FarEdge: checks.Optional,
+				checks.Telco: checks.Optional,
+				checks.NonTelco: checks.Optional,
+				checks.Extended: checks.Optional,
+			},
 		})
 	})
 }

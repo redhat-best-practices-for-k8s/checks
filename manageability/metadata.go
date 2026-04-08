@@ -1,0 +1,45 @@
+package manageability
+
+import "github.com/redhat-best-practices-for-k8s/checks"
+
+// Metadata constants migrated from certsuite identifiers.
+
+// Descriptions
+const (
+	ManageabilityContainerPortNameFormatDescription = "Check that the container's ports name follow the naming conventions. Name field in ContainerPort section must be of form `<protocol>[-<suffix>]`. More naming convention requirements may be released in future"
+
+	ManageabilityContainersImageTagDescription = `Check that image tag exists on containers.`
+
+)
+
+// Remediations
+const (
+	ManageabilityContainerPortNameFormatRemediation = `Ensure that the container's ports name follow our partner naming conventions`
+
+	ManageabilityContainersImageTagRemediation = `Ensure that all the container images are tagged. Checks containers have image tags (e.g. latest, stable, dev).`
+
+)
+
+// Best practice references
+const (
+	ManageabilityContainerPortNameFormatBestPracticeRef = `https://redhat-best-practices-for-k8s.github.io/guide/#k8s-best-practices-requirements-cnf-reqs`
+
+	ManageabilityContainersImageTagBestPracticeRef = `https://redhat-best-practices-for-k8s.github.io/guide/#k8s-best-practices-image-tagging`
+
+)
+
+// Exception processes
+const (
+	ManageabilityContainerPortNameFormatExceptionProcess = checks.NoExceptionProcessExtended
+
+	ManageabilityContainersImageTagExceptionProcess = checks.NoExceptionProcessExtended
+
+)
+
+// Impact statements
+const (
+	ManageabilityContainerPortNameFormatImpactStatement = `Incorrect port naming conventions can cause service discovery issues and configuration management problems.`
+
+	ManageabilityContainersImageTagImpactStatement = `Missing image tags make it difficult to track versions, perform rollbacks, and maintain deployment consistency.`
+
+)

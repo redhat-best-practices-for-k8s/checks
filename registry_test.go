@@ -101,3 +101,35 @@ func TestByCategory(t *testing.T) {
 		t.Fatalf("expected 0, got %d", len(catC))
 	}
 }
+
+func TestByName(t *testing.T) {
+	mu.Lock()
+	saved := registry
+	registry = nil
+	mu.Unlock()
+	defer func() {
+		mu.Lock()
+		registry = saved
+		mu.Unlock()
+	}()
+
+	Register(CheckInfo{Name: "check-a", Category: "cat-a", Fn: func(r *DiscoveredResources) CheckResult {
+		return CheckResult{}
+	}})
+	Register(CheckInfo{Name: "check-b", Category: "cat-b", Fn: func(r *DiscoveredResources) CheckResult {
+		return CheckResult{}
+	}})
+
+	info, ok := ByName("check-a")
+	if !ok {
+		t.Fatal("expected to find check-a")
+	}
+	if info.Name != "check-a" || info.Category != "cat-a" {
+		t.Errorf("unexpected check info: %+v", info)
+	}
+
+	_, ok = ByName("nonexistent")
+	if ok {
+		t.Fatal("expected not to find nonexistent check")
+	}
+}
