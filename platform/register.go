@@ -12,7 +12,7 @@ func Register() {
 	once.Do(func() {
 		checks.Register(checks.CheckInfo{
 			Name:     "platform-alteration-base-image",
-			Category: "platform-alteration",
+			Category: checks.CategoryPlatformAlteration,
 			CatalogID: "base-image",
 			Fn:       CheckUnalteredBaseImage,
 			Description: PlatformAlterationBaseImageDescription,
@@ -32,7 +32,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "platform-alteration-boot-params",
-			Category: "platform-alteration",
+			Category: checks.CategoryPlatformAlteration,
 			CatalogID: "platform-alteration-boot-params",
 			Fn:       CheckBootParams,
 			Description: PlatformAlterationBootParamsDescription,
@@ -52,7 +52,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "platform-alteration-cluster-operator-health",
-			Category: "platform-alteration",
+			Category: checks.CategoryPlatformAlteration,
 			CatalogID: "cluster-operator-health",
 			Fn:       CheckClusterOperatorHealth,
 			Description: PlatformAlterationClusterOperatorHealthDescription,
@@ -72,7 +72,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "platform-alteration-hugepages-1g-only",
-			Category: "platform-alteration",
+			Category: checks.CategoryPlatformAlteration,
 			CatalogID: "platform-alteration-hugepages-1g-only",
 			Fn:       CheckHugepages1GiOnly,
 			Description: PlatformAlterationHugepages1gOnlyDescription,
@@ -92,7 +92,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "platform-alteration-hugepages-2m-only",
-			Category: "platform-alteration",
+			Category: checks.CategoryPlatformAlteration,
 			CatalogID: "platform-alteration-hugepages-2m-only",
 			Fn:       CheckHugepages2MiOnly,
 			Description: PlatformAlterationHugepages2mOnlyDescription,
@@ -112,7 +112,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "platform-alteration-hugepages-config",
-			Category: "platform-alteration",
+			Category: checks.CategoryPlatformAlteration,
 			CatalogID: "platform-alteration-hugepages-config",
 			Fn:       CheckHugepages,
 			Description: PlatformAlterationHugepagesConfigDescription,
@@ -132,7 +132,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "platform-alteration-hyperthread-enable",
-			Category: "platform-alteration",
+			Category: checks.CategoryPlatformAlteration,
 			CatalogID: "hyperthread-enable",
 			Fn:       CheckHyperthreadEnable,
 			Description: PlatformAlterationHyperthreadEnableDescription,
@@ -152,7 +152,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "platform-alteration-is-selinux-enforcing",
-			Category: "platform-alteration",
+			Category: checks.CategoryPlatformAlteration,
 			CatalogID: "platform-alteration-is-selinux-enforcing",
 			Fn:       CheckSELinuxEnforcing,
 			Description: PlatformAlterationIsSelinuxEnforcingDescription,
@@ -172,7 +172,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "platform-alteration-isredhat-release",
-			Category: "platform-alteration",
+			Category: checks.CategoryPlatformAlteration,
 			CatalogID: "isredhat-release",
 			Fn:       CheckIsRedHatRelease,
 			Description: PlatformAlterationIsredhatReleaseDescription,
@@ -192,7 +192,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "platform-alteration-ocp-lifecycle",
-			Category: "platform-alteration",
+			Category: checks.CategoryPlatformAlteration,
 			CatalogID: "ocp-lifecycle",
 			Fn:       CheckOCPLifecycle,
 			Description: PlatformAlterationOcpLifecycleDescription,
@@ -212,13 +212,13 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "platform-alteration-ocp-node-count",
-			Category: "platform-alteration",
+			Category: checks.CategoryPlatformAlteration,
 			CatalogID: "platform-alteration-ocp-node-count",
 			Fn:       CheckNodeCount,
-			Description: "Verifies cluster has minimum recommended number of worker nodes",
-			Remediation: "Ensure cluster has at least 3 worker nodes",
-			BestPracticeReference: "https://redhat-best-practices-for-k8s.github.io/guide/#k8s-best-practices-high-level-cnf-expectations",
-			ExceptionProcess: "There is no documented exception process for this.",
+			Description: PlatformAlterationOcpNodeCountDescription,
+			Remediation: PlatformAlterationOcpNodeCountRemediation,
+			BestPracticeReference: PlatformAlterationOcpNodeCountBestPracticeRef,
+			ExceptionProcess: PlatformAlterationOcpNodeCountExceptionProcess,
 			ImpactStatement: PlatformAlterationOcpNodeCountImpactStatement,
 			Qe: false,
 			Tags: []string{checks.TagCommon},
@@ -232,7 +232,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "platform-alteration-ocp-node-os-lifecycle",
-			Category: "platform-alteration",
+			Category: checks.CategoryPlatformAlteration,
 			CatalogID: "ocp-node-os-lifecycle",
 			Fn:       CheckOCPNodeOSLifecycle,
 			Description: PlatformAlterationOcpNodeOsLifecycleDescription,
@@ -252,7 +252,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "platform-alteration-service-mesh-usage",
-			Category: "platform-alteration",
+			Category: checks.CategoryPlatformAlteration,
 			CatalogID: "platform-alteration-service-mesh-usage",
 			Fn:       CheckServiceMeshUsage,
 			Description: PlatformAlterationServiceMeshUsageDescription,
@@ -272,7 +272,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "platform-alteration-sysctl-config",
-			Category: "platform-alteration",
+			Category: checks.CategoryPlatformAlteration,
 			CatalogID: "platform-alteration-sysctl-config",
 			Fn:       CheckSysctl,
 			Description: PlatformAlterationSysctlConfigDescription,
@@ -292,7 +292,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "platform-alteration-tainted-node-kernel",
-			Category: "platform-alteration",
+			Category: checks.CategoryPlatformAlteration,
 			CatalogID: "platform-alteration-tainted-node-kernel",
 			Fn:       CheckTainted,
 			Description: PlatformAlterationTaintedNodeKernelDescription,

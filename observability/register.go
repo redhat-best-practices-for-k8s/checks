@@ -12,7 +12,7 @@ func Register() {
 	once.Do(func() {
 		checks.Register(checks.CheckInfo{
 			Name:     "observability-compatibility-with-next-ocp-release",
-			Category: "observability",
+			Category: checks.CategoryObservability,
 			CatalogID: "compatibility-with-next-ocp-release",
 			Fn:       CheckAPICompatibilityWithNextOCPRelease,
 			Description: ObservabilityCompatibilityWithNextOcpReleaseDescription,
@@ -32,7 +32,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "observability-container-logging",
-			Category: "observability",
+			Category: checks.CategoryObservability,
 			CatalogID: "container-logging",
 			Fn:       CheckContainerLogging,
 			Description: ObservabilityContainerLoggingDescription,
@@ -52,7 +52,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "observability-crd-status",
-			Category: "observability",
+			Category: checks.CategoryObservability,
 			CatalogID: "observability-crd-status",
 			Fn:       CheckCRDStatus,
 			Description: ObservabilityCrdStatusDescription,
@@ -72,7 +72,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "observability-pod-disruption-budget",
-			Category: "observability",
+			Category: checks.CategoryObservability,
 			CatalogID: "observability-pod-disruption-budget",
 			Fn:       CheckPodDisruptionBudget,
 			Description: ObservabilityPodDisruptionBudgetDescription,
@@ -92,7 +92,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "observability-termination-policy",
-			Category: "observability",
+			Category: checks.CategoryObservability,
 			CatalogID: "observability-termination-policy",
 			Fn:       CheckTerminationPolicy,
 			Description: ObservabilityTerminationPolicyDescription,

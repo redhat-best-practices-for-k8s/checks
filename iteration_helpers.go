@@ -35,10 +35,11 @@ type ContainerFunc func(pod *corev1.Pod, container *corev1.Container)
 func ForEachPodContainer(pods []corev1.Pod, fn ContainerFunc) {
 	for i := range pods {
 		pod := &pods[i]
-		allContainers := append(pod.Spec.InitContainers, pod.Spec.Containers...)
-		for j := range allContainers {
-			container := &allContainers[j]
-			fn(pod, container)
+		for j := range pod.Spec.InitContainers {
+			fn(pod, &pod.Spec.InitContainers[j])
+		}
+		for j := range pod.Spec.Containers {
+			fn(pod, &pod.Spec.Containers[j])
 		}
 	}
 }

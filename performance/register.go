@@ -12,7 +12,7 @@ func Register() {
 	once.Do(func() {
 		checks.Register(checks.CheckInfo{
 			Name:     "performance-cpu-pinning-no-exec-probes",
-			Category: "performance",
+			Category: checks.CategoryPerformance,
 			CatalogID: "performance-cpu-pinning-no-exec-probes",
 			Fn:       CheckCPUPinningNoExecProbes,
 			Description: PerformanceCpuPinningNoExecProbesDescription,
@@ -32,7 +32,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "performance-exclusive-cpu-pool",
-			Category: "performance",
+			Category: checks.CategoryPerformance,
 			CatalogID: "performance-exclusive-cpu-pool",
 			Fn:       CheckExclusiveCPUPool,
 			Description: PerformanceExclusiveCpuPoolDescription,
@@ -52,7 +52,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "performance-exclusive-cpu-pool-rt-scheduling-policy",
-			Category: "performance",
+			Category: checks.CategoryPerformance,
 			CatalogID: "exclusive-cpu-pool-rt-scheduling-policy",
 			Fn:       CheckExclusiveCPUPoolSchedulingPolicy,
 			Description: PerformanceExclusiveCpuPoolRtSchedulingPolicyDescription,
@@ -72,7 +72,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "performance-isolated-cpu-pool-rt-scheduling-policy",
-			Category: "performance",
+			Category: checks.CategoryPerformance,
 			CatalogID: "isolated-cpu-pool-rt-scheduling-policy",
 			Fn:       CheckIsolatedCPUPoolSchedulingPolicy,
 			Description: PerformanceIsolatedCpuPoolRtSchedulingPolicyDescription,
@@ -92,13 +92,13 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "performance-limit-memory-allocation",
-			Category: "performance",
+			Category: checks.CategoryPerformance,
 			CatalogID: "performance-limit-memory-allocation",
 			Fn:       CheckMemoryLimit,
-			Description: "Verifies containers have memory limits set",
-			Remediation: "Set resources.limits.memory on all containers",
-			BestPracticeReference: "https://redhat-best-practices-for-k8s.github.io/guide/#k8s-best-practices-requests-limits",
-			ExceptionProcess: "There is no documented exception process for this.",
+			Description: PerformanceLimitMemoryAllocationDescription,
+			Remediation: PerformanceLimitMemoryAllocationRemediation,
+			BestPracticeReference: PerformanceLimitMemoryAllocationBestPracticeRef,
+			ExceptionProcess: PerformanceLimitMemoryAllocationExceptionProcess,
 			ImpactStatement: PerformanceLimitMemoryAllocationImpactStatement,
 			Qe: true,
 			Tags: []string{checks.TagCommon},
@@ -112,13 +112,13 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "performance-limited-use-of-exec-probes",
-			Category: "performance",
+			Category: checks.CategoryPerformance,
 			CatalogID: "performance-limited-use-of-exec-probes",
 			Fn:       CheckLimitedExecProbes,
-			Description: "Verifies cluster-wide exec probe count is below threshold (10)",
-			Remediation: "Reduce the number of exec probes or use httpGet/tcpSocket probes",
-			BestPracticeReference: "https://redhat-best-practices-for-k8s.github.io/guide/#k8s-best-practices-cpu-manager-pinning",
-			ExceptionProcess: "There is no documented exception process for this.",
+			Description: PerformanceLimitedUseOfExecProbesDescription,
+			Remediation: PerformanceLimitedUseOfExecProbesRemediation,
+			BestPracticeReference: PerformanceLimitedUseOfExecProbesBestPracticeRef,
+			ExceptionProcess: PerformanceLimitedUseOfExecProbesExceptionProcess,
 			ImpactStatement: PerformanceLimitedUseOfExecProbesImpactStatement,
 			Qe: true,
 			Tags: []string{checks.TagFarEdge},
@@ -132,7 +132,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "performance-max-resources-exec-probes",
-			Category: "performance",
+			Category: checks.CategoryPerformance,
 			CatalogID: "performance-max-resources-exec-probes",
 			Fn:       CheckMaxResourcesExecProbes,
 			Description: PerformanceMaxResourcesExecProbesDescription,
@@ -152,7 +152,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "performance-rt-apps-no-exec-probes",
-			Category: "performance",
+			Category: checks.CategoryPerformance,
 			CatalogID: "performance-rt-apps-no-exec-probes",
 			Fn:       CheckRTAppsNoExecProbes,
 			Description: PerformanceRtAppsNoExecProbesDescription,
@@ -172,7 +172,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "performance-shared-cpu-pool-non-rt-scheduling-policy",
-			Category: "performance",
+			Category: checks.CategoryPerformance,
 			CatalogID: "shared-cpu-pool-non-rt-scheduling-policy",
 			Fn:       CheckSharedCPUPoolSchedulingPolicy,
 			Description: PerformanceSharedCpuPoolNonRtSchedulingPolicyDescription,

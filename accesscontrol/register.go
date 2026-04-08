@@ -12,7 +12,7 @@ func Register() {
 	once.Do(func() {
 		checks.Register(checks.CheckInfo{
 			Name:     "access-control-bpf-capability-check",
-			Category: "access-control",
+			Category: checks.CategoryAccessControl,
 			CatalogID: "access-control-bpf-capability-check",
 			Fn:       CheckBPF,
 			Description: AccessControlBpfCapabilityCheckDescription,
@@ -32,7 +32,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "access-control-cluster-role-bindings",
-			Category: "access-control",
+			Category: checks.CategoryAccessControl,
 			CatalogID: "access-control-cluster-role-bindings",
 			Fn:       CheckClusterRoleBindings,
 			Description: AccessControlClusterRoleBindingsDescription,
@@ -52,7 +52,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "access-control-container-host-port",
-			Category: "access-control",
+			Category: checks.CategoryAccessControl,
 			CatalogID: "access-control-container-host-port",
 			Fn:       CheckContainerHostPort,
 			Description: AccessControlContainerHostPortDescription,
@@ -72,7 +72,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "access-control-crd-roles",
-			Category: "access-control",
+			Category: checks.CategoryAccessControl,
 			CatalogID: "access-control-crd-roles",
 			Fn:       CheckCrdRoles,
 			Description: AccessControlCrdRolesDescription,
@@ -92,7 +92,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "access-control-ipc-lock-capability-check",
-			Category: "access-control",
+			Category: checks.CategoryAccessControl,
 			CatalogID: "access-control-ipc-lock-capability-check",
 			Fn:       CheckIPCLock,
 			Description: AccessControlIpcLockCapabilityCheckDescription,
@@ -112,7 +112,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "access-control-namespace",
-			Category: "access-control",
+			Category: checks.CategoryAccessControl,
 			CatalogID: "access-control-namespace",
 			Fn:       CheckNamespace,
 			Description: AccessControlNamespaceDescription,
@@ -132,7 +132,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "access-control-namespace-resource-quota",
-			Category: "access-control",
+			Category: checks.CategoryAccessControl,
 			CatalogID: "access-control-namespace-resource-quota",
 			Fn:       CheckNamespaceResourceQuota,
 			Description: AccessControlNamespaceResourceQuotaDescription,
@@ -152,7 +152,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "access-control-net-admin-capability-check",
-			Category: "access-control",
+			Category: checks.CategoryAccessControl,
 			CatalogID: "access-control-net-admin-capability-check",
 			Fn:       CheckNetAdmin,
 			Description: AccessControlNetAdminCapabilityCheckDescription,
@@ -172,7 +172,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "access-control-net-raw-capability-check",
-			Category: "access-control",
+			Category: checks.CategoryAccessControl,
 			CatalogID: "access-control-net-raw-capability-check",
 			Fn:       CheckNetRaw,
 			Description: AccessControlNetRawCapabilityCheckDescription,
@@ -192,7 +192,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "access-control-no-1337-uid",
-			Category: "access-control",
+			Category: checks.CategoryAccessControl,
 			CatalogID: "access-control-no-1337-uid",
 			Fn:       Check1337UID,
 			Description: AccessControlNo1337UidDescription,
@@ -212,7 +212,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "access-control-one-process-per-container",
-			Category: "access-control",
+			Category: checks.CategoryAccessControl,
 			CatalogID: "access-control-one-process-per-container",
 			Fn:       CheckOneProcess,
 			Description: AccessControlOneProcessPerContainerDescription,
@@ -232,7 +232,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "access-control-pod-automount-service-account-token",
-			Category: "access-control",
+			Category: checks.CategoryAccessControl,
 			CatalogID: "access-control-pod-automount-service-account-token",
 			Fn:       CheckAutomountToken,
 			Description: AccessControlPodAutomountServiceAccountTokenDescription,
@@ -252,7 +252,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "access-control-pod-host-ipc",
-			Category: "access-control",
+			Category: checks.CategoryAccessControl,
 			CatalogID: "access-control-pod-host-ipc",
 			Fn:       CheckHostIPC,
 			Description: AccessControlPodHostIpcDescription,
@@ -272,7 +272,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "access-control-pod-host-network",
-			Category: "access-control",
+			Category: checks.CategoryAccessControl,
 			CatalogID: "access-control-pod-host-network",
 			Fn:       CheckHostNetwork,
 			Description: AccessControlPodHostNetworkDescription,
@@ -292,7 +292,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "access-control-pod-host-path",
-			Category: "access-control",
+			Category: checks.CategoryAccessControl,
 			CatalogID: "access-control-pod-host-path",
 			Fn:       CheckHostPath,
 			Description: AccessControlPodHostPathDescription,
@@ -312,7 +312,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "access-control-pod-host-pid",
-			Category: "access-control",
+			Category: checks.CategoryAccessControl,
 			CatalogID: "access-control-pod-host-pid",
 			Fn:       CheckHostPID,
 			Description: AccessControlPodHostPidDescription,
@@ -332,7 +332,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "access-control-pod-role-bindings",
-			Category: "access-control",
+			Category: checks.CategoryAccessControl,
 			CatalogID: "access-control-pod-role-bindings",
 			Fn:       CheckRoleBindings,
 			Description: AccessControlPodRoleBindingsDescription,
@@ -352,7 +352,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "access-control-pod-service-account",
-			Category: "access-control",
+			Category: checks.CategoryAccessControl,
 			CatalogID: "access-control-pod-service-account",
 			Fn:       CheckServiceAccount,
 			Description: AccessControlPodServiceAccountDescription,
@@ -372,7 +372,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "access-control-requests",
-			Category: "access-control",
+			Category: checks.CategoryAccessControl,
 			CatalogID: "access-control-requests",
 			Fn:       CheckPodRequests,
 			Description: AccessControlRequestsDescription,
@@ -392,7 +392,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "access-control-security-context",
-			Category: "access-control",
+			Category: checks.CategoryAccessControl,
 			CatalogID: "access-control-security-context",
 			Fn:       CheckSecurityContext,
 			Description: AccessControlSecurityContextDescription,
@@ -412,7 +412,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "access-control-security-context-non-root-user-id-check",
-			Category: "access-control",
+			Category: checks.CategoryAccessControl,
 			CatalogID: "access-control-security-context-non-root-user-id-check",
 			Fn:       CheckNonRootUser,
 			Description: AccessControlSecurityContextNonRootUserIdCheckDescription,
@@ -432,7 +432,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "access-control-security-context-privilege-escalation",
-			Category: "access-control",
+			Category: checks.CategoryAccessControl,
 			CatalogID: "access-control-security-context-privilege-escalation",
 			Fn:       CheckPrivilegeEscalation,
 			Description: AccessControlSecurityContextPrivilegeEscalationDescription,
@@ -452,7 +452,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "access-control-security-context-read-only-file-system",
-			Category: "access-control",
+			Category: checks.CategoryAccessControl,
 			CatalogID: "access-control-security-context-read-only-file-system",
 			Fn:       CheckReadOnlyFilesystem,
 			Description: AccessControlSecurityContextReadOnlyFileSystemDescription,
@@ -472,7 +472,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "access-control-service-type",
-			Category: "access-control",
+			Category: checks.CategoryAccessControl,
 			CatalogID: "access-control-service-type",
 			Fn:       CheckNodePortService,
 			Description: AccessControlServiceTypeDescription,
@@ -492,7 +492,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "access-control-ssh-daemons",
-			Category: "access-control",
+			Category: checks.CategoryAccessControl,
 			CatalogID: "access-control-ssh-daemons",
 			Fn:       CheckNoSSHD,
 			Description: AccessControlSshDaemonsDescription,
@@ -512,7 +512,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "access-control-sys-admin-capability-check",
-			Category: "access-control",
+			Category: checks.CategoryAccessControl,
 			CatalogID: "access-control-sys-admin-capability-check",
 			Fn:       CheckSysAdmin,
 			Description: AccessControlSysAdminCapabilityCheckDescription,
@@ -532,7 +532,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "access-control-sys-nice-realtime-capability",
-			Category: "access-control",
+			Category: checks.CategoryAccessControl,
 			CatalogID: "access-control-sys-nice-realtime-capability",
 			Fn:       CheckSysNiceRealtime,
 			Description: AccessControlSysNiceRealtimeCapabilityDescription,
@@ -552,7 +552,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "access-control-sys-ptrace-capability",
-			Category: "access-control",
+			Category: checks.CategoryAccessControl,
 			CatalogID: "access-control-sys-ptrace-capability",
 			Fn:       CheckSysPtrace,
 			Description: AccessControlSysPtraceCapabilityDescription,

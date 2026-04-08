@@ -12,7 +12,7 @@ func Register() {
 	once.Do(func() {
 		checks.Register(checks.CheckInfo{
 			Name:     "manageability-container-port-name-format",
-			Category: "manageability",
+			Category: checks.CategoryManageability,
 			CatalogID: "manageability-container-port-name-format",
 			Fn:       CheckPortNameFormat,
 			Description: ManageabilityContainerPortNameFormatDescription,
@@ -32,7 +32,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "manageability-containers-image-tag",
-			Category: "manageability",
+			Category: checks.CategoryManageability,
 			CatalogID: "manageability-containers-image-tag",
 			Fn:       CheckImageTag,
 			Description: ManageabilityContainersImageTagDescription,

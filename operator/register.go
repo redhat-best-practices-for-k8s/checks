@@ -12,7 +12,7 @@ func Register() {
 	once.Do(func() {
 		checks.Register(checks.CheckInfo{
 			Name:     "operator-catalogsource-bundle-count",
-			Category: "operator",
+			Category: checks.CategoryOperator,
 			CatalogID: "catalogsource-bundle-count",
 			Fn:       CheckCatalogSourceBundleCount,
 			Description: OperatorCatalogsourceBundleCountDescription,
@@ -32,7 +32,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "operator-crd-openapi-schema",
-			Category: "operator",
+			Category: checks.CategoryOperator,
 			CatalogID: "operator-crd-openapi-schema",
 			Fn:       CheckCrdOpenAPISchema,
 			Description: OperatorCrdOpenapiSchemaDescription,
@@ -52,7 +52,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "operator-crd-versioning",
-			Category: "operator",
+			Category: checks.CategoryOperator,
 			CatalogID: "operator-crd-versioning",
 			Fn:       CheckCrdVersioning,
 			Description: OperatorCrdVersioningDescription,
@@ -72,7 +72,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "operator-install-source",
-			Category: "operator",
+			Category: checks.CategoryOperator,
 			CatalogID: "operator-install-source",
 			Fn:       CheckOperatorInstalledViaOLM,
 			Description: OperatorInstallSourceDescription,
@@ -92,7 +92,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "operator-install-status-no-privileges",
-			Category: "operator",
+			Category: checks.CategoryOperator,
 			CatalogID: "operator-install-status-no-privileges",
 			Fn:       CheckOperatorNoSCCAccess,
 			Description: OperatorInstallStatusNoPrivilegesDescription,
@@ -112,7 +112,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "operator-install-status-succeeded",
-			Category: "operator",
+			Category: checks.CategoryOperator,
 			CatalogID: "operator-install-status-succeeded",
 			Fn:       CheckOperatorInstallStatusSucceeded,
 			Description: OperatorInstallStatusSucceededDescription,
@@ -132,7 +132,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "operator-multiple-same-operators",
-			Category: "operator",
+			Category: checks.CategoryOperator,
 			CatalogID: "operator-multiple-same-operators",
 			Fn:       CheckMultipleSameOperators,
 			Description: OperatorMultipleSameOperatorsDescription,
@@ -152,7 +152,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "operator-olm-skip-range",
-			Category: "operator",
+			Category: checks.CategoryOperator,
 			CatalogID: "operator-olm-skip-range",
 			Fn:       CheckOperatorOlmSkipRange,
 			Description: OperatorOlmSkipRangeDescription,
@@ -172,7 +172,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "operator-pods-no-hugepages",
-			Category: "operator",
+			Category: checks.CategoryOperator,
 			CatalogID: "operator-pods-no-hugepages",
 			Fn:       CheckOperatorPodsNoHugepages,
 			Description: OperatorPodsNoHugepagesDescription,
@@ -192,7 +192,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "operator-semantic-versioning",
-			Category: "operator",
+			Category: checks.CategoryOperator,
 			CatalogID: "operator-semantic-versioning",
 			Fn:       CheckOperatorSemanticVersioning,
 			Description: OperatorSemanticVersioningDescription,
@@ -212,7 +212,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "operator-single-crd-owner",
-			Category: "operator",
+			Category: checks.CategoryOperator,
 			CatalogID: "operator-single-crd-owner",
 			Fn:       CheckSingleCrdOwner,
 			Description: OperatorSingleCrdOwnerDescription,
@@ -232,7 +232,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "operator-single-or-multi-namespaced-allowed-in-tenant-namespaces",
-			Category: "operator",
+			Category: checks.CategoryOperator,
 			CatalogID: "single-or-multi-namespaced-allowed-in-tenant-namespaces",
 			Fn:       CheckSingleOrMultiNamespacedOperators,
 			Description: OperatorSingleOrMultiNamespacedAllowedInTenantNamespacesDescription,

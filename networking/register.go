@@ -12,7 +12,7 @@ func Register() {
 	once.Do(func() {
 		checks.Register(checks.CheckInfo{
 			Name:     "networking-dual-stack-service",
-			Category: "networking",
+			Category: checks.CategoryNetworking,
 			CatalogID: "networking-dual-stack-service",
 			Fn:       CheckDualStackService,
 			Description: NetworkingDualStackServiceDescription,
@@ -32,7 +32,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "networking-icmpv4-connectivity",
-			Category: "networking",
+			Category: checks.CategoryNetworking,
 			CatalogID: "icmpv4-connectivity",
 			Fn:       CheckICMPv4Connectivity,
 			Description: NetworkingIcmpv4ConnectivityDescription,
@@ -52,7 +52,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "networking-icmpv4-connectivity-multus",
-			Category: "networking",
+			Category: checks.CategoryNetworking,
 			CatalogID: "icmpv4-connectivity-multus",
 			Fn:       CheckICMPv4ConnectivityMultus,
 			Description: NetworkingIcmpv4ConnectivityMultusDescription,
@@ -72,7 +72,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "networking-icmpv6-connectivity",
-			Category: "networking",
+			Category: checks.CategoryNetworking,
 			CatalogID: "icmpv6-connectivity",
 			Fn:       CheckICMPv6Connectivity,
 			Description: NetworkingIcmpv6ConnectivityDescription,
@@ -92,7 +92,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "networking-icmpv6-connectivity-multus",
-			Category: "networking",
+			Category: checks.CategoryNetworking,
 			CatalogID: "icmpv6-connectivity-multus",
 			Fn:       CheckICMPv6ConnectivityMultus,
 			Description: NetworkingIcmpv6ConnectivityMultusDescription,
@@ -112,7 +112,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "networking-network-attachment-definition-sriov-mtu",
-			Category: "networking",
+			Category: checks.CategoryNetworking,
 			CatalogID: "network-attachment-definition-sriov-mtu",
 			Fn:       CheckSRIOVNetworkAttachmentDefinitionMTU,
 			Description: NetworkingNetworkAttachmentDefinitionSriovMtuDescription,
@@ -132,7 +132,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "networking-network-policy-deny-all",
-			Category: "networking",
+			Category: checks.CategoryNetworking,
 			CatalogID: "networking-network-policy-deny-all",
 			Fn:       CheckNetworkPolicyDenyAll,
 			Description: NetworkingNetworkPolicyDenyAllDescription,
@@ -152,7 +152,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "networking-ocp-reserved-ports-usage",
-			Category: "networking",
+			Category: checks.CategoryNetworking,
 			CatalogID: "networking-ocp-reserved-ports-usage",
 			Fn:       CheckOCPReservedPorts,
 			Description: NetworkingOcpReservedPortsUsageDescription,
@@ -172,7 +172,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "networking-reserved-partner-ports",
-			Category: "networking",
+			Category: checks.CategoryNetworking,
 			CatalogID: "networking-reserved-partner-ports",
 			Fn:       CheckReservedPartnerPorts,
 			Description: NetworkingReservedPartnerPortsDescription,
@@ -192,7 +192,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "networking-restart-on-reboot-sriov-pod",
-			Category: "networking",
+			Category: checks.CategoryNetworking,
 			CatalogID: "networking-restart-on-reboot-sriov-pod",
 			Fn:       CheckSRIOVRestartLabel,
 			Description: NetworkingRestartOnRebootSriovPodDescription,
@@ -212,7 +212,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "networking-undeclared-container-ports-usage",
-			Category: "networking",
+			Category: checks.CategoryNetworking,
 			CatalogID: "networking-undeclared-container-ports-usage",
 			Fn:       CheckUndeclaredContainerPorts,
 			Description: NetworkingUndeclaredContainerPortsUsageDescription,

@@ -12,7 +12,7 @@ func Register() {
 	once.Do(func() {
 		checks.Register(checks.CheckInfo{
 			Name:     "affiliated-certification-container-is-certified-digest",
-			Category: "affiliated-certification",
+			Category: checks.CategoryAffiliatedCertification,
 			CatalogID: "container-is-certified-digest",
 			Fn:       CheckContainerCertified,
 			Description: AffiliatedCertificationContainerIsCertifiedDigestDescription,
@@ -32,7 +32,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "affiliated-certification-helm-version",
-			Category: "affiliated-certification",
+			Category: checks.CategoryAffiliatedCertification,
 			CatalogID: "helm-version",
 			Fn:       CheckHelmVersion,
 			Description: AffiliatedCertificationHelmVersionDescription,
@@ -52,7 +52,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "affiliated-certification-helmchart-is-certified",
-			Category: "affiliated-certification",
+			Category: checks.CategoryAffiliatedCertification,
 			CatalogID: "helmchart-is-certified",
 			Fn:       CheckHelmChartCertified,
 			Description: AffiliatedCertificationHelmchartIsCertifiedDescription,
@@ -72,7 +72,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "affiliated-certification-operator-is-certified",
-			Category: "affiliated-certification",
+			Category: checks.CategoryAffiliatedCertification,
 			CatalogID: "operator-is-certified",
 			Fn:       CheckOperatorCertified,
 			Description: AffiliatedCertificationOperatorIsCertifiedDescription,

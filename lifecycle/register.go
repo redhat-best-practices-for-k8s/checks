@@ -12,7 +12,7 @@ func Register() {
 	once.Do(func() {
 		checks.Register(checks.CheckInfo{
 			Name:     "lifecycle-affinity-required-pods",
-			Category: "lifecycle",
+			Category: checks.CategoryLifecycle,
 			CatalogID: "lifecycle-affinity-required-pods",
 			Fn:       CheckAffinityRequired,
 			Description: LifecycleAffinityRequiredPodsDescription,
@@ -32,7 +32,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "lifecycle-container-poststart",
-			Category: "lifecycle",
+			Category: checks.CategoryLifecycle,
 			CatalogID: "lifecycle-container-poststart",
 			Fn:       CheckPostStart,
 			Description: LifecycleContainerPoststartDescription,
@@ -52,7 +52,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "lifecycle-container-prestop",
-			Category: "lifecycle",
+			Category: checks.CategoryLifecycle,
 			CatalogID: "lifecycle-container-prestop",
 			Fn:       CheckPreStop,
 			Description: LifecycleContainerPrestopDescription,
@@ -72,7 +72,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "lifecycle-cpu-isolation",
-			Category: "lifecycle",
+			Category: checks.CategoryLifecycle,
 			CatalogID: "lifecycle-cpu-isolation",
 			Fn:       CheckCPUIsolation,
 			Description: LifecycleCpuIsolationDescription,
@@ -92,7 +92,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "lifecycle-crd-scaling",
-			Category: "lifecycle",
+			Category: checks.CategoryLifecycle,
 			CatalogID: "lifecycle-crd-scaling",
 			Fn:       CheckCRDScaling,
 			Description: LifecycleCrdScalingDescription,
@@ -112,7 +112,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "lifecycle-deployment-scaling",
-			Category: "lifecycle",
+			Category: checks.CategoryLifecycle,
 			CatalogID: "lifecycle-deployment-scaling",
 			Fn:       CheckDeploymentScaling,
 			Description: LifecycleDeploymentScalingDescription,
@@ -132,7 +132,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "lifecycle-image-pull-policy",
-			Category: "lifecycle",
+			Category: checks.CategoryLifecycle,
 			CatalogID: "lifecycle-image-pull-policy",
 			Fn:       CheckImagePullPolicy,
 			Description: LifecycleImagePullPolicyDescription,
@@ -152,7 +152,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "lifecycle-liveness-probe",
-			Category: "lifecycle",
+			Category: checks.CategoryLifecycle,
 			CatalogID: "lifecycle-liveness-probe",
 			Fn:       CheckLivenessProbe,
 			Description: LifecycleLivenessProbeDescription,
@@ -172,7 +172,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "lifecycle-persistent-volume-reclaim-policy",
-			Category: "lifecycle",
+			Category: checks.CategoryLifecycle,
 			CatalogID: "lifecycle-persistent-volume-reclaim-policy",
 			Fn:       CheckPVReclaimPolicy,
 			Description: LifecyclePersistentVolumeReclaimPolicyDescription,
@@ -192,7 +192,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "lifecycle-pod-high-availability",
-			Category: "lifecycle",
+			Category: checks.CategoryLifecycle,
 			CatalogID: "lifecycle-pod-high-availability",
 			Fn:       CheckHighAvailability,
 			Description: LifecyclePodHighAvailabilityDescription,
@@ -212,7 +212,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "lifecycle-pod-owner-type",
-			Category: "lifecycle",
+			Category: checks.CategoryLifecycle,
 			CatalogID: "lifecycle-pod-owner-type",
 			Fn:       CheckPodOwnerType,
 			Description: LifecyclePodOwnerTypeDescription,
@@ -232,7 +232,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "lifecycle-pod-recreation",
-			Category: "lifecycle",
+			Category: checks.CategoryLifecycle,
 			CatalogID: "lifecycle-pod-recreation",
 			Fn:       CheckPodRecreation,
 			Description: LifecyclePodRecreationDescription,
@@ -252,7 +252,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "lifecycle-pod-scheduling",
-			Category: "lifecycle",
+			Category: checks.CategoryLifecycle,
 			CatalogID: "lifecycle-pod-scheduling",
 			Fn:       CheckPodScheduling,
 			Description: LifecyclePodSchedulingDescription,
@@ -272,7 +272,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "lifecycle-pod-toleration-bypass",
-			Category: "lifecycle",
+			Category: checks.CategoryLifecycle,
 			CatalogID: "lifecycle-pod-toleration-bypass",
 			Fn:       CheckTolerationBypass,
 			Description: LifecyclePodTolerationBypassDescription,
@@ -292,7 +292,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "lifecycle-readiness-probe",
-			Category: "lifecycle",
+			Category: checks.CategoryLifecycle,
 			CatalogID: "lifecycle-readiness-probe",
 			Fn:       CheckReadinessProbe,
 			Description: LifecycleReadinessProbeDescription,
@@ -312,7 +312,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "lifecycle-startup-probe",
-			Category: "lifecycle",
+			Category: checks.CategoryLifecycle,
 			CatalogID: "lifecycle-startup-probe",
 			Fn:       CheckStartupProbe,
 			Description: LifecycleStartupProbeDescription,
@@ -332,7 +332,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "lifecycle-statefulset-scaling",
-			Category: "lifecycle",
+			Category: checks.CategoryLifecycle,
 			CatalogID: "lifecycle-statefulset-scaling",
 			Fn:       CheckStatefulSetScaling,
 			Description: LifecycleStatefulsetScalingDescription,
@@ -352,7 +352,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "lifecycle-storage-provisioner",
-			Category: "lifecycle",
+			Category: checks.CategoryLifecycle,
 			CatalogID: "lifecycle-storage-provisioner",
 			Fn:       CheckStorageProvisioner,
 			Description: LifecycleStorageProvisionerDescription,
@@ -372,7 +372,7 @@ func Register() {
 
 		checks.Register(checks.CheckInfo{
 			Name:     "lifecycle-topology-spread-constraint",
-			Category: "lifecycle",
+			Category: checks.CategoryLifecycle,
 			CatalogID: "lifecycle-topology-spread-constraint",
 			Fn:       CheckTopologySpreadConstraints,
 			Description: LifecycleTopologySpreadConstraintDescription,
