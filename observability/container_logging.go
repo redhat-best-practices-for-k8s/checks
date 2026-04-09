@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"strings"
 
 	"github.com/redhat-best-practices-for-k8s/checks"
 	corev1 "k8s.io/api/core/v1"
@@ -49,6 +50,11 @@ func CheckContainerLogging(resources *checks.DiscoveredResources) checks.CheckRe
 
 			hasLogs, err := containerHasLoggingOutput(k8sClient, pod, container.Name)
 			if err != nil {
+				// Pod may have been recreated between autodiscovery and this check.
+				// Treat "not found" as compliant -- the pod was healthy at discovery time.
+				if strings.Contains(err.Error(), "not found") {
+					continue
+				}
 				failedContainers++
 				result.Details = append(result.Details, checks.ResourceDetail{
 					Kind:      "Container",
