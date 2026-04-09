@@ -134,6 +134,70 @@ func TestCheckNetworkPolicyDenyAll_NonCompliant(t *testing.T) {
 	}
 }
 
+func TestCheckNetworkPolicyDenyAll_MultiNamespace_Mixed(t *testing.T) {
+	resources := &checks.DiscoveredResources{
+		Pods: []corev1.Pod{
+			{ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "ns1"}},
+			{ObjectMeta: metav1.ObjectMeta{Name: "pod2", Namespace: "ns2"}},
+		},
+		NetworkPolicies: []networkingv1.NetworkPolicy{{
+			ObjectMeta: metav1.ObjectMeta{Name: "deny-all", Namespace: "ns1"},
+			Spec: networkingv1.NetworkPolicySpec{
+				PodSelector: metav1.LabelSelector{},
+				PolicyTypes: []networkingv1.PolicyType{
+					networkingv1.PolicyTypeIngress,
+					networkingv1.PolicyTypeEgress,
+				},
+			},
+		}},
+		Namespaces: []string{"ns1", "ns2"},
+	}
+	result := CheckNetworkPolicyDenyAll(resources)
+	if result.ComplianceStatus != "NonCompliant" {
+		t.Errorf("expected NonCompliant (ns2 has no deny-all), got %s", result.ComplianceStatus)
+	}
+	// Should have exactly 1 non-compliant detail for ns2
+	nonCompliantCount := 0
+	for _, d := range result.Details {
+		if !d.Compliant {
+			nonCompliantCount++
+		}
+	}
+	if nonCompliantCount != 1 {
+		t.Errorf("expected 1 non-compliant namespace detail, got %d", nonCompliantCount)
+	}
+}
+
+func TestCheckNetworkPolicyDenyAll_SeparatePolicies_Compliant(t *testing.T) {
+	// Two separate policies in the same namespace covering ingress and egress separately.
+	resources := &checks.DiscoveredResources{
+		Pods: []corev1.Pod{{
+			ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "ns1"},
+		}},
+		NetworkPolicies: []networkingv1.NetworkPolicy{
+			{
+				ObjectMeta: metav1.ObjectMeta{Name: "deny-ingress", Namespace: "ns1"},
+				Spec: networkingv1.NetworkPolicySpec{
+					PodSelector: metav1.LabelSelector{},
+					PolicyTypes: []networkingv1.PolicyType{networkingv1.PolicyTypeIngress},
+				},
+			},
+			{
+				ObjectMeta: metav1.ObjectMeta{Name: "deny-egress", Namespace: "ns1"},
+				Spec: networkingv1.NetworkPolicySpec{
+					PodSelector: metav1.LabelSelector{},
+					PolicyTypes: []networkingv1.PolicyType{networkingv1.PolicyTypeEgress},
+				},
+			},
+		},
+		Namespaces: []string{"ns1"},
+	}
+	result := CheckNetworkPolicyDenyAll(resources)
+	if result.ComplianceStatus != "Compliant" {
+		t.Errorf("expected Compliant (separate ingress+egress deny-all), got %s", result.ComplianceStatus)
+	}
+}
+
 // --- NetworkPolicy deny-all additional scenarios (from certsuite policies_test.go) ---
 
 func TestCheckNetworkPolicyDenyAll_NonEmptySelector(t *testing.T) {
@@ -216,7 +280,7 @@ func TestCheckReservedPartnerPorts_NonCompliant(t *testing.T) {
 			Spec: corev1.PodSpec{
 				Containers: []corev1.Container{{
 					Name:  "c1",
-					Ports: []corev1.ContainerPort{{ContainerPort: 22222}},
+					Ports: []corev1.ContainerPort{{ContainerPort: 15090}},
 				}},
 			},
 		}},

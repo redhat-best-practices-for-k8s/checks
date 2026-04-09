@@ -1253,6 +1253,18 @@ func TestCheckNamespace_DefaultNS_NonCompliant(t *testing.T) {
 	}
 }
 
+func TestCheckNamespace_DefaultPrefixNS_NonCompliant(t *testing.T) {
+	resources := &checks.DiscoveredResources{
+		Pods: []corev1.Pod{
+			{ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "default-test"}},
+		},
+	}
+	result := CheckNamespace(resources)
+	if result.ComplianceStatus != "NonCompliant" {
+		t.Errorf("expected NonCompliant for pod in 'default-test' namespace, got %s", result.ComplianceStatus)
+	}
+}
+
 func TestCheckNamespace_OpenShiftNS_NonCompliant(t *testing.T) {
 	resources := &checks.DiscoveredResources{
 		Pods: []corev1.Pod{
@@ -1262,6 +1274,42 @@ func TestCheckNamespace_OpenShiftNS_NonCompliant(t *testing.T) {
 	result := CheckNamespace(resources)
 	if result.ComplianceStatus != "NonCompliant" {
 		t.Errorf("expected NonCompliant for pod in 'openshift-monitoring' namespace, got %s", result.ComplianceStatus)
+	}
+}
+
+func TestCheckNamespace_IstioNS_NonCompliant(t *testing.T) {
+	resources := &checks.DiscoveredResources{
+		Pods: []corev1.Pod{
+			{ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "istio-system"}},
+		},
+	}
+	result := CheckNamespace(resources)
+	if result.ComplianceStatus != "NonCompliant" {
+		t.Errorf("expected NonCompliant for pod in 'istio-system' namespace, got %s", result.ComplianceStatus)
+	}
+}
+
+func TestCheckNamespace_AspenMeshNS_NonCompliant(t *testing.T) {
+	resources := &checks.DiscoveredResources{
+		Pods: []corev1.Pod{
+			{ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "aspenmesh-system"}},
+		},
+	}
+	result := CheckNamespace(resources)
+	if result.ComplianceStatus != "NonCompliant" {
+		t.Errorf("expected NonCompliant for pod in 'aspenmesh-system' namespace, got %s", result.ComplianceStatus)
+	}
+}
+
+func TestCheckNamespace_CustomNS_Compliant(t *testing.T) {
+	resources := &checks.DiscoveredResources{
+		Pods: []corev1.Pod{
+			{ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "my-app"}},
+		},
+	}
+	result := CheckNamespace(resources)
+	if result.ComplianceStatus != "Compliant" {
+		t.Errorf("expected Compliant for pod in 'my-app' namespace, got %s", result.ComplianceStatus)
 	}
 }
 

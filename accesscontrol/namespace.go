@@ -2,40 +2,28 @@ package accesscontrol
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/redhat-best-practices-for-k8s/checks"
 )
 
-// defaultNamespaces are Kubernetes/OpenShift system namespaces where workloads should not run.
-var defaultNamespaces = map[string]bool{
-	"default":                              true,
-	"kube-system":                          true,
-	"kube-public":                          true,
-	"kube-node-lease":                      true,
-	"openshift":                            true,
-	"openshift-apiserver":                  true,
-	"openshift-authentication":             true,
-	"openshift-config":                     true,
-	"openshift-console":                    true,
-	"openshift-controller-manager":         true,
-	"openshift-dns":                        true,
-	"openshift-etcd":                       true,
-	"openshift-image-registry":             true,
-	"openshift-infra":                      true,
-	"openshift-ingress":                    true,
-	"openshift-kube-apiserver":             true,
-	"openshift-kube-controller-manager":    true,
-	"openshift-kube-scheduler":             true,
-	"openshift-machine-api":                true,
-	"openshift-machine-config-operator":    true,
-	"openshift-marketplace":                true,
-	"openshift-monitoring":                 true,
-	"openshift-multus":                     true,
-	"openshift-network-operator":           true,
-	"openshift-node":                       true,
-	"openshift-operator-lifecycle-manager": true,
-	"openshift-operators":                  true,
-	"openshift-sdn":                        true,
+// invalidNamespacePrefixes are prefixes that identify system namespaces where workloads should not run.
+// This matches the certsuite's namespace validation logic.
+var invalidNamespacePrefixes = []string{
+	"default",
+	"openshift-",
+	"istio-",
+	"aspenmesh-",
+}
+
+// isInvalidNamespace returns true if the namespace starts with any of the invalid prefixes.
+func isInvalidNamespace(namespace string) bool {
+	for _, prefix := range invalidNamespacePrefixes {
+		if strings.HasPrefix(namespace, prefix) {
+			return true
+		}
+	}
+	return false
 }
 
 // CheckNamespace verifies pods run in allowed namespaces.
@@ -50,7 +38,7 @@ func CheckNamespace(resources *checks.DiscoveredResources) checks.CheckResult {
 	var count int
 	for i := range resources.Pods {
 		pod := &resources.Pods[i]
-		if defaultNamespaces[pod.Namespace] {
+		if isInvalidNamespace(pod.Namespace) {
 			count++
 			result.Details = append(result.Details, checks.ResourceDetail{
 				Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,

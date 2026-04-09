@@ -97,6 +97,12 @@ func CheckPodScheduling(resources *checks.DiscoveredResources) checks.CheckResul
 	var count int
 	for i := range resources.Pods {
 		pod := &resources.Pods[i]
+
+		// Skip pods with the AffinityRequired label; those are checked by CheckAffinityRequired.
+		if val, ok := pod.Labels[affinityRequiredLabel]; ok && strings.EqualFold(val, "true") {
+			continue
+		}
+
 		hasNodeSelector := len(pod.Spec.NodeSelector) > 0
 		hasNodeAffinity := pod.Spec.Affinity != nil && pod.Spec.Affinity.NodeAffinity != nil
 

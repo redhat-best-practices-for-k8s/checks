@@ -81,8 +81,8 @@ func getServiceIPVersion(svc *corev1.Service) ipVersion {
 		if isDualStack(svc.Spec.ClusterIPs) {
 			return ipVersionDualStack
 		}
-		// Dual-stack policy but not enough IPs; still treat as the single IP version
-		return clusterIPVer
+		// Dual-stack policy but not enough IPs; the certsuite returns an error in this case.
+		return ipVersionUndefined
 	}
 
 	return ipVersionUndefined
@@ -115,10 +115,18 @@ func isDualStack(ips []string) bool {
 	return hasIPv4 && hasIPv6
 }
 
+// reservedPartnerPorts are the Istio ports reserved by partner.
+// https://istio.io/latest/docs/ops/deployment/requirements/#ports-used-by-istio
 var reservedPartnerPorts = map[int32]bool{
-	22222: true,
-	22623: true,
-	22624: true,
+	15443: true, // Istio SNI
+	15090: true, // Envoy Prometheus telemetry
+	15021: true, // Health checks
+	15020: true, // Merged Prometheus telemetry from Istio agent, Envoy, and application
+	15014: true, // Control plane monitoring
+	15008: true, // HBONE mTLS tunnel port
+	15006: true, // Envoy inbound
+	15001: true, // Envoy outbound
+	15000: true, // Envoy admin port (commands/diagnostics)
 }
 
 var ocpReservedPorts = map[int32]bool{

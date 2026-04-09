@@ -608,6 +608,56 @@ func TestCheckPodScheduling_NoPods(t *testing.T) {
 	}
 }
 
+func TestCheckPodScheduling_AffinityRequiredSkipped(t *testing.T) {
+	// A pod with AffinityRequired label and nodeSelector should be skipped,
+	// so the result should be Compliant.
+	resources := &checks.DiscoveredResources{
+		Pods: []corev1.Pod{{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "pod1", Namespace: "ns1",
+				Labels: map[string]string{"AffinityRequired": "true"},
+			},
+			Spec: corev1.PodSpec{
+				NodeSelector: map[string]string{"role": "worker"},
+			},
+		}},
+	}
+	result := CheckPodScheduling(resources)
+	if result.ComplianceStatus != "Compliant" {
+		t.Errorf("expected Compliant for pod with AffinityRequired label, got %s", result.ComplianceStatus)
+	}
+}
+
+func TestCheckPodScheduling_MixedAffinityRequired(t *testing.T) {
+	// One pod with AffinityRequired (skipped) and one without (checked).
+	resources := &checks.DiscoveredResources{
+		Pods: []corev1.Pod{
+			{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "pod-affinity", Namespace: "ns1",
+					Labels: map[string]string{"AffinityRequired": "true"},
+				},
+				Spec: corev1.PodSpec{
+					NodeSelector: map[string]string{"role": "worker"},
+				},
+			},
+			{
+				ObjectMeta: metav1.ObjectMeta{Name: "pod-normal", Namespace: "ns1"},
+				Spec: corev1.PodSpec{
+					NodeSelector: map[string]string{"role": "worker"},
+				},
+			},
+		},
+	}
+	result := CheckPodScheduling(resources)
+	if result.ComplianceStatus != "NonCompliant" {
+		t.Errorf("expected NonCompliant for non-AffinityRequired pod with nodeSelector, got %s", result.ComplianceStatus)
+	}
+	if len(result.Details) != 1 {
+		t.Errorf("expected 1 detail (only the non-AffinityRequired pod), got %d", len(result.Details))
+	}
+}
+
 func TestCheckAffinityRequired_PodAffinity_Compliant(t *testing.T) {
 	resources := &checks.DiscoveredResources{
 		Pods: []corev1.Pod{{
