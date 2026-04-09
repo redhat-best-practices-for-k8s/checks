@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	corev1 "k8s.io/api/core/v1"
+	storagev1 "k8s.io/api/storage/v1"
 
 	"github.com/redhat-best-practices-for-k8s/checks"
 )
@@ -372,113 +373,124 @@ func isLocalProvisioner(provisioner string) bool {
 	return provisioner == localStorageProvisioner || strings.HasPrefix(provisioner, lvmProvisioner)
 }
 
-// CheckStorageProvisioner validates StorageClass provisioners based on cluster topology.
-//
-// Multi-node clusters: Local storage provisioners (kubernetes.io/no-provisioner and
-// topolvm.io) are non-compliant. Non-local storage is compliant.
-//
-// SNO clusters (single node): Local storage is recommended but only one type is allowed
-// (not both no-provisioner AND topolvm). Non-local storage is non-compliant on SNO.
+// CheckStorageProvisioner validates storage provisioners by iterating pods -> volumes ->
+// PVCs -> StorageClasses. Matches the certsuite's testStorageProvisioner logic:
+// - Multi-node: local storage (no-provisioner, topolvm) is non-compliant
+// - SNO: local storage is recommended but only one type allowed
+// - Pods with PVCs that don't match any StorageClass are compliant
 func CheckStorageProvisioner(resources *checks.DiscoveredResources) checks.CheckResult {
 	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
-	if len(resources.StorageClasses) == 0 {
-		result.ComplianceStatus = checks.StatusCompliant
-		result.Reason = "No StorageClasses found"
+	if len(resources.Pods) == 0 {
+		result.Reason = "No pods found"
 		return result
 	}
 
 	isSNO := len(resources.Nodes) == 1
-
+	snoSingleLocalProvisioner := ""
 	var nonCompliantCount int
-	if isSNO {
-		nonCompliantCount = checkStorageProvisionerSNO(resources, &result)
-	} else {
-		nonCompliantCount = checkStorageProvisionerMultiNode(resources, &result)
+
+	for i := range resources.Pods {
+		pod := &resources.Pods[i]
+		usesPvcAndStorageClass := false
+
+		for vi := range pod.Spec.Volumes {
+			pvc := pod.Spec.Volumes[vi].PersistentVolumeClaim
+			if pvc == nil {
+				continue
+			}
+
+			// Find matching PVC by name and namespace
+			for pi := range resources.PersistentVolumeClaims {
+				claim := &resources.PersistentVolumeClaims[pi]
+				if claim.Name != pvc.ClaimName || claim.Namespace != pod.Namespace {
+					continue
+				}
+				if claim.Spec.StorageClassName == nil || *claim.Spec.StorageClassName == "" {
+					continue
+				}
+
+				// Find matching StorageClass
+				for si := range resources.StorageClasses {
+					sc := &resources.StorageClasses[si]
+					if sc.Name != *claim.Spec.StorageClassName {
+						continue
+					}
+					usesPvcAndStorageClass = true
+
+					if isSNO {
+						nonCompliantCount += checkProvisionerSNO(pod, sc, pvc.ClaimName, &snoSingleLocalProvisioner, &result)
+					} else {
+						nonCompliantCount += checkProvisionerMultiNode(pod, sc, pvc.ClaimName, &result)
+					}
+				}
+			}
+		}
+
+		// Pods not using any PVC/StorageClass are compliant
+		if !usesPvcAndStorageClass {
+			result.Details = append(result.Details, checks.ResourceDetail{
+				Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
+				Compliant: true, Message: "Pod not configured to use local storage",
+			})
+		}
 	}
 
 	if nonCompliantCount > 0 {
 		result.ComplianceStatus = checks.StatusNonCompliant
-		result.Reason = fmt.Sprintf("%d StorageClass(es) have non-compliant provisioner", nonCompliantCount)
+		result.Reason = fmt.Sprintf("%d storage provisioner violation(s) found", nonCompliantCount)
 	}
 	return result
 }
 
-// checkStorageProvisionerMultiNode checks storage provisioners for multi-node clusters.
-// Local storage is non-compliant; non-local storage is compliant.
-func checkStorageProvisionerMultiNode(resources *checks.DiscoveredResources, result *checks.CheckResult) int {
-	var count int
-	for i := range resources.StorageClasses {
-		sc := &resources.StorageClasses[i]
-		if isLocalProvisioner(sc.Provisioner) {
-			count++
-			result.Details = append(result.Details, checks.ResourceDetail{
-				Kind: "StorageClass", Name: sc.Name,
-				Compliant: false,
-				Message:   fmt.Sprintf("Local storage provisioner %q not recommended in multi-node clusters", sc.Provisioner),
-			})
-		} else {
-			result.Details = append(result.Details, checks.ResourceDetail{
-				Kind: "StorageClass", Name: sc.Name,
-				Compliant: true,
-				Message:   fmt.Sprintf("Non-local storage provisioner %q recommended in multi-node clusters", sc.Provisioner),
-			})
-		}
+func checkProvisionerMultiNode(pod *corev1.Pod, sc *storagev1.StorageClass, claimName string, result *checks.CheckResult) int {
+	if isLocalProvisioner(sc.Provisioner) {
+		result.Details = append(result.Details, checks.ResourceDetail{
+			Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
+			Compliant: false,
+			Message:   fmt.Sprintf("Local storage provisioner %q not recommended in multi-node clusters (PVC: %s)", sc.Provisioner, claimName),
+		})
+		return 1
 	}
-	return count
+	result.Details = append(result.Details, checks.ResourceDetail{
+		Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
+		Compliant: true,
+		Message:   fmt.Sprintf("Non-local storage provisioner %q recommended in multi-node clusters", sc.Provisioner),
+	})
+	return 0
 }
 
-// checkStorageProvisionerSNO checks storage provisioners for single-node (SNO) clusters.
-// Local storage is compliant but only one type allowed (not both no-provisioner AND topolvm).
-// Non-local storage is non-compliant on SNO.
-func checkStorageProvisionerSNO(resources *checks.DiscoveredResources, result *checks.CheckResult) int {
-	// Track which local provisioner type was seen first
-	snoSingleLocalProvisioner := ""
-
-	var count int
-	for i := range resources.StorageClasses {
-		sc := &resources.StorageClasses[i]
-
-		if !isLocalProvisioner(sc.Provisioner) {
-			// Non-local storage is non-compliant on SNO
-			count++
-			result.Details = append(result.Details, checks.ResourceDetail{
-				Kind: "StorageClass", Name: sc.Name,
-				Compliant: false,
-				Message:   fmt.Sprintf("Non-local storage provisioner %q not recommended in single-node clusters", sc.Provisioner),
-			})
-			continue
-		}
-
-		// Local provisioner -- determine which type
-		provType := sc.Provisioner
-		if strings.HasPrefix(provType, lvmProvisioner) {
-			provType = lvmProvisioner
-		}
-
-		if snoSingleLocalProvisioner == "" {
-			// First local provisioner seen -- this is the allowed type
-			snoSingleLocalProvisioner = provType
-			result.Details = append(result.Details, checks.ResourceDetail{
-				Kind: "StorageClass", Name: sc.Name,
-				Compliant: true,
-				Message:   fmt.Sprintf("Local storage provisioner %q recommended for SNO clusters", sc.Provisioner),
-			})
-		} else if provType == snoSingleLocalProvisioner {
-			// Same type as the first -- compliant
-			result.Details = append(result.Details, checks.ResourceDetail{
-				Kind: "StorageClass", Name: sc.Name,
-				Compliant: true,
-				Message:   fmt.Sprintf("Local storage provisioner %q recommended for SNO clusters", sc.Provisioner),
-			})
-		} else {
-			// Different local type -- non-compliant (can't use both no-provisioner AND topolvm)
-			count++
-			result.Details = append(result.Details, checks.ResourceDetail{
-				Kind: "StorageClass", Name: sc.Name,
-				Compliant: false,
-				Message:   "A single type of local storage is recommended for single-node clusters; use either kubernetes.io/no-provisioner or topolvm, but not both",
-			})
-		}
+func checkProvisionerSNO(pod *corev1.Pod, sc *storagev1.StorageClass, claimName string, snoFirst *string, result *checks.CheckResult) int {
+	if !isLocalProvisioner(sc.Provisioner) {
+		result.Details = append(result.Details, checks.ResourceDetail{
+			Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
+			Compliant: false,
+			Message:   fmt.Sprintf("Non-local storage provisioner %q not recommended in single-node clusters (PVC: %s)", sc.Provisioner, claimName),
+		})
+		return 1
 	}
-	return count
+
+	provType := sc.Provisioner
+	if strings.HasPrefix(provType, lvmProvisioner) {
+		provType = lvmProvisioner
+	}
+
+	if *snoFirst == "" {
+		*snoFirst = provType
+	}
+
+	if provType == *snoFirst {
+		result.Details = append(result.Details, checks.ResourceDetail{
+			Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
+			Compliant: true,
+			Message:   fmt.Sprintf("Local storage provisioner %q recommended for SNO clusters", sc.Provisioner),
+		})
+		return 0
+	}
+
+	result.Details = append(result.Details, checks.ResourceDetail{
+		Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
+		Compliant: false,
+		Message:   "Use either kubernetes.io/no-provisioner or topolvm, but not both (PVC: " + claimName + ")",
+	})
+	return 1
 }

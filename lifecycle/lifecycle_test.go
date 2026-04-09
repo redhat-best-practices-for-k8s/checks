@@ -1,6 +1,7 @@
 package lifecycle
 
 import (
+	"fmt"
 	"testing"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -759,104 +760,88 @@ func TestCheckTopologySpreadConstraints_MissingZone_NonCompliant(t *testing.T) {
 
 // --- StorageProvisioner checks ---
 
-func TestCheckStorageProvisioner_MultiNode_NonLocalCompliant(t *testing.T) {
-	resources := &checks.DiscoveredResources{
-		StorageClasses: []storagev1.StorageClass{{
-			ObjectMeta:  metav1.ObjectMeta{Name: "ebs-sc"},
-			Provisioner: "ebs.csi.aws.com",
-		}},
-		Nodes: []corev1.Node{
-			{ObjectMeta: metav1.ObjectMeta{Name: "node1"}},
-			{ObjectMeta: metav1.ObjectMeta{Name: "node2"}},
-		},
+// storageTestResources builds test resources with a pod using a PVC bound to a StorageClass.
+func storageTestResources(scName, provisioner string, nodeCount int) *checks.DiscoveredResources {
+	sc := scName
+	nodes := make([]corev1.Node, nodeCount)
+	for i := range nodes {
+		nodes[i] = corev1.Node{ObjectMeta: metav1.ObjectMeta{Name: fmt.Sprintf("node%d", i+1)}}
 	}
-	result := CheckStorageProvisioner(resources)
+	return &checks.DiscoveredResources{
+		Pods: []corev1.Pod{{
+			ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "ns1"},
+			Spec: corev1.PodSpec{Volumes: []corev1.Volume{{
+				Name: "vol1",
+				VolumeSource: corev1.VolumeSource{PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{ClaimName: "pvc1"}},
+			}}},
+		}},
+		PersistentVolumeClaims: []corev1.PersistentVolumeClaim{{
+			ObjectMeta: metav1.ObjectMeta{Name: "pvc1", Namespace: "ns1"},
+			Spec:       corev1.PersistentVolumeClaimSpec{StorageClassName: &sc},
+		}},
+		StorageClasses: []storagev1.StorageClass{{
+			ObjectMeta:  metav1.ObjectMeta{Name: scName},
+			Provisioner: provisioner,
+		}},
+		Nodes: nodes,
+	}
+}
+
+func TestCheckStorageProvisioner_MultiNode_NonLocalCompliant(t *testing.T) {
+	result := CheckStorageProvisioner(storageTestResources("ebs-sc", "ebs.csi.aws.com", 2))
 	if result.ComplianceStatus != "Compliant" {
-		t.Errorf("expected Compliant for non-local in multi-node, got %s", result.ComplianceStatus)
+		t.Errorf("expected Compliant for non-local in multi-node, got %s: %s", result.ComplianceStatus, result.Reason)
 	}
 }
 
 func TestCheckStorageProvisioner_MultiNode_LocalNonCompliant(t *testing.T) {
-	resources := &checks.DiscoveredResources{
-		StorageClasses: []storagev1.StorageClass{{
-			ObjectMeta:  metav1.ObjectMeta{Name: "local-sc"},
-			Provisioner: "kubernetes.io/no-provisioner",
-		}},
-		Nodes: []corev1.Node{
-			{ObjectMeta: metav1.ObjectMeta{Name: "node1"}},
-			{ObjectMeta: metav1.ObjectMeta{Name: "node2"}},
-		},
-	}
-	result := CheckStorageProvisioner(resources)
+	result := CheckStorageProvisioner(storageTestResources("local-sc", "kubernetes.io/no-provisioner", 2))
 	if result.ComplianceStatus != "NonCompliant" {
 		t.Errorf("expected NonCompliant for local storage in multi-node, got %s", result.ComplianceStatus)
 	}
 }
 
 func TestCheckStorageProvisioner_MultiNode_TopolvmNonCompliant(t *testing.T) {
-	resources := &checks.DiscoveredResources{
-		StorageClasses: []storagev1.StorageClass{{
-			ObjectMeta:  metav1.ObjectMeta{Name: "topolvm-sc"},
-			Provisioner: "topolvm.io",
-		}},
-		Nodes: []corev1.Node{
-			{ObjectMeta: metav1.ObjectMeta{Name: "node1"}},
-			{ObjectMeta: metav1.ObjectMeta{Name: "node2"}},
-		},
-	}
-	result := CheckStorageProvisioner(resources)
+	result := CheckStorageProvisioner(storageTestResources("topolvm-sc", "topolvm.io", 2))
 	if result.ComplianceStatus != "NonCompliant" {
 		t.Errorf("expected NonCompliant for topolvm in multi-node, got %s", result.ComplianceStatus)
 	}
 }
 
 func TestCheckStorageProvisioner_SNO_LocalCompliant(t *testing.T) {
-	resources := &checks.DiscoveredResources{
-		StorageClasses: []storagev1.StorageClass{{
-			ObjectMeta:  metav1.ObjectMeta{Name: "local-sc"},
-			Provisioner: "kubernetes.io/no-provisioner",
-		}},
-		Nodes: []corev1.Node{
-			{ObjectMeta: metav1.ObjectMeta{Name: "node1"}},
-		},
-	}
-	result := CheckStorageProvisioner(resources)
+	result := CheckStorageProvisioner(storageTestResources("local-sc", "kubernetes.io/no-provisioner", 1))
 	if result.ComplianceStatus != "Compliant" {
 		t.Errorf("expected Compliant for local storage in SNO, got %s: %s", result.ComplianceStatus, result.Reason)
 	}
 }
 
 func TestCheckStorageProvisioner_SNO_NonLocalNonCompliant(t *testing.T) {
-	resources := &checks.DiscoveredResources{
-		StorageClasses: []storagev1.StorageClass{{
-			ObjectMeta:  metav1.ObjectMeta{Name: "ebs-sc"},
-			Provisioner: "ebs.csi.aws.com",
-		}},
-		Nodes: []corev1.Node{
-			{ObjectMeta: metav1.ObjectMeta{Name: "node1"}},
-		},
-	}
-	result := CheckStorageProvisioner(resources)
+	result := CheckStorageProvisioner(storageTestResources("ebs-sc", "ebs.csi.aws.com", 1))
 	if result.ComplianceStatus != "NonCompliant" {
 		t.Errorf("expected NonCompliant for non-local storage in SNO, got %s", result.ComplianceStatus)
 	}
 }
 
 func TestCheckStorageProvisioner_SNO_BothLocalTypes_NonCompliant(t *testing.T) {
+	sc1 := "local-sc"
+	sc2 := "topolvm-sc"
 	resources := &checks.DiscoveredResources{
+		Pods: []corev1.Pod{{
+			ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "ns1"},
+			Spec: corev1.PodSpec{Volumes: []corev1.Volume{
+				{Name: "vol1", VolumeSource: corev1.VolumeSource{PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{ClaimName: "pvc1"}}},
+				{Name: "vol2", VolumeSource: corev1.VolumeSource{PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{ClaimName: "pvc2"}}},
+			}},
+		}},
+		PersistentVolumeClaims: []corev1.PersistentVolumeClaim{
+			{ObjectMeta: metav1.ObjectMeta{Name: "pvc1", Namespace: "ns1"}, Spec: corev1.PersistentVolumeClaimSpec{StorageClassName: &sc1}},
+			{ObjectMeta: metav1.ObjectMeta{Name: "pvc2", Namespace: "ns1"}, Spec: corev1.PersistentVolumeClaimSpec{StorageClassName: &sc2}},
+		},
 		StorageClasses: []storagev1.StorageClass{
-			{
-				ObjectMeta:  metav1.ObjectMeta{Name: "local-sc"},
-				Provisioner: "kubernetes.io/no-provisioner",
-			},
-			{
-				ObjectMeta:  metav1.ObjectMeta{Name: "topolvm-sc"},
-				Provisioner: "topolvm.io",
-			},
+			{ObjectMeta: metav1.ObjectMeta{Name: "local-sc"}, Provisioner: "kubernetes.io/no-provisioner"},
+			{ObjectMeta: metav1.ObjectMeta{Name: "topolvm-sc"}, Provisioner: "topolvm.io"},
 		},
-		Nodes: []corev1.Node{
-			{ObjectMeta: metav1.ObjectMeta{Name: "node1"}},
-		},
+		Nodes: []corev1.Node{{ObjectMeta: metav1.ObjectMeta{Name: "node1"}}},
 	}
 	result := CheckStorageProvisioner(resources)
 	if result.ComplianceStatus != "NonCompliant" {
@@ -864,9 +849,33 @@ func TestCheckStorageProvisioner_SNO_BothLocalTypes_NonCompliant(t *testing.T) {
 	}
 }
 
-func TestCheckStorageProvisioner_Skipped(t *testing.T) {
+func TestCheckStorageProvisioner_NoPods(t *testing.T) {
 	result := CheckStorageProvisioner(&checks.DiscoveredResources{})
 	if result.ComplianceStatus != checks.StatusCompliant {
 		t.Errorf("expected Compliant, got %s", result.ComplianceStatus)
+	}
+}
+
+func TestCheckStorageProvisioner_PVCNoStorageClass_Compliant(t *testing.T) {
+	resources := &checks.DiscoveredResources{
+		Pods: []corev1.Pod{{
+			ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "ns1"},
+			Spec: corev1.PodSpec{Volumes: []corev1.Volume{{
+				Name: "vol1",
+				VolumeSource: corev1.VolumeSource{PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{ClaimName: "pvc1"}},
+			}}},
+		}},
+		PersistentVolumeClaims: []corev1.PersistentVolumeClaim{{
+			ObjectMeta: metav1.ObjectMeta{Name: "pvc1", Namespace: "ns1"},
+			Spec:       corev1.PersistentVolumeClaimSpec{}, // No StorageClassName
+		}},
+		Nodes: []corev1.Node{
+			{ObjectMeta: metav1.ObjectMeta{Name: "node1"}},
+			{ObjectMeta: metav1.ObjectMeta{Name: "node2"}},
+		},
+	}
+	result := CheckStorageProvisioner(resources)
+	if result.ComplianceStatus != "Compliant" {
+		t.Errorf("expected Compliant for PVC with no storageclass, got %s: %s", result.ComplianceStatus, result.Reason)
 	}
 }

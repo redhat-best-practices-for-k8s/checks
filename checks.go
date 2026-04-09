@@ -39,8 +39,9 @@ type DiscoveredResources struct {
 	NetworkPolicies      []networkingv1.NetworkPolicy
 	ResourceQuotas       []corev1.ResourceQuota
 	Nodes                []corev1.Node
-	PersistentVolumes    []corev1.PersistentVolume
-	StorageClasses       []storagev1.StorageClass
+	PersistentVolumes      []corev1.PersistentVolume
+	PersistentVolumeClaims []corev1.PersistentVolumeClaim
+	StorageClasses         []storagev1.StorageClass
 	PodDisruptionBudgets []policyv1.PodDisruptionBudget
 	CSVs                 []olmv1alpha1.ClusterServiceVersion
 
