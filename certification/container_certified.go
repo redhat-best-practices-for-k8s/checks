@@ -11,7 +11,7 @@ import (
 func CheckContainerCertified(resources *checks.DiscoveredResources) checks.CheckResult {
 	if resources.CertValidator == nil {
 		return checks.CheckResult{
-			ComplianceStatus: checks.StatusCompliant,
+			ComplianceStatus: checks.StatusError,
 			Reason:           "No certification validator available",
 		}
 	}

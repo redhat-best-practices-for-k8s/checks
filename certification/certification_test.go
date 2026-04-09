@@ -102,7 +102,7 @@ func TestCheckContainerCertified_NoValidator(t *testing.T) {
 	result := CheckContainerCertified(&checks.DiscoveredResources{
 		Pods: []corev1.Pod{{ObjectMeta: metav1.ObjectMeta{Name: "p1"}}},
 	})
-	if result.ComplianceStatus != checks.StatusCompliant {
+	if result.ComplianceStatus != checks.StatusError {
 		t.Errorf("expected Skipped, got %s", result.ComplianceStatus)
 	}
 }
@@ -204,7 +204,7 @@ func TestCheckOperatorCertified_NoValidator(t *testing.T) {
 	result := CheckOperatorCertified(&checks.DiscoveredResources{
 		CSVs: []v1alpha1.ClusterServiceVersion{{ObjectMeta: metav1.ObjectMeta{Name: "op1"}}},
 	})
-	if result.ComplianceStatus != checks.StatusCompliant {
+	if result.ComplianceStatus != checks.StatusError {
 		t.Errorf("expected Skipped, got %s", result.ComplianceStatus)
 	}
 }
@@ -276,7 +276,7 @@ func TestCheckHelmChartCertified_NoValidator(t *testing.T) {
 	result := CheckHelmChartCertified(&checks.DiscoveredResources{
 		HelmChartReleases: []checks.HelmChartRelease{{Name: "chart1"}},
 	})
-	if result.ComplianceStatus != checks.StatusCompliant {
+	if result.ComplianceStatus != checks.StatusError {
 		t.Errorf("expected Skipped, got %s", result.ComplianceStatus)
 	}
 }
