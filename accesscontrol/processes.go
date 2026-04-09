@@ -3,13 +3,18 @@ package accesscontrol
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/redhat-best-practices-for-k8s/checks"
 )
 
+const nbProcessesIndex = 2
+
 // CheckOneProcess verifies each container runs only one process (probe-based).
+// It uses crictl inspect to get the container PID, then lsns to count processes
+// in the container's PID namespace.
 func CheckOneProcess(resources *checks.DiscoveredResources) checks.CheckResult {
 	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if resources.ProbeExecutor == nil || len(resources.ProbePods) == 0 {
@@ -25,8 +30,6 @@ func CheckOneProcess(resources *checks.DiscoveredResources) checks.CheckResult {
 	}
 
 	var count int
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
 
 	for i := range resources.Pods {
 		pod := &resources.Pods[i]
@@ -35,19 +38,79 @@ func CheckOneProcess(resources *checks.DiscoveredResources) checks.CheckResult {
 			continue
 		}
 
-		for _, container := range pod.Spec.Containers {
-			cmd := fmt.Sprintf("lsns -t pid -o PID,COMMAND --no-headings | grep -c '%s'", container.Name)
-			stdout, _, err := resources.ProbeExecutor.ExecCommand(ctx, probePod, cmd)
-			if err != nil {
+		for j := range pod.Status.ContainerStatuses {
+			containerName := pod.Status.ContainerStatuses[j].Name
+
+			// Skip istio-proxy sidecar containers
+			if checks.IsIgnoredContainer(containerName) {
 				continue
 			}
-			stdout = strings.TrimSpace(stdout)
-			if stdout != "" && stdout != "0" && stdout != "1" {
+
+			containerID := checks.ParseContainerID(pod.Status.ContainerStatuses[j].ContainerID)
+			if containerID == "" {
+				continue
+			}
+
+			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			pid, err := checks.GetContainerPID(ctx, resources.ProbeExecutor, probePod, containerID)
+			if err != nil {
+				cancel()
 				count++
 				result.Details = append(result.Details, checks.ResourceDetail{
 					Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
 					Compliant: false,
-					Message:   fmt.Sprintf("Container %q has multiple processes", container.Name),
+					Message:   fmt.Sprintf("Container %q: failed to get PID: %v", containerName, err),
+				})
+				continue
+			}
+
+			lsnsCmd := fmt.Sprintf("lsns -p %s -t pid -n", pid)
+			stdout, _, err := resources.ProbeExecutor.ExecCommand(ctx, probePod, lsnsCmd)
+			cancel()
+			if err != nil {
+				count++
+				result.Details = append(result.Details, checks.ResourceDetail{
+					Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
+					Compliant: false,
+					Message:   fmt.Sprintf("Container %q: failed to run lsns: %v", containerName, err),
+				})
+				continue
+			}
+
+			fields := strings.Fields(strings.TrimSpace(stdout))
+			if len(fields) <= nbProcessesIndex {
+				count++
+				result.Details = append(result.Details, checks.ResourceDetail{
+					Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
+					Compliant: false,
+					Message:   fmt.Sprintf("Container %q: unexpected lsns output: %s", containerName, stdout),
+				})
+				continue
+			}
+
+			nbProcesses, err := strconv.Atoi(fields[nbProcessesIndex])
+			if err != nil {
+				count++
+				result.Details = append(result.Details, checks.ResourceDetail{
+					Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
+					Compliant: false,
+					Message:   fmt.Sprintf("Container %q: failed to parse NPROCS: %v", containerName, err),
+				})
+				continue
+			}
+
+			if nbProcesses > 1 {
+				count++
+				result.Details = append(result.Details, checks.ResourceDetail{
+					Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
+					Compliant: false,
+					Message:   fmt.Sprintf("Container %q has %d processes running", containerName, nbProcesses),
+				})
+			} else {
+				result.Details = append(result.Details, checks.ResourceDetail{
+					Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
+					Compliant: true,
+					Message:   fmt.Sprintf("Container %q has only one process running", containerName),
 				})
 			}
 		}
@@ -59,7 +122,9 @@ func CheckOneProcess(resources *checks.DiscoveredResources) checks.CheckResult {
 	return result
 }
 
-// CheckNoSSHD verifies no SSH daemons are running (probe-based).
+// CheckNoSSHD verifies no SSH daemons are running in any container (probe-based).
+// It uses crictl inspect to get the container PID, then nsenter + ss to check
+// for sshd listening in the container's network namespace.
 func CheckNoSSHD(resources *checks.DiscoveredResources) checks.CheckResult {
 	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if resources.ProbeExecutor == nil || len(resources.ProbePods) == 0 {
@@ -75,8 +140,6 @@ func CheckNoSSHD(resources *checks.DiscoveredResources) checks.CheckResult {
 	}
 
 	var count int
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
 
 	for i := range resources.Pods {
 		pod := &resources.Pods[i]
@@ -85,16 +148,47 @@ func CheckNoSSHD(resources *checks.DiscoveredResources) checks.CheckResult {
 			continue
 		}
 
-		cmd := fmt.Sprintf("nsenter --target $(crictl inspect $(crictl ps --name %s -q 2>/dev/null | head -1) 2>/dev/null | jq -r '.info.pid' 2>/dev/null) --mount --pid -- pgrep -x sshd 2>/dev/null", pod.Name)
-		stdout, _, err := resources.ProbeExecutor.ExecCommand(ctx, probePod, cmd)
-		if err != nil {
+		// Check the first container of the pod (same as certsuite)
+		if len(pod.Status.ContainerStatuses) == 0 {
 			continue
 		}
-		if strings.TrimSpace(stdout) != "" {
+
+		containerID := checks.ParseContainerID(pod.Status.ContainerStatuses[0].ContainerID)
+		if containerID == "" {
+			continue
+		}
+
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		pid, err := checks.GetContainerPID(ctx, resources.ProbeExecutor, probePod, containerID)
+		if err != nil {
+			cancel()
+			count++
+			result.Details = append(result.Details, checks.ResourceDetail{
+				Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
+				Compliant: false,
+				Message:   fmt.Sprintf("Failed to get container PID: %v", err),
+			})
+			continue
+		}
+
+		ssCmd := fmt.Sprintf("nsenter -t %s -n ss -tpln", pid)
+		stdout, _, err := resources.ProbeExecutor.ExecCommand(ctx, probePod, ssCmd)
+		cancel()
+		if err != nil {
+			// If the command fails, we cannot determine compliance
+			continue
+		}
+
+		if strings.Contains(stdout, "sshd") {
 			count++
 			result.Details = append(result.Details, checks.ResourceDetail{
 				Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
 				Compliant: false, Message: "SSH daemon found running",
+			})
+		} else {
+			result.Details = append(result.Details, checks.ResourceDetail{
+				Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
+				Compliant: true, Message: "No SSH daemon running",
 			})
 		}
 	}

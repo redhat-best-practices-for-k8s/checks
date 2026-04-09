@@ -1269,7 +1269,9 @@ func TestCheckNamespace_OpenShiftNS_NonCompliant(t *testing.T) {
 
 func TestCheckNamespaceResourceQuota_Compliant(t *testing.T) {
 	resources := &checks.DiscoveredResources{
-		Namespaces: []string{"ns1"},
+		Pods: []corev1.Pod{
+			{ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "ns1"}},
+		},
 		ResourceQuotas: []corev1.ResourceQuota{
 			{ObjectMeta: metav1.ObjectMeta{Name: "quota1", Namespace: "ns1"}},
 		},
@@ -1282,7 +1284,9 @@ func TestCheckNamespaceResourceQuota_Compliant(t *testing.T) {
 
 func TestCheckNamespaceResourceQuota_NonCompliant(t *testing.T) {
 	resources := &checks.DiscoveredResources{
-		Namespaces: []string{"ns1"},
+		Pods: []corev1.Pod{
+			{ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "ns1"}},
+		},
 	}
 	result := CheckNamespaceResourceQuota(resources)
 	if result.ComplianceStatus != "NonCompliant" {
@@ -1290,10 +1294,53 @@ func TestCheckNamespaceResourceQuota_NonCompliant(t *testing.T) {
 	}
 }
 
-func TestCheckNamespaceResourceQuota_Skipped(t *testing.T) {
+func TestCheckNamespaceResourceQuota_NoPods(t *testing.T) {
 	result := CheckNamespaceResourceQuota(&checks.DiscoveredResources{})
 	if result.ComplianceStatus != checks.StatusCompliant {
-		t.Errorf("expected Skipped, got %s", result.ComplianceStatus)
+		t.Errorf("expected Compliant for no pods, got %s", result.ComplianceStatus)
+	}
+}
+
+func TestCheckNamespaceResourceQuota_MultiplePods_MixedNamespaces(t *testing.T) {
+	resources := &checks.DiscoveredResources{
+		Pods: []corev1.Pod{
+			{ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "ns1"}},
+			{ObjectMeta: metav1.ObjectMeta{Name: "pod2", Namespace: "ns2"}},
+		},
+		ResourceQuotas: []corev1.ResourceQuota{
+			{ObjectMeta: metav1.ObjectMeta{Name: "quota1", Namespace: "ns1"}},
+		},
+	}
+	result := CheckNamespaceResourceQuota(resources)
+	if result.ComplianceStatus != "NonCompliant" {
+		t.Errorf("expected NonCompliant (ns2 has no quota), got %s", result.ComplianceStatus)
+	}
+	// Should have exactly 1 non-compliant detail for pod2 in ns2
+	nonCompliantCount := 0
+	for _, d := range result.Details {
+		if !d.Compliant {
+			nonCompliantCount++
+		}
+	}
+	if nonCompliantCount != 1 {
+		t.Errorf("expected 1 non-compliant detail, got %d", nonCompliantCount)
+	}
+}
+
+func TestCheckNamespaceResourceQuota_AllPodsHaveQuota(t *testing.T) {
+	resources := &checks.DiscoveredResources{
+		Pods: []corev1.Pod{
+			{ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "ns1"}},
+			{ObjectMeta: metav1.ObjectMeta{Name: "pod2", Namespace: "ns2"}},
+		},
+		ResourceQuotas: []corev1.ResourceQuota{
+			{ObjectMeta: metav1.ObjectMeta{Name: "quota1", Namespace: "ns1"}},
+			{ObjectMeta: metav1.ObjectMeta{Name: "quota2", Namespace: "ns2"}},
+		},
+	}
+	result := CheckNamespaceResourceQuota(resources)
+	if result.ComplianceStatus != "Compliant" {
+		t.Errorf("expected Compliant, got %s", result.ComplianceStatus)
 	}
 }
 
@@ -1307,17 +1354,21 @@ func TestCheckOneProcess_Compliant(t *testing.T) {
 				NodeName:   "node1",
 				Containers: []corev1.Container{{Name: "c1"}},
 			},
+			Status: corev1.PodStatus{
+				ContainerStatuses: []corev1.ContainerStatus{{Name: "c1", ContainerID: "cri-o://abc123"}},
+			},
 		}},
 		ProbePods: map[string]*corev1.Pod{"node1": makeProbePod("node1")},
 		ProbeExecutor: &mockProbeExecutor{
 			responses: map[string]mockProbeResponse{
-				"lsns -t pid -o PID,COMMAND --no-headings | grep -c 'c1'": {stdout: "1"},
+				"chroot /host crictl inspect --output go-template --template '{{.info.pid}}' abc123 2>/dev/null": {stdout: "12345"},
+				"lsns -p 12345 -t pid -n": {stdout: "4026531836 pid 1 12345 /usr/bin/myapp"},
 			},
 		},
 	}
 	result := CheckOneProcess(resources)
 	if result.ComplianceStatus != "Compliant" {
-		t.Errorf("expected Compliant, got %s", result.ComplianceStatus)
+		t.Errorf("expected Compliant, got %s: %s", result.ComplianceStatus, result.Reason)
 	}
 }
 
@@ -1329,11 +1380,15 @@ func TestCheckOneProcess_NonCompliant(t *testing.T) {
 				NodeName:   "node1",
 				Containers: []corev1.Container{{Name: "c1"}},
 			},
+			Status: corev1.PodStatus{
+				ContainerStatuses: []corev1.ContainerStatus{{Name: "c1", ContainerID: "cri-o://abc123"}},
+			},
 		}},
 		ProbePods: map[string]*corev1.Pod{"node1": makeProbePod("node1")},
 		ProbeExecutor: &mockProbeExecutor{
 			responses: map[string]mockProbeResponse{
-				"lsns -t pid -o PID,COMMAND --no-headings | grep -c 'c1'": {stdout: "3"},
+				"chroot /host crictl inspect --output go-template --template '{{.info.pid}}' abc123 2>/dev/null": {stdout: "12345"},
+				"lsns -p 12345 -t pid -n": {stdout: "4026531836 pid 3 12345 /usr/bin/myapp"},
 			},
 		},
 	}
@@ -1350,17 +1405,21 @@ func TestCheckNoSSHD_Compliant(t *testing.T) {
 		Pods: []corev1.Pod{{
 			ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "ns1"},
 			Spec:       corev1.PodSpec{NodeName: "node1"},
+			Status: corev1.PodStatus{
+				ContainerStatuses: []corev1.ContainerStatus{{Name: "c1", ContainerID: "cri-o://abc123"}},
+			},
 		}},
 		ProbePods: map[string]*corev1.Pod{"node1": makeProbePod("node1")},
 		ProbeExecutor: &mockProbeExecutor{
 			responses: map[string]mockProbeResponse{
-				"nsenter --target $(crictl inspect $(crictl ps --name pod1 -q 2>/dev/null | head -1) 2>/dev/null | jq -r '.info.pid' 2>/dev/null) --mount --pid -- pgrep -x sshd 2>/dev/null": {stdout: ""},
+				"chroot /host crictl inspect --output go-template --template '{{.info.pid}}' abc123 2>/dev/null": {stdout: "12345"},
+				"nsenter -t 12345 -n ss -tpln": {stdout: "State  Recv-Q Send-Q Local Address:Port  Peer Address:Port\nLISTEN 0      128    0.0.0.0:8080         0.0.0.0:*     users:((\"myapp\",pid=12345,fd=3))\n"},
 			},
 		},
 	}
 	result := CheckNoSSHD(resources)
 	if result.ComplianceStatus != "Compliant" {
-		t.Errorf("expected Compliant, got %s", result.ComplianceStatus)
+		t.Errorf("expected Compliant, got %s: %s", result.ComplianceStatus, result.Reason)
 	}
 }
 
@@ -1369,11 +1428,15 @@ func TestCheckNoSSHD_NonCompliant(t *testing.T) {
 		Pods: []corev1.Pod{{
 			ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "ns1"},
 			Spec:       corev1.PodSpec{NodeName: "node1"},
+			Status: corev1.PodStatus{
+				ContainerStatuses: []corev1.ContainerStatus{{Name: "c1", ContainerID: "cri-o://abc123"}},
+			},
 		}},
 		ProbePods: map[string]*corev1.Pod{"node1": makeProbePod("node1")},
 		ProbeExecutor: &mockProbeExecutor{
 			responses: map[string]mockProbeResponse{
-				"nsenter --target $(crictl inspect $(crictl ps --name pod1 -q 2>/dev/null | head -1) 2>/dev/null | jq -r '.info.pid' 2>/dev/null) --mount --pid -- pgrep -x sshd 2>/dev/null": {stdout: "1234"},
+				"chroot /host crictl inspect --output go-template --template '{{.info.pid}}' abc123 2>/dev/null": {stdout: "12345"},
+				"nsenter -t 12345 -n ss -tpln": {stdout: "State  Recv-Q Send-Q Local Address:Port  Peer Address:Port\nLISTEN 0      128    0.0.0.0:22           0.0.0.0:*     users:((\"sshd\",pid=12345,fd=3))\n"},
 			},
 		},
 	}

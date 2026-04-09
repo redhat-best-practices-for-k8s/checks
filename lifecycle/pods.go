@@ -82,7 +82,9 @@ func hasAllowedOwner(pod *corev1.Pod) bool {
 	return false
 }
 
-// CheckPodScheduling verifies pods have scheduling directives.
+// CheckPodScheduling verifies pods do not use nodeSelector or nodeAffinity.
+// Pods should be schedulable on any node; using nodeSelector or nodeAffinity
+// restricts scheduling and is non-compliant.
 func CheckPodScheduling(resources *checks.DiscoveredResources) checks.CheckResult {
 	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.Pods) == 0 {
@@ -95,20 +97,27 @@ func CheckPodScheduling(resources *checks.DiscoveredResources) checks.CheckResul
 	for i := range resources.Pods {
 		pod := &resources.Pods[i]
 		hasNodeSelector := len(pod.Spec.NodeSelector) > 0
-		hasAffinity := pod.Spec.Affinity != nil
-		hasTolerations := len(pod.Spec.Tolerations) > 0
-		if !hasNodeSelector && !hasAffinity && !hasTolerations {
+		hasNodeAffinity := pod.Spec.Affinity != nil && pod.Spec.Affinity.NodeAffinity != nil
+
+		if hasNodeSelector || hasNodeAffinity {
 			count++
+			var reasons []string
+			if hasNodeSelector {
+				reasons = append(reasons, fmt.Sprintf("nodeSelector: %v", pod.Spec.NodeSelector))
+			}
+			if hasNodeAffinity {
+				reasons = append(reasons, "nodeAffinity set")
+			}
 			result.Details = append(result.Details, checks.ResourceDetail{
 				Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
 				Compliant: false,
-				Message:   "Pod has no nodeSelector, affinity, or tolerations",
+				Message:   fmt.Sprintf("Pod has scheduling constraints: %s", strings.Join(reasons, ", ")),
 			})
 		}
 	}
 	if count > 0 {
 		result.ComplianceStatus = checks.StatusNonCompliant
-		result.Reason = fmt.Sprintf("%d pod(s) have no scheduling directives", count)
+		result.Reason = fmt.Sprintf("%d pod(s) have nodeSelector or nodeAffinity scheduling constraints", count)
 	}
 	return result
 }
@@ -242,12 +251,18 @@ func CheckAffinityRequired(resources *checks.DiscoveredResources) checks.CheckRe
 	return result
 }
 
-var masterTaintKeys = map[string]bool{
-	"node-role.kubernetes.io/master":        true,
-	"node-role.kubernetes.io/control-plane": true,
-}
+const tolerationSecondsDefault = 300
 
-// CheckTolerationBypass verifies pods do not tolerate master/control-plane taints.
+// CheckTolerationBypass verifies pods have not modified default Kubernetes tolerations.
+// A toleration is considered modified (non-compliant) if:
+//   - Its key does not contain "node.kubernetes.io" (not a default toleration)
+//   - It is a node.kubernetes.io/not-ready or node.kubernetes.io/unreachable NoExecute
+//     toleration but the operator is not Exists or tolerationSeconds is not 300
+//   - It is a node.kubernetes.io/memory-pressure NoSchedule toleration but the operator
+//     is not Exists or the pod's QoS class is BestEffort (memory-pressure is only added
+//     by default for non-BestEffort pods)
+//   - It is any other non-default node.kubernetes.io toleration with a NoExecute,
+//     NoSchedule, or PreferNoSchedule effect
 func CheckTolerationBypass(resources *checks.DiscoveredResources) checks.CheckResult {
 	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.Pods) == 0 {
@@ -260,12 +275,12 @@ func CheckTolerationBypass(resources *checks.DiscoveredResources) checks.CheckRe
 	for i := range resources.Pods {
 		pod := &resources.Pods[i]
 		for _, tol := range pod.Spec.Tolerations {
-			if masterTaintKeys[tol.Key] && (tol.Effect == corev1.TaintEffectNoSchedule || tol.Effect == corev1.TaintEffectNoExecute) {
+			if isTolerationModified(tol, pod.Status.QOSClass) {
 				count++
 				result.Details = append(result.Details, checks.ResourceDetail{
 					Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
 					Compliant: false,
-					Message:   fmt.Sprintf("Pod tolerates master taint %q with effect %s", tol.Key, tol.Effect),
+					Message:   fmt.Sprintf("Pod has modified toleration: key=%q, effect=%s, operator=%s", tol.Key, tol.Effect, tol.Operator),
 				})
 				break
 			}
@@ -273,9 +288,48 @@ func CheckTolerationBypass(resources *checks.DiscoveredResources) checks.CheckRe
 	}
 	if count > 0 {
 		result.ComplianceStatus = checks.StatusNonCompliant
-		result.Reason = fmt.Sprintf("%d pod(s) tolerate master/control-plane taints", count)
+		result.Reason = fmt.Sprintf("%d pod(s) have modified tolerations", count)
 	}
 	return result
+}
+
+// isTolerationModified checks whether a toleration deviates from the default
+// tolerations automatically added by Kubernetes. This mirrors the certsuite's
+// tolerations.IsTolerationModified logic.
+func isTolerationModified(t corev1.Toleration, qosClass corev1.PodQOSClass) bool {
+	const (
+		notReadyStr       = "node.kubernetes.io/not-ready"
+		unreachableStr    = "node.kubernetes.io/unreachable"
+		memoryPressureStr = "node.kubernetes.io/memory-pressure"
+	)
+
+	// Any toleration key that does not contain "node.kubernetes.io" is considered modified.
+	if !strings.Contains(t.Key, "node.kubernetes.io") {
+		return true
+	}
+
+	switch t.Effect {
+	case corev1.TaintEffectNoExecute:
+		if t.Key == notReadyStr || t.Key == unreachableStr {
+			// Default: operator=Exists, tolerationSeconds=300
+			if t.Operator == corev1.TolerationOpExists && t.TolerationSeconds != nil && *t.TolerationSeconds == int64(tolerationSecondsDefault) {
+				return false
+			}
+		}
+		return true
+	case corev1.TaintEffectNoSchedule:
+		// Default memory-pressure toleration: only for non-BestEffort pods
+		if t.Key == memoryPressureStr &&
+			t.Operator == corev1.TolerationOpExists &&
+			qosClass != corev1.PodQOSBestEffort {
+			return false
+		}
+		return true
+	case corev1.TaintEffectPreferNoSchedule:
+		return true
+	}
+
+	return false
 }
 
 // CheckPVReclaimPolicy verifies PersistentVolume reclaimPolicy is Delete.
@@ -308,7 +362,23 @@ func CheckPVReclaimPolicy(resources *checks.DiscoveredResources) checks.CheckRes
 	return result
 }
 
-// CheckStorageProvisioner verifies StorageClasses have a non-empty provisioner.
+const (
+	localStorageProvisioner = "kubernetes.io/no-provisioner"
+	lvmProvisioner          = "topolvm.io"
+)
+
+// isLocalProvisioner returns true if the provisioner is a local storage provisioner.
+func isLocalProvisioner(provisioner string) bool {
+	return provisioner == localStorageProvisioner || strings.HasPrefix(provisioner, lvmProvisioner)
+}
+
+// CheckStorageProvisioner validates StorageClass provisioners based on cluster topology.
+//
+// Multi-node clusters: Local storage provisioners (kubernetes.io/no-provisioner and
+// topolvm.io) are non-compliant. Non-local storage is compliant.
+//
+// SNO clusters (single node): Local storage is recommended but only one type is allowed
+// (not both no-provisioner AND topolvm). Non-local storage is non-compliant on SNO.
 func CheckStorageProvisioner(resources *checks.DiscoveredResources) checks.CheckResult {
 	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.StorageClasses) == 0 {
@@ -317,21 +387,98 @@ func CheckStorageProvisioner(resources *checks.DiscoveredResources) checks.Check
 		return result
 	}
 
+	isSNO := len(resources.Nodes) == 1
+
+	var nonCompliantCount int
+	if isSNO {
+		nonCompliantCount = checkStorageProvisionerSNO(resources, &result)
+	} else {
+		nonCompliantCount = checkStorageProvisionerMultiNode(resources, &result)
+	}
+
+	if nonCompliantCount > 0 {
+		result.ComplianceStatus = checks.StatusNonCompliant
+		result.Reason = fmt.Sprintf("%d StorageClass(es) have non-compliant provisioner", nonCompliantCount)
+	}
+	return result
+}
+
+// checkStorageProvisionerMultiNode checks storage provisioners for multi-node clusters.
+// Local storage is non-compliant; non-local storage is compliant.
+func checkStorageProvisionerMultiNode(resources *checks.DiscoveredResources, result *checks.CheckResult) int {
 	var count int
 	for i := range resources.StorageClasses {
 		sc := &resources.StorageClasses[i]
-		if sc.Provisioner == "" || sc.Provisioner == "kubernetes.io/no-provisioner" {
+		if isLocalProvisioner(sc.Provisioner) {
 			count++
 			result.Details = append(result.Details, checks.ResourceDetail{
 				Kind: "StorageClass", Name: sc.Name,
 				Compliant: false,
-				Message:   fmt.Sprintf("StorageClass provisioner is %q", sc.Provisioner),
+				Message:   fmt.Sprintf("Local storage provisioner %q not recommended in multi-node clusters", sc.Provisioner),
+			})
+		} else {
+			result.Details = append(result.Details, checks.ResourceDetail{
+				Kind: "StorageClass", Name: sc.Name,
+				Compliant: true,
+				Message:   fmt.Sprintf("Non-local storage provisioner %q recommended in multi-node clusters", sc.Provisioner),
 			})
 		}
 	}
-	if count > 0 {
-		result.ComplianceStatus = checks.StatusNonCompliant
-		result.Reason = fmt.Sprintf("%d StorageClass(es) have invalid provisioner", count)
+	return count
+}
+
+// checkStorageProvisionerSNO checks storage provisioners for single-node (SNO) clusters.
+// Local storage is compliant but only one type allowed (not both no-provisioner AND topolvm).
+// Non-local storage is non-compliant on SNO.
+func checkStorageProvisionerSNO(resources *checks.DiscoveredResources, result *checks.CheckResult) int {
+	// Track which local provisioner type was seen first
+	snoSingleLocalProvisioner := ""
+
+	var count int
+	for i := range resources.StorageClasses {
+		sc := &resources.StorageClasses[i]
+
+		if !isLocalProvisioner(sc.Provisioner) {
+			// Non-local storage is non-compliant on SNO
+			count++
+			result.Details = append(result.Details, checks.ResourceDetail{
+				Kind: "StorageClass", Name: sc.Name,
+				Compliant: false,
+				Message:   fmt.Sprintf("Non-local storage provisioner %q not recommended in single-node clusters", sc.Provisioner),
+			})
+			continue
+		}
+
+		// Local provisioner -- determine which type
+		provType := sc.Provisioner
+		if strings.HasPrefix(provType, lvmProvisioner) {
+			provType = lvmProvisioner
+		}
+
+		if snoSingleLocalProvisioner == "" {
+			// First local provisioner seen -- this is the allowed type
+			snoSingleLocalProvisioner = provType
+			result.Details = append(result.Details, checks.ResourceDetail{
+				Kind: "StorageClass", Name: sc.Name,
+				Compliant: true,
+				Message:   fmt.Sprintf("Local storage provisioner %q recommended for SNO clusters", sc.Provisioner),
+			})
+		} else if provType == snoSingleLocalProvisioner {
+			// Same type as the first -- compliant
+			result.Details = append(result.Details, checks.ResourceDetail{
+				Kind: "StorageClass", Name: sc.Name,
+				Compliant: true,
+				Message:   fmt.Sprintf("Local storage provisioner %q recommended for SNO clusters", sc.Provisioner),
+			})
+		} else {
+			// Different local type -- non-compliant (can't use both no-provisioner AND topolvm)
+			count++
+			result.Details = append(result.Details, checks.ResourceDetail{
+				Kind: "StorageClass", Name: sc.Name,
+				Compliant: false,
+				Message:   "A single type of local storage is recommended for single-node clusters; use either kubernetes.io/no-provisioner or topolvm, but not both",
+			})
+		}
 	}
-	return result
+	return count
 }

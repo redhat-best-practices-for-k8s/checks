@@ -18,7 +18,6 @@ const (
 	indexProtocol        = 0
 	indexState           = 1
 	indexPort            = 4
-	istioProxyContainer  = "istio-proxy"
 )
 
 var reservedIstioPorts = map[int32]bool{
@@ -142,45 +141,22 @@ func CheckUndeclaredContainerPorts(resources *checks.DiscoveredResources) checks
 	return result
 }
 
-// getContainerIDFromPod extracts the container runtime ID from the pod's container statuses.
-// The container ID in the status has the format "runtime://hash", and we return just the hash.
-func getContainerIDFromPod(pod *corev1.Pod) (string, error) {
-	if len(pod.Status.ContainerStatuses) == 0 {
-		return "", fmt.Errorf("no container statuses found for pod %s/%s", pod.Namespace, pod.Name)
-	}
-
-	// Use the first container's status to get its ID (same approach as certsuite)
-	containerID := pod.Status.ContainerStatuses[0].ContainerID
-	parts := strings.SplitN(containerID, "://", 2)
-	if len(parts) < 2 || parts[1] == "" {
-		return "", fmt.Errorf("could not parse container ID %q for pod %s/%s", containerID, pod.Namespace, pod.Name)
-	}
-
-	return parts[1], nil
-}
-
-// getListeningPorts executes ss command and parses output to get listening ports
+// getListeningPorts resolves the container PID and runs ss in its network namespace.
 func getListeningPorts(ctx context.Context, executor checks.ProbeExecutor, probePod *corev1.Pod, targetPod *corev1.Pod) (map[portInfo]bool, error) {
-	// Get the container ID from the pod's container status (pod-scoped, not name-based)
-	containerID, err := getContainerIDFromPod(targetPod)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get container ID: %w", err)
+	if len(targetPod.Status.ContainerStatuses) == 0 {
+		return nil, fmt.Errorf("no container statuses for pod %s/%s", targetPod.Namespace, targetPod.Name)
+	}
+	containerID := checks.ParseContainerID(targetPod.Status.ContainerStatuses[0].ContainerID)
+	if containerID == "" {
+		return nil, fmt.Errorf("empty container ID for pod %s/%s", targetPod.Namespace, targetPod.Name)
 	}
 
-	// Get the PID of the container using crictl inspect with the container ID
-	getPIDCmd := fmt.Sprintf("chroot /host crictl inspect --output go-template --template '{{.info.pid}}' %s 2>/dev/null", containerID)
-	pidOut, _, err := executor.ExecCommand(ctx, probePod, getPIDCmd)
+	pid, err := checks.GetContainerPID(ctx, executor, probePod, containerID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get container PID: %w", err)
 	}
 
-	pidOut = strings.TrimSpace(pidOut)
-	if pidOut == "" || pidOut == "null" || pidOut == "0" {
-		return nil, fmt.Errorf("could not determine PID for container %s in pod %s/%s", containerID, targetPod.Namespace, targetPod.Name)
-	}
-
-	// Execute ss command in the container's network namespace using nsenter with -n (network namespace only)
-	cmd := fmt.Sprintf("nsenter -t %s -n %s", pidOut, getListeningPortsCmd)
+	cmd := fmt.Sprintf("nsenter -t %s -n %s", pid, getListeningPortsCmd)
 	stdout, _, err := executor.ExecCommand(ctx, probePod, cmd)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute ss command: %w", err)
@@ -232,10 +208,9 @@ func parseListeningPorts(cmdOut string) (map[portInfo]bool, error) {
 	return portSet, nil
 }
 
-// containsIstioProxy checks if pod has istio-proxy container
 func containsIstioProxy(pod *corev1.Pod) bool {
 	for _, container := range pod.Spec.Containers {
-		if container.Name == istioProxyContainer {
+		if checks.IsIgnoredContainer(container.Name) {
 			return true
 		}
 	}

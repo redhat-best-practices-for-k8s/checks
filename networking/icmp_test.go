@@ -13,7 +13,10 @@ func TestCheckICMPv4Connectivity_Compliant(t *testing.T) {
 	probePod := &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: "probe-pod", Namespace: "probe-ns"}}
 
 	mockProbe := testutil.NewMockProbeExecutor(map[string]testutil.MockProbeResponse{
-		"ping -4 -c 5 10.0.0.2": {
+		"chroot /host crictl inspect --output go-template --template '{{.info.pid}}' abc123 2>/dev/null": {
+			Stdout: "12345",
+		},
+		"nsenter -t 12345 -n ping -c 5 10.0.0.2": {
 			Stdout: "5 packets transmitted, 5 received, 0% packet loss\n",
 			Stderr: "",
 			Err:    nil,
@@ -26,14 +29,16 @@ func TestCheckICMPv4Connectivity_Compliant(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "test-ns"},
 				Spec:       corev1.PodSpec{NodeName: "node1"},
 				Status: corev1.PodStatus{
-					PodIPs: []corev1.PodIP{{IP: "10.0.0.1"}},
+					PodIPs:            []corev1.PodIP{{IP: "10.0.0.1"}},
+					ContainerStatuses: []corev1.ContainerStatus{{Name: "c1", ContainerID: "cri-o://abc123"}},
 				},
 			},
 			{
 				ObjectMeta: metav1.ObjectMeta{Name: "pod2", Namespace: "test-ns"},
 				Spec:       corev1.PodSpec{NodeName: "node1"},
 				Status: corev1.PodStatus{
-					PodIPs: []corev1.PodIP{{IP: "10.0.0.2"}},
+					PodIPs:            []corev1.PodIP{{IP: "10.0.0.2"}},
+					ContainerStatuses: []corev1.ContainerStatus{{Name: "c1", ContainerID: "cri-o://def456"}},
 				},
 			},
 		},
@@ -58,7 +63,10 @@ func TestCheckICMPv4Connectivity_NonCompliant(t *testing.T) {
 	probePod := &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: "probe-pod", Namespace: "probe-ns"}}
 
 	mockProbe := testutil.NewMockProbeExecutor(map[string]testutil.MockProbeResponse{
-		"ping -4 -c 5 10.0.0.2": {
+		"chroot /host crictl inspect --output go-template --template '{{.info.pid}}' abc123 2>/dev/null": {
+			Stdout: "12345",
+		},
+		"nsenter -t 12345 -n ping -c 5 10.0.0.2": {
 			Stdout: "5 packets transmitted, 0 received, 100% packet loss\n",
 			Stderr: "",
 			Err:    nil,
@@ -71,14 +79,16 @@ func TestCheckICMPv4Connectivity_NonCompliant(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "test-ns"},
 				Spec:       corev1.PodSpec{NodeName: "node1"},
 				Status: corev1.PodStatus{
-					PodIPs: []corev1.PodIP{{IP: "10.0.0.1"}},
+					PodIPs:            []corev1.PodIP{{IP: "10.0.0.1"}},
+					ContainerStatuses: []corev1.ContainerStatus{{Name: "c1", ContainerID: "cri-o://abc123"}},
 				},
 			},
 			{
 				ObjectMeta: metav1.ObjectMeta{Name: "pod2", Namespace: "test-ns"},
 				Spec:       corev1.PodSpec{NodeName: "node1"},
 				Status: corev1.PodStatus{
-					PodIPs: []corev1.PodIP{{IP: "10.0.0.2"}},
+					PodIPs:            []corev1.PodIP{{IP: "10.0.0.2"}},
+					ContainerStatuses: []corev1.ContainerStatus{{Name: "c1", ContainerID: "cri-o://def456"}},
 				},
 			},
 		},
@@ -99,7 +109,10 @@ func TestCheckICMPv6Connectivity_Compliant(t *testing.T) {
 	probePod := &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: "probe-pod", Namespace: "probe-ns"}}
 
 	mockProbe := testutil.NewMockProbeExecutor(map[string]testutil.MockProbeResponse{
-		"ping -6 -c 5 2001:db8::2": {
+		"chroot /host crictl inspect --output go-template --template '{{.info.pid}}' abc123 2>/dev/null": {
+			Stdout: "12345",
+		},
+		"nsenter -t 12345 -n ping -c 5 2001:db8::2": {
 			Stdout: "5 packets transmitted, 5 received, 0% packet loss\n",
 			Stderr: "",
 			Err:    nil,
@@ -112,14 +125,16 @@ func TestCheckICMPv6Connectivity_Compliant(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "test-ns"},
 				Spec:       corev1.PodSpec{NodeName: "node1"},
 				Status: corev1.PodStatus{
-					PodIPs: []corev1.PodIP{{IP: "2001:db8::1"}},
+					PodIPs:            []corev1.PodIP{{IP: "2001:db8::1"}},
+					ContainerStatuses: []corev1.ContainerStatus{{Name: "c1", ContainerID: "cri-o://abc123"}},
 				},
 			},
 			{
 				ObjectMeta: metav1.ObjectMeta{Name: "pod2", Namespace: "test-ns"},
 				Spec:       corev1.PodSpec{NodeName: "node1"},
 				Status: corev1.PodStatus{
-					PodIPs: []corev1.PodIP{{IP: "2001:db8::2"}},
+					PodIPs:            []corev1.PodIP{{IP: "2001:db8::2"}},
+					ContainerStatuses: []corev1.ContainerStatus{{Name: "c1", ContainerID: "cri-o://def456"}},
 				},
 			},
 		},
@@ -145,7 +160,8 @@ func TestCheckICMPv4Connectivity_NotEnoughPods(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "test-ns"},
 				Spec:       corev1.PodSpec{NodeName: "node1"},
 				Status: corev1.PodStatus{
-					PodIPs: []corev1.PodIP{{IP: "10.0.0.1"}},
+					PodIPs:            []corev1.PodIP{{IP: "10.0.0.1"}},
+					ContainerStatuses: []corev1.ContainerStatus{{Name: "c1", ContainerID: "cri-o://abc123"}},
 				},
 			},
 		},
@@ -191,14 +207,16 @@ func TestCheckICMPv4Connectivity_NoIPv4Addresses(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "test-ns"},
 				Spec:       corev1.PodSpec{NodeName: "node1"},
 				Status: corev1.PodStatus{
-					PodIPs: []corev1.PodIP{{IP: "2001:db8::1"}}, // Only IPv6
+					PodIPs:            []corev1.PodIP{{IP: "2001:db8::1"}}, // Only IPv6
+					ContainerStatuses: []corev1.ContainerStatus{{Name: "c1", ContainerID: "cri-o://abc123"}},
 				},
 			},
 			{
 				ObjectMeta: metav1.ObjectMeta{Name: "pod2", Namespace: "test-ns"},
 				Spec:       corev1.PodSpec{NodeName: "node1"},
 				Status: corev1.PodStatus{
-					PodIPs: []corev1.PodIP{{IP: "2001:db8::2"}}, // Only IPv6
+					PodIPs:            []corev1.PodIP{{IP: "2001:db8::2"}}, // Only IPv6
+					ContainerStatuses: []corev1.ContainerStatus{{Name: "c1", ContainerID: "cri-o://def456"}},
 				},
 			},
 		},

@@ -81,24 +81,33 @@ func checkICMPConnectivity(resources *checks.DiscoveredResources, ipVersion stri
 
 	var failures int
 
-	for _, pair := range testPairs {
-		// Execute ping from the probe pod on the source pod's node, not the workload pod itself.
-		// Workload pods may not have ping available; probe pods are guaranteed to have it.
-		probePod, ok := resources.ProbePods[pair.sourcePod.Spec.NodeName]
-		if !ok || probePod == nil {
-			failures++
-			result.Details = append(result.Details, checks.ResourceDetail{
-				Kind:      "ICMPTest",
-				Name:      fmt.Sprintf("%s->%s", pair.sourcePod.Name, pair.targetPod.Name),
-				Namespace: pair.sourcePod.Namespace,
-				Compliant: false,
-				Message:   fmt.Sprintf("No probe pod available on node %s", pair.sourcePod.Spec.NodeName),
-			})
-			continue
-		}
+	// All pairs share the same source pod -- resolve its PID once.
+	sourcePod := testPairs[0].sourcePod
+	probePod, ok := resources.ProbePods[sourcePod.Spec.NodeName]
+	if !ok || probePod == nil {
+		result.ComplianceStatus = checks.StatusNonCompliant
+		result.Reason = fmt.Sprintf("No probe pod available on node %s", sourcePod.Spec.NodeName)
+		return result
+	}
+	if len(sourcePod.Status.ContainerStatuses) == 0 {
+		result.ComplianceStatus = checks.StatusNonCompliant
+		result.Reason = "Source pod has no container statuses"
+		return result
+	}
+	containerID := checks.ParseContainerID(sourcePod.Status.ContainerStatuses[0].ContainerID)
+	pidCtx, pidCancel := context.WithTimeout(context.Background(), 30*time.Second)
+	sourcePID, err := checks.GetContainerPID(pidCtx, resources.ProbeExecutor, probePod, containerID)
+	pidCancel()
+	if err != nil {
+		result.ComplianceStatus = checks.StatusNonCompliant
+		result.Reason = fmt.Sprintf("Failed to get source container PID: %v", err)
+		return result
+	}
 
-		pingCmd := fmt.Sprintf("ping -%s -c %d %s", ipVersion, defaultPingCount, pair.targetIP)
+	for _, pair := range testPairs {
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+
+		pingCmd := fmt.Sprintf("nsenter -t %s -n ping -c %d %s", sourcePID, defaultPingCount, pair.targetIP)
 		stdout, stderr, err := resources.ProbeExecutor.ExecCommand(ctx, probePod, pingCmd)
 		cancel()
 

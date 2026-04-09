@@ -2,7 +2,6 @@ package manageability
 
 import (
 	"fmt"
-	"regexp"
 	"strings"
 
 	corev1 "k8s.io/api/core/v1"
@@ -10,9 +9,25 @@ import (
 	"github.com/redhat-best-practices-for-k8s/checks"
 )
 
-var ianaPortNameRegex = regexp.MustCompile(`^[a-z0-9]([a-z0-9-]{0,13}[a-z0-9])?$`)
+// allowedProtocolNames defines the valid protocol prefixes for container port names.
+// The port name format is <protocol>[-<suffix>] where protocol must be one of these.
+var allowedProtocolNames = map[string]bool{
+	"grpc":  true,
+	"http":  true,
+	"http2": true,
+	"tcp":   true,
+	"udp":   true,
+}
 
-// CheckPortNameFormat verifies container port names follow IANA naming conventions.
+// portNameFormatCheck validates a container port name follows the format
+// <protocol>[-<suffix>] where <protocol> is one of the allowed protocol names.
+func portNameFormatCheck(portName string) bool {
+	res := strings.Split(portName, "-")
+	return allowedProtocolNames[res[0]]
+}
+
+// CheckPortNameFormat verifies container port names follow the naming convention
+// <protocol>[-<suffix>] where protocol is one of: grpc, http, http2, tcp, udp.
 func CheckPortNameFormat(resources *checks.DiscoveredResources) checks.CheckResult {
 	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.Pods) == 0 {
@@ -27,19 +42,19 @@ func CheckPortNameFormat(resources *checks.DiscoveredResources) checks.CheckResu
 			if port.Name == "" {
 				continue
 			}
-			if !ianaPortNameRegex.MatchString(port.Name) {
+			if !portNameFormatCheck(port.Name) {
 				count++
 				result.Details = append(result.Details, checks.ResourceDetail{
 					Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
 					Compliant: false,
-					Message:   fmt.Sprintf("Container %q port name %q does not follow IANA format", container.Name, port.Name),
+					Message:   fmt.Sprintf("Container %q port name %q does not follow the naming convention <protocol>[-<suffix>]", container.Name, port.Name),
 				})
 			}
 		}
 	})
 	if count > 0 {
 		result.ComplianceStatus = checks.StatusNonCompliant
-		result.Reason = fmt.Sprintf("%d port name(s) do not follow IANA format", count)
+		result.Reason = fmt.Sprintf("%d port name(s) do not follow the naming convention", count)
 	}
 	return result
 }
