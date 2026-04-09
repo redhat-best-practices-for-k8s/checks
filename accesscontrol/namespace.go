@@ -66,25 +66,37 @@ func CheckNamespace(resources *checks.DiscoveredResources) checks.CheckResult {
 	return result
 }
 
-// CheckNamespaceResourceQuota verifies the namespace has a ResourceQuota defined.
+// CheckNamespaceResourceQuota verifies each pod runs in a namespace that has a ResourceQuota.
+// For each pod under test, it checks whether any ResourceQuota exists in that pod's namespace.
 func CheckNamespaceResourceQuota(resources *checks.DiscoveredResources) checks.CheckResult {
 	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
-	if len(resources.Namespaces) == 0 {
+	if len(resources.Pods) == 0 {
 		result.ComplianceStatus = checks.StatusCompliant
-		result.Reason = "No namespaces found"
+		result.Reason = "No pods found"
 		return result
 	}
 
-	if len(resources.ResourceQuotas) == 0 {
-		result.ComplianceStatus = checks.StatusNonCompliant
-		result.Reason = "No ResourceQuota found in namespace"
-		if len(resources.Namespaces) > 0 {
+	// Build a set of namespaces that have at least one ResourceQuota.
+	quotaNamespaces := make(map[string]bool, len(resources.ResourceQuotas))
+	for i := range resources.ResourceQuotas {
+		quotaNamespaces[resources.ResourceQuotas[i].Namespace] = true
+	}
+
+	var count int
+	for i := range resources.Pods {
+		pod := &resources.Pods[i]
+		if !quotaNamespaces[pod.Namespace] {
+			count++
 			result.Details = append(result.Details, checks.ResourceDetail{
-				Kind: "Namespace", Name: resources.Namespaces[0],
+				Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
 				Compliant: false,
-				Message:   "Namespace does not have a ResourceQuota defined",
+				Message:   "Pod is running in a namespace that does not have a ResourceQuota applied",
 			})
 		}
+	}
+	if count > 0 {
+		result.ComplianceStatus = checks.StatusNonCompliant
+		result.Reason = fmt.Sprintf("%d pod(s) are running in namespaces without a ResourceQuota", count)
 	}
 	return result
 }

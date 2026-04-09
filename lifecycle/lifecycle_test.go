@@ -341,7 +341,26 @@ func TestCheckCPUIsolation_NonCompliant(t *testing.T) {
 	}
 }
 
-func TestCheckTolerationBypass_NonCompliant(t *testing.T) {
+func TestCheckTolerationBypass_NonCompliant_NonDefaultKey(t *testing.T) {
+	// Any toleration key not containing "node.kubernetes.io" is modified
+	resources := &checks.DiscoveredResources{
+		Pods: []corev1.Pod{{
+			ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "ns1"},
+			Spec: corev1.PodSpec{
+				Tolerations: []corev1.Toleration{{
+					Key:    "some-other-taint",
+					Effect: corev1.TaintEffectNoSchedule,
+				}},
+			},
+		}},
+	}
+	result := CheckTolerationBypass(resources)
+	if result.ComplianceStatus != "NonCompliant" {
+		t.Errorf("expected NonCompliant for non-default toleration key, got %s", result.ComplianceStatus)
+	}
+}
+
+func TestCheckTolerationBypass_NonCompliant_MasterTaint(t *testing.T) {
 	resources := &checks.DiscoveredResources{
 		Pods: []corev1.Pod{{
 			ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "ns1"},
@@ -355,25 +374,135 @@ func TestCheckTolerationBypass_NonCompliant(t *testing.T) {
 	}
 	result := CheckTolerationBypass(resources)
 	if result.ComplianceStatus != "NonCompliant" {
-		t.Errorf("expected NonCompliant, got %s", result.ComplianceStatus)
+		t.Errorf("expected NonCompliant for master taint, got %s", result.ComplianceStatus)
 	}
 }
 
-func TestCheckTolerationBypass_Compliant(t *testing.T) {
+func TestCheckTolerationBypass_Compliant_DefaultNotReady(t *testing.T) {
+	// Default not-ready toleration: NoExecute, Exists, 300s
+	tolSeconds := int64(300)
 	resources := &checks.DiscoveredResources{
 		Pods: []corev1.Pod{{
 			ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "ns1"},
 			Spec: corev1.PodSpec{
 				Tolerations: []corev1.Toleration{{
-					Key:    "some-other-taint",
-					Effect: corev1.TaintEffectNoSchedule,
+					Key:               "node.kubernetes.io/not-ready",
+					Effect:            corev1.TaintEffectNoExecute,
+					Operator:          corev1.TolerationOpExists,
+					TolerationSeconds: &tolSeconds,
 				}},
 			},
 		}},
 	}
 	result := CheckTolerationBypass(resources)
 	if result.ComplianceStatus != "Compliant" {
-		t.Errorf("expected Compliant, got %s", result.ComplianceStatus)
+		t.Errorf("expected Compliant for default not-ready toleration, got %s", result.ComplianceStatus)
+	}
+}
+
+func TestCheckTolerationBypass_Compliant_DefaultUnreachable(t *testing.T) {
+	tolSeconds := int64(300)
+	resources := &checks.DiscoveredResources{
+		Pods: []corev1.Pod{{
+			ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "ns1"},
+			Spec: corev1.PodSpec{
+				Tolerations: []corev1.Toleration{{
+					Key:               "node.kubernetes.io/unreachable",
+					Effect:            corev1.TaintEffectNoExecute,
+					Operator:          corev1.TolerationOpExists,
+					TolerationSeconds: &tolSeconds,
+				}},
+			},
+		}},
+	}
+	result := CheckTolerationBypass(resources)
+	if result.ComplianceStatus != "Compliant" {
+		t.Errorf("expected Compliant for default unreachable toleration, got %s", result.ComplianceStatus)
+	}
+}
+
+func TestCheckTolerationBypass_NonCompliant_ModifiedSeconds(t *testing.T) {
+	// not-ready with non-default tolerationSeconds
+	tolSeconds := int64(600)
+	resources := &checks.DiscoveredResources{
+		Pods: []corev1.Pod{{
+			ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "ns1"},
+			Spec: corev1.PodSpec{
+				Tolerations: []corev1.Toleration{{
+					Key:               "node.kubernetes.io/not-ready",
+					Effect:            corev1.TaintEffectNoExecute,
+					Operator:          corev1.TolerationOpExists,
+					TolerationSeconds: &tolSeconds,
+				}},
+			},
+		}},
+	}
+	result := CheckTolerationBypass(resources)
+	if result.ComplianceStatus != "NonCompliant" {
+		t.Errorf("expected NonCompliant for modified tolerationSeconds, got %s", result.ComplianceStatus)
+	}
+}
+
+func TestCheckTolerationBypass_Compliant_MemoryPressure_NonBestEffort(t *testing.T) {
+	// memory-pressure NoSchedule is a default toleration for non-BestEffort pods
+	resources := &checks.DiscoveredResources{
+		Pods: []corev1.Pod{{
+			ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "ns1"},
+			Spec: corev1.PodSpec{
+				Tolerations: []corev1.Toleration{{
+					Key:      "node.kubernetes.io/memory-pressure",
+					Effect:   corev1.TaintEffectNoSchedule,
+					Operator: corev1.TolerationOpExists,
+				}},
+			},
+			Status: corev1.PodStatus{QOSClass: corev1.PodQOSGuaranteed},
+		}},
+	}
+	result := CheckTolerationBypass(resources)
+	if result.ComplianceStatus != "Compliant" {
+		t.Errorf("expected Compliant for memory-pressure with Guaranteed QoS, got %s", result.ComplianceStatus)
+	}
+}
+
+func TestCheckTolerationBypass_NonCompliant_MemoryPressure_BestEffort(t *testing.T) {
+	// memory-pressure NoSchedule is NOT a default for BestEffort pods
+	resources := &checks.DiscoveredResources{
+		Pods: []corev1.Pod{{
+			ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "ns1"},
+			Spec: corev1.PodSpec{
+				Tolerations: []corev1.Toleration{{
+					Key:      "node.kubernetes.io/memory-pressure",
+					Effect:   corev1.TaintEffectNoSchedule,
+					Operator: corev1.TolerationOpExists,
+				}},
+			},
+			Status: corev1.PodStatus{QOSClass: corev1.PodQOSBestEffort},
+		}},
+	}
+	result := CheckTolerationBypass(resources)
+	if result.ComplianceStatus != "NonCompliant" {
+		t.Errorf("expected NonCompliant for memory-pressure with BestEffort QoS, got %s", result.ComplianceStatus)
+	}
+}
+
+func TestCheckTolerationBypass_NoPods(t *testing.T) {
+	resources := &checks.DiscoveredResources{}
+	result := CheckTolerationBypass(resources)
+	if result.ComplianceStatus != "Compliant" {
+		t.Errorf("expected Compliant for no pods, got %s", result.ComplianceStatus)
+	}
+}
+
+func TestCheckTolerationBypass_Compliant_NoTolerations(t *testing.T) {
+	resources := &checks.DiscoveredResources{
+		Pods: []corev1.Pod{{
+			ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "ns1"},
+			Spec:       corev1.PodSpec{},
+		}},
+	}
+	result := CheckTolerationBypass(resources)
+	if result.ComplianceStatus != "Compliant" {
+		t.Errorf("expected Compliant for pod with no tolerations, got %s", result.ComplianceStatus)
 	}
 }
 
@@ -407,7 +536,7 @@ func TestCheckPVReclaimPolicy_Retain_NonCompliant(t *testing.T) {
 	}
 }
 
-func TestCheckPodScheduling_NonCompliant(t *testing.T) {
+func TestCheckPodScheduling_Compliant_NoConstraints(t *testing.T) {
 	resources := &checks.DiscoveredResources{
 		Pods: []corev1.Pod{{
 			ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "ns1"},
@@ -415,12 +544,12 @@ func TestCheckPodScheduling_NonCompliant(t *testing.T) {
 		}},
 	}
 	result := CheckPodScheduling(resources)
-	if result.ComplianceStatus != "NonCompliant" {
-		t.Errorf("expected NonCompliant, got %s", result.ComplianceStatus)
+	if result.ComplianceStatus != "Compliant" {
+		t.Errorf("expected Compliant for pod with no scheduling constraints, got %s", result.ComplianceStatus)
 	}
 }
 
-func TestCheckPodScheduling_Compliant_NodeSelector(t *testing.T) {
+func TestCheckPodScheduling_NonCompliant_NodeSelector(t *testing.T) {
 	resources := &checks.DiscoveredResources{
 		Pods: []corev1.Pod{{
 			ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "ns1"},
@@ -430,8 +559,51 @@ func TestCheckPodScheduling_Compliant_NodeSelector(t *testing.T) {
 		}},
 	}
 	result := CheckPodScheduling(resources)
+	if result.ComplianceStatus != "NonCompliant" {
+		t.Errorf("expected NonCompliant for pod with nodeSelector, got %s", result.ComplianceStatus)
+	}
+}
+
+func TestCheckPodScheduling_NonCompliant_NodeAffinity(t *testing.T) {
+	resources := &checks.DiscoveredResources{
+		Pods: []corev1.Pod{{
+			ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "ns1"},
+			Spec: corev1.PodSpec{
+				Affinity: &corev1.Affinity{
+					NodeAffinity: &corev1.NodeAffinity{},
+				},
+			},
+		}},
+	}
+	result := CheckPodScheduling(resources)
+	if result.ComplianceStatus != "NonCompliant" {
+		t.Errorf("expected NonCompliant for pod with nodeAffinity, got %s", result.ComplianceStatus)
+	}
+}
+
+func TestCheckPodScheduling_Compliant_PodAffinityOnly(t *testing.T) {
+	// PodAffinity (not NodeAffinity) should be compliant
+	resources := &checks.DiscoveredResources{
+		Pods: []corev1.Pod{{
+			ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "ns1"},
+			Spec: corev1.PodSpec{
+				Affinity: &corev1.Affinity{
+					PodAffinity: &corev1.PodAffinity{},
+				},
+			},
+		}},
+	}
+	result := CheckPodScheduling(resources)
 	if result.ComplianceStatus != "Compliant" {
-		t.Errorf("expected Compliant, got %s", result.ComplianceStatus)
+		t.Errorf("expected Compliant for pod with only podAffinity (no nodeAffinity), got %s", result.ComplianceStatus)
+	}
+}
+
+func TestCheckPodScheduling_NoPods(t *testing.T) {
+	resources := &checks.DiscoveredResources{}
+	result := CheckPodScheduling(resources)
+	if result.ComplianceStatus != "Compliant" {
+		t.Errorf("expected Compliant for no pods, got %s", result.ComplianceStatus)
 	}
 }
 
@@ -587,35 +759,114 @@ func TestCheckTopologySpreadConstraints_MissingZone_NonCompliant(t *testing.T) {
 
 // --- StorageProvisioner checks ---
 
-func TestCheckStorageProvisioner_Compliant(t *testing.T) {
+func TestCheckStorageProvisioner_MultiNode_NonLocalCompliant(t *testing.T) {
 	resources := &checks.DiscoveredResources{
 		StorageClasses: []storagev1.StorageClass{{
 			ObjectMeta:  metav1.ObjectMeta{Name: "ebs-sc"},
 			Provisioner: "ebs.csi.aws.com",
 		}},
+		Nodes: []corev1.Node{
+			{ObjectMeta: metav1.ObjectMeta{Name: "node1"}},
+			{ObjectMeta: metav1.ObjectMeta{Name: "node2"}},
+		},
 	}
 	result := CheckStorageProvisioner(resources)
 	if result.ComplianceStatus != "Compliant" {
-		t.Errorf("expected Compliant, got %s", result.ComplianceStatus)
+		t.Errorf("expected Compliant for non-local in multi-node, got %s", result.ComplianceStatus)
 	}
 }
 
-func TestCheckStorageProvisioner_NonCompliant(t *testing.T) {
+func TestCheckStorageProvisioner_MultiNode_LocalNonCompliant(t *testing.T) {
 	resources := &checks.DiscoveredResources{
 		StorageClasses: []storagev1.StorageClass{{
 			ObjectMeta:  metav1.ObjectMeta{Name: "local-sc"},
 			Provisioner: "kubernetes.io/no-provisioner",
 		}},
+		Nodes: []corev1.Node{
+			{ObjectMeta: metav1.ObjectMeta{Name: "node1"}},
+			{ObjectMeta: metav1.ObjectMeta{Name: "node2"}},
+		},
 	}
 	result := CheckStorageProvisioner(resources)
 	if result.ComplianceStatus != "NonCompliant" {
-		t.Errorf("expected NonCompliant, got %s", result.ComplianceStatus)
+		t.Errorf("expected NonCompliant for local storage in multi-node, got %s", result.ComplianceStatus)
+	}
+}
+
+func TestCheckStorageProvisioner_MultiNode_TopolvmNonCompliant(t *testing.T) {
+	resources := &checks.DiscoveredResources{
+		StorageClasses: []storagev1.StorageClass{{
+			ObjectMeta:  metav1.ObjectMeta{Name: "topolvm-sc"},
+			Provisioner: "topolvm.io",
+		}},
+		Nodes: []corev1.Node{
+			{ObjectMeta: metav1.ObjectMeta{Name: "node1"}},
+			{ObjectMeta: metav1.ObjectMeta{Name: "node2"}},
+		},
+	}
+	result := CheckStorageProvisioner(resources)
+	if result.ComplianceStatus != "NonCompliant" {
+		t.Errorf("expected NonCompliant for topolvm in multi-node, got %s", result.ComplianceStatus)
+	}
+}
+
+func TestCheckStorageProvisioner_SNO_LocalCompliant(t *testing.T) {
+	resources := &checks.DiscoveredResources{
+		StorageClasses: []storagev1.StorageClass{{
+			ObjectMeta:  metav1.ObjectMeta{Name: "local-sc"},
+			Provisioner: "kubernetes.io/no-provisioner",
+		}},
+		Nodes: []corev1.Node{
+			{ObjectMeta: metav1.ObjectMeta{Name: "node1"}},
+		},
+	}
+	result := CheckStorageProvisioner(resources)
+	if result.ComplianceStatus != "Compliant" {
+		t.Errorf("expected Compliant for local storage in SNO, got %s: %s", result.ComplianceStatus, result.Reason)
+	}
+}
+
+func TestCheckStorageProvisioner_SNO_NonLocalNonCompliant(t *testing.T) {
+	resources := &checks.DiscoveredResources{
+		StorageClasses: []storagev1.StorageClass{{
+			ObjectMeta:  metav1.ObjectMeta{Name: "ebs-sc"},
+			Provisioner: "ebs.csi.aws.com",
+		}},
+		Nodes: []corev1.Node{
+			{ObjectMeta: metav1.ObjectMeta{Name: "node1"}},
+		},
+	}
+	result := CheckStorageProvisioner(resources)
+	if result.ComplianceStatus != "NonCompliant" {
+		t.Errorf("expected NonCompliant for non-local storage in SNO, got %s", result.ComplianceStatus)
+	}
+}
+
+func TestCheckStorageProvisioner_SNO_BothLocalTypes_NonCompliant(t *testing.T) {
+	resources := &checks.DiscoveredResources{
+		StorageClasses: []storagev1.StorageClass{
+			{
+				ObjectMeta:  metav1.ObjectMeta{Name: "local-sc"},
+				Provisioner: "kubernetes.io/no-provisioner",
+			},
+			{
+				ObjectMeta:  metav1.ObjectMeta{Name: "topolvm-sc"},
+				Provisioner: "topolvm.io",
+			},
+		},
+		Nodes: []corev1.Node{
+			{ObjectMeta: metav1.ObjectMeta{Name: "node1"}},
+		},
+	}
+	result := CheckStorageProvisioner(resources)
+	if result.ComplianceStatus != "NonCompliant" {
+		t.Errorf("expected NonCompliant for both local types in SNO, got %s", result.ComplianceStatus)
 	}
 }
 
 func TestCheckStorageProvisioner_Skipped(t *testing.T) {
 	result := CheckStorageProvisioner(&checks.DiscoveredResources{})
 	if result.ComplianceStatus != checks.StatusCompliant {
-		t.Errorf("expected Skipped, got %s", result.ComplianceStatus)
+		t.Errorf("expected Compliant, got %s", result.ComplianceStatus)
 	}
 }

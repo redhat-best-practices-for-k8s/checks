@@ -47,6 +47,50 @@ func TestCheckPortNameFormat_NonCompliant(t *testing.T) {
 	}
 }
 
+func TestCheckPortNameFormat_ProtocolWithSuffix_Compliant(t *testing.T) {
+	resources := &checks.DiscoveredResources{
+		Pods: []corev1.Pod{{
+			ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "ns1"},
+			Spec: corev1.PodSpec{
+				Containers: []corev1.Container{{
+					Name: "c1",
+					Ports: []corev1.ContainerPort{
+						{Name: "http-api", ContainerPort: 8080},
+						{Name: "tcp-metrics", ContainerPort: 9090},
+						{Name: "grpc-service", ContainerPort: 50051},
+						{Name: "http2-web", ContainerPort: 8443},
+						{Name: "udp-dns", ContainerPort: 53},
+					},
+				}},
+			},
+		}},
+	}
+	result := CheckPortNameFormat(resources)
+	if result.ComplianceStatus != "Compliant" {
+		t.Errorf("expected Compliant for protocol-suffix format, got %s: %s", result.ComplianceStatus, result.Reason)
+	}
+}
+
+func TestCheckPortNameFormat_InvalidProtocol_NonCompliant(t *testing.T) {
+	resources := &checks.DiscoveredResources{
+		Pods: []corev1.Pod{{
+			ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "ns1"},
+			Spec: corev1.PodSpec{
+				Containers: []corev1.Container{{
+					Name: "c1",
+					Ports: []corev1.ContainerPort{
+						{Name: "ftp-data", ContainerPort: 21},
+					},
+				}},
+			},
+		}},
+	}
+	result := CheckPortNameFormat(resources)
+	if result.ComplianceStatus != "NonCompliant" {
+		t.Errorf("expected NonCompliant for invalid protocol prefix, got %s", result.ComplianceStatus)
+	}
+}
+
 func TestCheckPortNameFormat_UnnamedPort(t *testing.T) {
 	resources := &checks.DiscoveredResources{
 		Pods: []corev1.Pod{{
