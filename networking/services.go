@@ -2,13 +2,19 @@ package networking
 
 import (
 	"fmt"
+	"net"
 
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/redhat-best-practices-for-k8s/checks"
 )
 
-// CheckDualStackService verifies services support dual-stack.
+// CheckDualStackService verifies services support IPv6 or dual-stack.
+// The certsuite logic:
+//   - IPFamilyPolicy == nil -> non-compliant (error: no policy configured)
+//   - SingleStack with IPv6 ClusterIP -> compliant
+//   - SingleStack with IPv4 ClusterIP -> non-compliant
+//   - PreferDualStack or RequireDualStack -> compliant (if properly configured)
 func CheckDualStackService(resources *checks.DiscoveredResources) checks.CheckResult {
 	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.Services) == 0 {
@@ -23,21 +29,90 @@ func CheckDualStackService(resources *checks.DiscoveredResources) checks.CheckRe
 		if svc.Spec.ClusterIP == "None" || svc.Spec.Type == corev1.ServiceTypeExternalName {
 			continue
 		}
-		policy := svc.Spec.IPFamilyPolicy
-		if policy == nil || *policy == corev1.IPFamilyPolicySingleStack {
+
+		ipVersion := getServiceIPVersion(svc)
+		if ipVersion == ipVersionUndefined || ipVersion == ipVersionIPv4 {
 			count++
 			result.Details = append(result.Details, checks.ResourceDetail{
 				Kind: "Service", Name: svc.Name, Namespace: svc.Namespace,
 				Compliant: false,
-				Message:   "Service does not support dual-stack (ipFamilyPolicy is SingleStack or not set)",
+				Message:   fmt.Sprintf("Service only supports IPv4 (ipVersion: %s)", ipVersion),
+			})
+		} else {
+			result.Details = append(result.Details, checks.ResourceDetail{
+				Kind: "Service", Name: svc.Name, Namespace: svc.Namespace,
+				Compliant: true,
+				Message:   fmt.Sprintf("Service supports IPv6 or dual-stack (ipVersion: %s)", ipVersion),
 			})
 		}
 	}
 	if count > 0 {
 		result.ComplianceStatus = checks.StatusNonCompliant
-		result.Reason = fmt.Sprintf("%d service(s) do not support dual-stack", count)
+		result.Reason = fmt.Sprintf("%d service(s) do not support IPv6 or dual-stack", count)
 	}
 	return result
+}
+
+type ipVersion string
+
+const (
+	ipVersionIPv4      ipVersion = "IPv4"
+	ipVersionIPv6      ipVersion = "IPv6"
+	ipVersionDualStack ipVersion = "IPv4v6"
+	ipVersionUndefined ipVersion = "undefined"
+)
+
+// getServiceIPVersion determines the IP version status of a service,
+// matching the certsuite's services.GetServiceIPVersion logic.
+func getServiceIPVersion(svc *corev1.Service) ipVersion {
+	if svc.Spec.IPFamilyPolicy == nil {
+		return ipVersionUndefined
+	}
+
+	clusterIPVer := parseIPVersion(svc.Spec.ClusterIP)
+
+	switch *svc.Spec.IPFamilyPolicy {
+	case corev1.IPFamilyPolicySingleStack:
+		if clusterIPVer == ipVersionIPv6 {
+			return ipVersionIPv6
+		}
+		return ipVersionIPv4
+	case corev1.IPFamilyPolicyPreferDualStack, corev1.IPFamilyPolicyRequireDualStack:
+		if isDualStack(svc.Spec.ClusterIPs) {
+			return ipVersionDualStack
+		}
+		// Dual-stack policy but not enough IPs; still treat as the single IP version
+		return clusterIPVer
+	}
+
+	return ipVersionUndefined
+}
+
+func parseIPVersion(ip string) ipVersion {
+	parsed := net.ParseIP(ip)
+	if parsed == nil {
+		return ipVersionUndefined
+	}
+	if parsed.To4() != nil {
+		return ipVersionIPv4
+	}
+	return ipVersionIPv6
+}
+
+func isDualStack(ips []string) bool {
+	var hasIPv4, hasIPv6 bool
+	for _, ip := range ips {
+		parsed := net.ParseIP(ip)
+		if parsed == nil {
+			continue
+		}
+		if parsed.To4() != nil {
+			hasIPv4 = true
+		} else {
+			hasIPv6 = true
+		}
+	}
+	return hasIPv4 && hasIPv6
 }
 
 var reservedPartnerPorts = map[int32]bool{

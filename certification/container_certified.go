@@ -31,6 +31,10 @@ func CheckContainerCertified(resources *checks.DiscoveredResources) checks.Check
 		for j := range pod.Spec.Containers {
 			container := &pod.Spec.Containers[j]
 
+			if checks.IsIgnoredContainer(container.Name) {
+				continue
+			}
+
 			// Find the matching container status for the imageID (digest)
 			imageID := ""
 			for k := range pod.Status.ContainerStatuses {
@@ -84,10 +88,10 @@ func CheckContainerCertified(resources *checks.DiscoveredResources) checks.Check
 		}
 	}
 
-	status := "Compliant"
+	status := checks.StatusCompliant
 	reason := "All container images are certified"
 	if !allCompliant {
-		status = "NonCompliant"
+		status = checks.StatusNonCompliant
 		reason = "One or more container images are not certified"
 	}
 

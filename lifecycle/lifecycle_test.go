@@ -144,7 +144,26 @@ func TestCheckPostStart_NonCompliant(t *testing.T) {
 
 // --- Pod checks ---
 
-func TestCheckImagePullPolicy_Always_Compliant(t *testing.T) {
+func TestCheckImagePullPolicy_IfNotPresent_Compliant(t *testing.T) {
+	resources := &checks.DiscoveredResources{
+		Pods: []corev1.Pod{{
+			ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "ns1"},
+			Spec: corev1.PodSpec{
+				Containers: []corev1.Container{{
+					Name:            "c1",
+					Image:           "nginx:1.21",
+					ImagePullPolicy: corev1.PullIfNotPresent,
+				}},
+			},
+		}},
+	}
+	result := CheckImagePullPolicy(resources)
+	if result.ComplianceStatus != "Compliant" {
+		t.Errorf("expected Compliant, got %s", result.ComplianceStatus)
+	}
+}
+
+func TestCheckImagePullPolicy_Always_NonCompliant(t *testing.T) {
 	resources := &checks.DiscoveredResources{
 		Pods: []corev1.Pod{{
 			ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "ns1"},
@@ -158,31 +177,12 @@ func TestCheckImagePullPolicy_Always_Compliant(t *testing.T) {
 		}},
 	}
 	result := CheckImagePullPolicy(resources)
-	if result.ComplianceStatus != "Compliant" {
-		t.Errorf("expected Compliant, got %s", result.ComplianceStatus)
+	if result.ComplianceStatus != "NonCompliant" {
+		t.Errorf("expected NonCompliant, got %s", result.ComplianceStatus)
 	}
 }
 
-func TestCheckImagePullPolicy_IfNotPresent_WithDigest_Compliant(t *testing.T) {
-	resources := &checks.DiscoveredResources{
-		Pods: []corev1.Pod{{
-			ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "ns1"},
-			Spec: corev1.PodSpec{
-				Containers: []corev1.Container{{
-					Name:            "c1",
-					Image:           "nginx@sha256:abc123",
-					ImagePullPolicy: corev1.PullIfNotPresent,
-				}},
-			},
-		}},
-	}
-	result := CheckImagePullPolicy(resources)
-	if result.ComplianceStatus != "Compliant" {
-		t.Errorf("expected Compliant, got %s", result.ComplianceStatus)
-	}
-}
-
-func TestCheckImagePullPolicy_IfNotPresent_NoDigest_NonCompliant(t *testing.T) {
+func TestCheckImagePullPolicy_Never_NonCompliant(t *testing.T) {
 	resources := &checks.DiscoveredResources{
 		Pods: []corev1.Pod{{
 			ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "ns1"},
@@ -190,7 +190,7 @@ func TestCheckImagePullPolicy_IfNotPresent_NoDigest_NonCompliant(t *testing.T) {
 				Containers: []corev1.Container{{
 					Name:            "c1",
 					Image:           "nginx:1.21",
-					ImagePullPolicy: corev1.PullIfNotPresent,
+					ImagePullPolicy: corev1.PullNever,
 				}},
 			},
 		}},
@@ -377,7 +377,7 @@ func TestCheckTolerationBypass_Compliant(t *testing.T) {
 	}
 }
 
-func TestCheckPVReclaimPolicy_NonCompliant(t *testing.T) {
+func TestCheckPVReclaimPolicy_Delete_Compliant(t *testing.T) {
 	resources := &checks.DiscoveredResources{
 		PersistentVolumes: []corev1.PersistentVolume{{
 			ObjectMeta: metav1.ObjectMeta{Name: "pv1"},
@@ -387,12 +387,12 @@ func TestCheckPVReclaimPolicy_NonCompliant(t *testing.T) {
 		}},
 	}
 	result := CheckPVReclaimPolicy(resources)
-	if result.ComplianceStatus != "NonCompliant" {
-		t.Errorf("expected NonCompliant, got %s", result.ComplianceStatus)
+	if result.ComplianceStatus != "Compliant" {
+		t.Errorf("expected Compliant, got %s", result.ComplianceStatus)
 	}
 }
 
-func TestCheckPVReclaimPolicy_Compliant(t *testing.T) {
+func TestCheckPVReclaimPolicy_Retain_NonCompliant(t *testing.T) {
 	resources := &checks.DiscoveredResources{
 		PersistentVolumes: []corev1.PersistentVolume{{
 			ObjectMeta: metav1.ObjectMeta{Name: "pv1"},
@@ -402,8 +402,8 @@ func TestCheckPVReclaimPolicy_Compliant(t *testing.T) {
 		}},
 	}
 	result := CheckPVReclaimPolicy(resources)
-	if result.ComplianceStatus != "Compliant" {
-		t.Errorf("expected Compliant, got %s", result.ComplianceStatus)
+	if result.ComplianceStatus != "NonCompliant" {
+		t.Errorf("expected NonCompliant, got %s", result.ComplianceStatus)
 	}
 }
 
@@ -435,7 +435,84 @@ func TestCheckPodScheduling_Compliant_NodeSelector(t *testing.T) {
 	}
 }
 
-func TestCheckAffinityRequired_NonCompliant(t *testing.T) {
+func TestCheckAffinityRequired_PodAffinity_Compliant(t *testing.T) {
+	resources := &checks.DiscoveredResources{
+		Pods: []corev1.Pod{{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "pod1", Namespace: "ns1",
+				Labels: map[string]string{"AffinityRequired": "true"},
+			},
+			Spec: corev1.PodSpec{
+				Affinity: &corev1.Affinity{
+					PodAffinity: &corev1.PodAffinity{},
+				},
+			},
+		}},
+	}
+	result := CheckAffinityRequired(resources)
+	if result.ComplianceStatus != "Compliant" {
+		t.Errorf("expected Compliant, got %s", result.ComplianceStatus)
+	}
+}
+
+func TestCheckAffinityRequired_NodeAffinity_Compliant(t *testing.T) {
+	resources := &checks.DiscoveredResources{
+		Pods: []corev1.Pod{{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "pod1", Namespace: "ns1",
+				Labels: map[string]string{"AffinityRequired": "true"},
+			},
+			Spec: corev1.PodSpec{
+				Affinity: &corev1.Affinity{
+					NodeAffinity: &corev1.NodeAffinity{},
+				},
+			},
+		}},
+	}
+	result := CheckAffinityRequired(resources)
+	if result.ComplianceStatus != "Compliant" {
+		t.Errorf("expected Compliant, got %s", result.ComplianceStatus)
+	}
+}
+
+func TestCheckAffinityRequired_NoAffinity_NonCompliant(t *testing.T) {
+	resources := &checks.DiscoveredResources{
+		Pods: []corev1.Pod{{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "pod1", Namespace: "ns1",
+				Labels: map[string]string{"AffinityRequired": "true"},
+			},
+			Spec: corev1.PodSpec{},
+		}},
+	}
+	result := CheckAffinityRequired(resources)
+	if result.ComplianceStatus != "NonCompliant" {
+		t.Errorf("expected NonCompliant, got %s", result.ComplianceStatus)
+	}
+}
+
+func TestCheckAffinityRequired_AntiAffinity_NonCompliant(t *testing.T) {
+	resources := &checks.DiscoveredResources{
+		Pods: []corev1.Pod{{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "pod1", Namespace: "ns1",
+				Labels: map[string]string{"AffinityRequired": "true"},
+			},
+			Spec: corev1.PodSpec{
+				Affinity: &corev1.Affinity{
+					PodAntiAffinity: &corev1.PodAntiAffinity{},
+					PodAffinity:     &corev1.PodAffinity{},
+				},
+			},
+		}},
+	}
+	result := CheckAffinityRequired(resources)
+	if result.ComplianceStatus != "NonCompliant" {
+		t.Errorf("expected NonCompliant, got %s", result.ComplianceStatus)
+	}
+}
+
+func TestCheckAffinityRequired_NoLabel_Skipped(t *testing.T) {
 	resources := &checks.DiscoveredResources{
 		Pods: []corev1.Pod{{
 			ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "ns1"},
@@ -443,8 +520,8 @@ func TestCheckAffinityRequired_NonCompliant(t *testing.T) {
 		}},
 	}
 	result := CheckAffinityRequired(resources)
-	if result.ComplianceStatus != "NonCompliant" {
-		t.Errorf("expected NonCompliant, got %s", result.ComplianceStatus)
+	if result.ComplianceStatus != "Compliant" {
+		t.Errorf("expected Compliant (no pods with label), got %s", result.ComplianceStatus)
 	}
 }
 
