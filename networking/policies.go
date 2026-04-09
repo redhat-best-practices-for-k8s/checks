@@ -26,34 +26,37 @@ func CheckNetworkPolicyDenyAll(resources *checks.DiscoveredResources) checks.Che
 		podNamespaces[resources.Pods[i].Namespace] = true
 	}
 
-	// For each namespace, check if deny-all ingress AND deny-all egress exist.
-	var count int
-	for ns := range podNamespaces {
-		hasDenyIngress := false
-		hasDenyEgress := false
-
-		for i := range resources.NetworkPolicies {
-			np := &resources.NetworkPolicies[i]
-
-			// Only consider policies in this namespace.
-			if np.Namespace != ns {
-				continue
+	// Pre-group deny-all policies by namespace in a single pass.
+	type denyStatus struct{ ingress, egress bool }
+	nsDeny := make(map[string]*denyStatus)
+	for i := range resources.NetworkPolicies {
+		np := &resources.NetworkPolicies[i]
+		if !podNamespaces[np.Namespace] {
+			continue
+		}
+		if len(np.Spec.PodSelector.MatchLabels) > 0 || len(np.Spec.PodSelector.MatchExpressions) > 0 {
+			continue
+		}
+		ds, ok := nsDeny[np.Namespace]
+		if !ok {
+			ds = &denyStatus{}
+			nsDeny[np.Namespace] = ds
+		}
+		for _, pt := range np.Spec.PolicyTypes {
+			if pt == networkingv1.PolicyTypeIngress && len(np.Spec.Ingress) == 0 {
+				ds.ingress = true
 			}
-
-			// Only consider policies with an empty PodSelector (matching all pods).
-			if len(np.Spec.PodSelector.MatchLabels) > 0 || len(np.Spec.PodSelector.MatchExpressions) > 0 {
-				continue
-			}
-
-			for _, pt := range np.Spec.PolicyTypes {
-				if pt == networkingv1.PolicyTypeIngress && len(np.Spec.Ingress) == 0 {
-					hasDenyIngress = true
-				}
-				if pt == networkingv1.PolicyTypeEgress && len(np.Spec.Egress) == 0 {
-					hasDenyEgress = true
-				}
+			if pt == networkingv1.PolicyTypeEgress && len(np.Spec.Egress) == 0 {
+				ds.egress = true
 			}
 		}
+	}
+
+	var count int
+	for ns := range podNamespaces {
+		ds := nsDeny[ns]
+		hasDenyIngress := ds != nil && ds.ingress
+		hasDenyEgress := ds != nil && ds.egress
 
 		if !hasDenyIngress || !hasDenyEgress {
 			count++
