@@ -19,6 +19,8 @@ func TestCheckDualStackService_Compliant(t *testing.T) {
 		Services: []corev1.Service{{
 			ObjectMeta: metav1.ObjectMeta{Name: "svc1", Namespace: "ns1"},
 			Spec: corev1.ServiceSpec{
+				ClusterIP:      "10.0.0.1",
+				ClusterIPs:     []string{"10.0.0.1", "fd00::1"},
 				IPFamilyPolicy: &policy,
 			},
 		}},
@@ -29,19 +31,52 @@ func TestCheckDualStackService_Compliant(t *testing.T) {
 	}
 }
 
-func TestCheckDualStackService_NonCompliant(t *testing.T) {
+func TestCheckDualStackService_NonCompliant_IPv4SingleStack(t *testing.T) {
 	policy := corev1.IPFamilyPolicySingleStack
 	resources := &checks.DiscoveredResources{
 		Services: []corev1.Service{{
 			ObjectMeta: metav1.ObjectMeta{Name: "svc1", Namespace: "ns1"},
 			Spec: corev1.ServiceSpec{
+				ClusterIP:      "10.0.0.1",
 				IPFamilyPolicy: &policy,
 			},
 		}},
 	}
 	result := CheckDualStackService(resources)
 	if result.ComplianceStatus != "NonCompliant" {
-		t.Errorf("expected NonCompliant, got %s", result.ComplianceStatus)
+		t.Errorf("expected NonCompliant for IPv4 SingleStack, got %s", result.ComplianceStatus)
+	}
+}
+
+func TestCheckDualStackService_NonCompliant_NilPolicy(t *testing.T) {
+	resources := &checks.DiscoveredResources{
+		Services: []corev1.Service{{
+			ObjectMeta: metav1.ObjectMeta{Name: "svc1", Namespace: "ns1"},
+			Spec: corev1.ServiceSpec{
+				ClusterIP: "10.0.0.1",
+			},
+		}},
+	}
+	result := CheckDualStackService(resources)
+	if result.ComplianceStatus != "NonCompliant" {
+		t.Errorf("expected NonCompliant for nil IPFamilyPolicy, got %s", result.ComplianceStatus)
+	}
+}
+
+func TestCheckDualStackService_Compliant_IPv6SingleStack(t *testing.T) {
+	policy := corev1.IPFamilyPolicySingleStack
+	resources := &checks.DiscoveredResources{
+		Services: []corev1.Service{{
+			ObjectMeta: metav1.ObjectMeta{Name: "svc1", Namespace: "ns1"},
+			Spec: corev1.ServiceSpec{
+				ClusterIP:      "fd00::1",
+				IPFamilyPolicy: &policy,
+			},
+		}},
+	}
+	result := CheckDualStackService(resources)
+	if result.ComplianceStatus != "Compliant" {
+		t.Errorf("expected Compliant for IPv6 SingleStack, got %s", result.ComplianceStatus)
 	}
 }
 

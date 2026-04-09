@@ -11,7 +11,7 @@ import (
 
 func TestCheckIsRedHatRelease_Compliant(t *testing.T) {
 	mockProbe := testutil.NewMockProbeExecutor(map[string]testutil.MockProbeResponse{
-		"cat /etc/redhat-release": {
+		redhatReleaseCommand: {
 			Stdout: "Red Hat Enterprise Linux release 8.5 (Ootpa)\n",
 			Stderr: "",
 			Err:    nil,
@@ -47,9 +47,9 @@ func TestCheckIsRedHatRelease_Compliant(t *testing.T) {
 	}
 }
 
-func TestCheckIsRedHatRelease_NonCompliant(t *testing.T) {
+func TestCheckIsRedHatRelease_NonCompliant_Ubuntu(t *testing.T) {
 	mockProbe := testutil.NewMockProbeExecutor(map[string]testutil.MockProbeResponse{
-		"cat /etc/redhat-release": {
+		redhatReleaseCommand: {
 			Stdout: "Ubuntu 20.04.3 LTS\n",
 			Stderr: "",
 			Err:    nil,
@@ -82,6 +82,97 @@ func TestCheckIsRedHatRelease_NonCompliant(t *testing.T) {
 
 	if result.Details[0].Compliant {
 		t.Errorf("Expected container to be non-compliant")
+	}
+}
+
+func TestCheckIsRedHatRelease_NonCompliant_UnknownBaseImage(t *testing.T) {
+	mockProbe := testutil.NewMockProbeExecutor(map[string]testutil.MockProbeResponse{
+		redhatReleaseCommand: {
+			Stdout: "Unknown Base Image\n",
+			Stderr: "",
+			Err:    nil,
+		},
+	})
+
+	resources := &checks.DiscoveredResources{
+		Pods: []corev1.Pod{
+			{
+				ObjectMeta: metav1.ObjectMeta{Name: "test-pod", Namespace: "test-ns"},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{Name: "test-container"},
+					},
+				},
+			},
+		},
+		ProbeExecutor: mockProbe,
+	}
+
+	result := CheckIsRedHatRelease(resources)
+
+	if result.ComplianceStatus != "NonCompliant" {
+		t.Errorf("Expected NonCompliant for Unknown Base Image, got %s", result.ComplianceStatus)
+	}
+}
+
+func TestCheckIsRedHatRelease_Compliant_ServerRelease(t *testing.T) {
+	mockProbe := testutil.NewMockProbeExecutor(map[string]testutil.MockProbeResponse{
+		redhatReleaseCommand: {
+			Stdout: "Red Hat Enterprise Linux Server release 7.9 (Maipo)\n",
+			Stderr: "",
+			Err:    nil,
+		},
+	})
+
+	resources := &checks.DiscoveredResources{
+		Pods: []corev1.Pod{
+			{
+				ObjectMeta: metav1.ObjectMeta{Name: "test-pod", Namespace: "test-ns"},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{Name: "test-container"},
+					},
+				},
+			},
+		},
+		ProbeExecutor: mockProbe,
+	}
+
+	result := CheckIsRedHatRelease(resources)
+
+	if result.ComplianceStatus != "Compliant" {
+		t.Errorf("Expected Compliant for RHEL Server release, got %s: %s", result.ComplianceStatus, result.Reason)
+	}
+}
+
+func TestCheckIsRedHatRelease_NonCompliant_JustRedHat(t *testing.T) {
+	// A simple "Red Hat" string without the full version format should fail
+	mockProbe := testutil.NewMockProbeExecutor(map[string]testutil.MockProbeResponse{
+		redhatReleaseCommand: {
+			Stdout: "Red Hat something custom\n",
+			Stderr: "",
+			Err:    nil,
+		},
+	})
+
+	resources := &checks.DiscoveredResources{
+		Pods: []corev1.Pod{
+			{
+				ObjectMeta: metav1.ObjectMeta{Name: "test-pod", Namespace: "test-ns"},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{Name: "test-container"},
+					},
+				},
+			},
+		},
+		ProbeExecutor: mockProbe,
+	}
+
+	result := CheckIsRedHatRelease(resources)
+
+	if result.ComplianceStatus != "NonCompliant" {
+		t.Errorf("Expected NonCompliant for non-standard Red Hat string, got %s", result.ComplianceStatus)
 	}
 }
 

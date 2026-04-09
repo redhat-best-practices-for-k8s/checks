@@ -40,6 +40,11 @@ func CheckContainerLogging(resources *checks.DiscoveredResources) checks.CheckRe
 		pod := &resources.Pods[i]
 		for j := range pod.Spec.Containers {
 			container := &pod.Spec.Containers[j]
+
+			if checks.IsIgnoredContainer(container.Name) {
+				continue
+			}
+
 			containerName := fmt.Sprintf("%s/%s/%s", pod.Namespace, pod.Name, container.Name)
 
 			hasLogs, err := containerHasLoggingOutput(k8sClient, pod, container.Name)

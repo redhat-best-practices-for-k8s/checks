@@ -58,6 +58,12 @@ func checkICMPConnectivity(resources *checks.DiscoveredResources, ipVersion stri
 		return result
 	}
 
+	if len(resources.ProbePods) == 0 {
+		result.ComplianceStatus = checks.StatusError
+		result.Reason = "No probe pods available for ICMP connectivity checks"
+		return result
+	}
+
 	if len(resources.Pods) < 2 {
 		result.ComplianceStatus = checks.StatusCompliant
 		result.Reason = "At least 2 pods required for ICMP connectivity testing"
@@ -76,9 +82,24 @@ func checkICMPConnectivity(resources *checks.DiscoveredResources, ipVersion stri
 	var failures int
 
 	for _, pair := range testPairs {
+		// Execute ping from the probe pod on the source pod's node, not the workload pod itself.
+		// Workload pods may not have ping available; probe pods are guaranteed to have it.
+		probePod, ok := resources.ProbePods[pair.sourcePod.Spec.NodeName]
+		if !ok || probePod == nil {
+			failures++
+			result.Details = append(result.Details, checks.ResourceDetail{
+				Kind:      "ICMPTest",
+				Name:      fmt.Sprintf("%s->%s", pair.sourcePod.Name, pair.targetPod.Name),
+				Namespace: pair.sourcePod.Namespace,
+				Compliant: false,
+				Message:   fmt.Sprintf("No probe pod available on node %s", pair.sourcePod.Spec.NodeName),
+			})
+			continue
+		}
+
 		pingCmd := fmt.Sprintf("ping -%s -c %d %s", ipVersion, defaultPingCount, pair.targetIP)
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-		stdout, stderr, err := resources.ProbeExecutor.ExecCommand(ctx, pair.sourcePod, pingCmd)
+		stdout, stderr, err := resources.ProbeExecutor.ExecCommand(ctx, probePod, pingCmd)
 		cancel()
 
 		if err != nil || stderr != "" {

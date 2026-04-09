@@ -878,6 +878,7 @@ func TestCheckCrdRoles_Compliant(t *testing.T) {
 		CRDs: []apiextv1.CustomResourceDefinition{{
 			ObjectMeta: metav1.ObjectMeta{Name: "widgets.example.com"},
 			Spec: apiextv1.CustomResourceDefinitionSpec{
+				Group: "example.com",
 				Names: apiextv1.CustomResourceDefinitionNames{
 					Plural:   "widgets",
 					Singular: "widget",
@@ -887,10 +888,12 @@ func TestCheckCrdRoles_Compliant(t *testing.T) {
 		Roles: []rbacv1.Role{{
 			ObjectMeta: metav1.ObjectMeta{Name: "role1", Namespace: "ns1"},
 			Rules: []rbacv1.PolicyRule{{
+				APIGroups: []string{"example.com"},
 				Resources: []string{"widgets"},
 				Verbs:     []string{"get", "list"},
 			}},
 		}},
+		Namespaces: []string{"ns1"},
 	}
 	result := CheckCrdRoles(resources)
 	if result.ComplianceStatus != "Compliant" {
@@ -899,20 +902,31 @@ func TestCheckCrdRoles_Compliant(t *testing.T) {
 }
 
 func TestCheckCrdRoles_NonCompliant(t *testing.T) {
+	// A role that has both CRD and non-CRD rules should be non-compliant
 	resources := &checks.DiscoveredResources{
 		CRDs: []apiextv1.CustomResourceDefinition{{
 			ObjectMeta: metav1.ObjectMeta{Name: "widgets.example.com"},
 			Spec: apiextv1.CustomResourceDefinitionSpec{
+				Group: "example.com",
 				Names: apiextv1.CustomResourceDefinitionNames{Plural: "widgets"},
 			},
 		}},
 		Roles: []rbacv1.Role{{
 			ObjectMeta: metav1.ObjectMeta{Name: "role1", Namespace: "ns1"},
-			Rules: []rbacv1.PolicyRule{{
-				Resources: []string{"pods"},
-				Verbs:     []string{"get"},
-			}},
+			Rules: []rbacv1.PolicyRule{
+				{
+					APIGroups: []string{"example.com"},
+					Resources: []string{"widgets"},
+					Verbs:     []string{"get"},
+				},
+				{
+					APIGroups: []string{""},
+					Resources: []string{"pods"},
+					Verbs:     []string{"get"},
+				},
+			},
 		}},
+		Namespaces: []string{"ns1"},
 	}
 	result := CheckCrdRoles(resources)
 	if result.ComplianceStatus != "NonCompliant" {
@@ -920,25 +934,55 @@ func TestCheckCrdRoles_NonCompliant(t *testing.T) {
 	}
 }
 
-func TestCheckCrdRoles_Wildcard_NonCompliant(t *testing.T) {
+func TestCheckCrdRoles_NoCrdRules_Skipped(t *testing.T) {
+	// A role that doesn't touch any CRD resources should be skipped (compliant)
 	resources := &checks.DiscoveredResources{
 		CRDs: []apiextv1.CustomResourceDefinition{{
 			ObjectMeta: metav1.ObjectMeta{Name: "widgets.example.com"},
 			Spec: apiextv1.CustomResourceDefinitionSpec{
+				Group: "example.com",
 				Names: apiextv1.CustomResourceDefinitionNames{Plural: "widgets"},
 			},
 		}},
 		Roles: []rbacv1.Role{{
 			ObjectMeta: metav1.ObjectMeta{Name: "role1", Namespace: "ns1"},
 			Rules: []rbacv1.PolicyRule{{
-				Resources: []string{"*"},
+				APIGroups: []string{""},
+				Resources: []string{"pods"},
 				Verbs:     []string{"get"},
 			}},
 		}},
+		Namespaces: []string{"ns1"},
 	}
 	result := CheckCrdRoles(resources)
-	if result.ComplianceStatus != "NonCompliant" {
-		t.Errorf("expected NonCompliant for wildcard, got %s", result.ComplianceStatus)
+	if result.ComplianceStatus != "Compliant" {
+		t.Errorf("expected Compliant for role not touching CRD resources, got %s", result.ComplianceStatus)
+	}
+}
+
+func TestCheckCrdRoles_OutOfNamespace_Skipped(t *testing.T) {
+	// A role not in a target namespace should be skipped
+	resources := &checks.DiscoveredResources{
+		CRDs: []apiextv1.CustomResourceDefinition{{
+			ObjectMeta: metav1.ObjectMeta{Name: "widgets.example.com"},
+			Spec: apiextv1.CustomResourceDefinitionSpec{
+				Group: "example.com",
+				Names: apiextv1.CustomResourceDefinitionNames{Plural: "widgets"},
+			},
+		}},
+		Roles: []rbacv1.Role{{
+			ObjectMeta: metav1.ObjectMeta{Name: "role1", Namespace: "other-ns"},
+			Rules: []rbacv1.PolicyRule{{
+				APIGroups: []string{"example.com"},
+				Resources: []string{"widgets"},
+				Verbs:     []string{"get"},
+			}},
+		}},
+		Namespaces: []string{"ns1"},
+	}
+	result := CheckCrdRoles(resources)
+	if result.ComplianceStatus != "Compliant" {
+		t.Errorf("expected Compliant for role outside target namespaces, got %s", result.ComplianceStatus)
 	}
 }
 
@@ -1159,6 +1203,7 @@ func TestCheckCrdRoles_MultipleRulesMultipleGroups(t *testing.T) {
 		CRDs: []apiextv1.CustomResourceDefinition{{
 			ObjectMeta: metav1.ObjectMeta{Name: "widgets.example.com"},
 			Spec: apiextv1.CustomResourceDefinitionSpec{
+				Group: "example.com",
 				Names: apiextv1.CustomResourceDefinitionNames{Plural: "widgets"},
 			},
 		}},
@@ -1177,6 +1222,7 @@ func TestCheckCrdRoles_MultipleRulesMultipleGroups(t *testing.T) {
 				},
 			},
 		}},
+		Namespaces: []string{"ns1"},
 	}
 	result := CheckCrdRoles(resources)
 	if result.ComplianceStatus != "NonCompliant" {
@@ -1189,7 +1235,7 @@ func TestCheckCrdRoles_MultipleRulesMultipleGroups(t *testing.T) {
 		}
 	}
 	if nonCompliantCount != 1 {
-		t.Errorf("expected exactly 1 non-compliant detail for 'deployments', got %d", nonCompliantCount)
+		t.Errorf("expected 1 non-compliant detail for the role, got %d", nonCompliantCount)
 	}
 }
 

@@ -9,7 +9,9 @@ import (
 	"github.com/redhat-best-practices-for-k8s/checks"
 )
 
-// CheckImagePullPolicy verifies imagePullPolicy is Always or image uses a digest.
+const affinityRequiredLabel = "AffinityRequired"
+
+// CheckImagePullPolicy verifies imagePullPolicy is IfNotPresent.
 func CheckImagePullPolicy(resources *checks.DiscoveredResources) checks.CheckResult {
 	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.Pods) == 0 {
@@ -20,18 +22,14 @@ func CheckImagePullPolicy(resources *checks.DiscoveredResources) checks.CheckRes
 
 	var count int
 	checks.ForEachPodContainer(resources.Pods, func(pod *corev1.Pod, container *corev1.Container) {
-		if container.ImagePullPolicy == corev1.PullAlways {
-			return
+		if container.ImagePullPolicy != corev1.PullIfNotPresent {
+			count++
+			result.Details = append(result.Details, checks.ResourceDetail{
+				Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
+				Compliant: false,
+				Message:   fmt.Sprintf("Container %q has imagePullPolicy %q, must be IfNotPresent", container.Name, container.ImagePullPolicy),
+			})
 		}
-		if container.ImagePullPolicy == corev1.PullIfNotPresent && strings.Contains(container.Image, "@sha256:") {
-			return
-		}
-		count++
-		result.Details = append(result.Details, checks.ResourceDetail{
-			Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
-			Compliant: false,
-			Message:   fmt.Sprintf("Container %q has imagePullPolicy %q without digest reference", container.Name, container.ImagePullPolicy),
-		})
 	})
 	if count > 0 {
 		result.ComplianceStatus = checks.StatusNonCompliant
@@ -176,7 +174,10 @@ func CheckCPUIsolation(resources *checks.DiscoveredResources) checks.CheckResult
 	return result
 }
 
-// CheckAffinityRequired verifies pods have podAntiAffinity for high availability.
+// CheckAffinityRequired verifies pods with the AffinityRequired label have proper affinity rules.
+// Only pods with label AffinityRequired="true" (case-insensitive) are checked.
+// Compliant pods must have Affinity set, must NOT have PodAntiAffinity, and must have
+// either PodAffinity or NodeAffinity configured.
 func CheckAffinityRequired(resources *checks.DiscoveredResources) checks.CheckResult {
 	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.Pods) == 0 {
@@ -185,21 +186,58 @@ func CheckAffinityRequired(resources *checks.DiscoveredResources) checks.CheckRe
 		return result
 	}
 
+	var checked int
 	var count int
 	for i := range resources.Pods {
 		pod := &resources.Pods[i]
-		if pod.Spec.Affinity == nil || pod.Spec.Affinity.PodAntiAffinity == nil {
+
+		val, ok := pod.Labels[affinityRequiredLabel]
+		if !ok || !strings.EqualFold(val, "true") {
+			continue
+		}
+		checked++
+
+		// Affinity must be set
+		if pod.Spec.Affinity == nil {
 			count++
 			result.Details = append(result.Details, checks.ResourceDetail{
 				Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
 				Compliant: false,
-				Message:   "Pod does not have podAntiAffinity configured",
+				Message:   "Pod has AffinityRequired label but no affinity rules configured",
+			})
+			continue
+		}
+
+		// PodAntiAffinity must NOT be set
+		if pod.Spec.Affinity.PodAntiAffinity != nil {
+			count++
+			result.Details = append(result.Details, checks.ResourceDetail{
+				Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
+				Compliant: false,
+				Message:   "Pod has AffinityRequired label but has anti-affinity rules (not allowed)",
+			})
+			continue
+		}
+
+		// Must have either PodAffinity or NodeAffinity
+		if pod.Spec.Affinity.PodAffinity == nil && pod.Spec.Affinity.NodeAffinity == nil {
+			count++
+			result.Details = append(result.Details, checks.ResourceDetail{
+				Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
+				Compliant: false,
+				Message:   "Pod has AffinityRequired label but is missing pod affinity or node affinity rules",
 			})
 		}
 	}
+
+	if checked == 0 {
+		result.Reason = "No pods with AffinityRequired label found"
+		return result
+	}
+
 	if count > 0 {
 		result.ComplianceStatus = checks.StatusNonCompliant
-		result.Reason = fmt.Sprintf("%d pod(s) missing podAntiAffinity", count)
+		result.Reason = fmt.Sprintf("%d pod(s) with AffinityRequired label have non-compliant affinity configuration", count)
 	}
 	return result
 }
@@ -240,7 +278,9 @@ func CheckTolerationBypass(resources *checks.DiscoveredResources) checks.CheckRe
 	return result
 }
 
-// CheckPVReclaimPolicy verifies PersistentVolume reclaimPolicy is not Delete.
+// CheckPVReclaimPolicy verifies PersistentVolume reclaimPolicy is Delete.
+// The Delete reclaim policy is the required/compliant policy, ensuring that
+// persistent volumes are cleaned up when no longer needed.
 func CheckPVReclaimPolicy(resources *checks.DiscoveredResources) checks.CheckResult {
 	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.PersistentVolumes) == 0 {
@@ -252,18 +292,18 @@ func CheckPVReclaimPolicy(resources *checks.DiscoveredResources) checks.CheckRes
 	var count int
 	for i := range resources.PersistentVolumes {
 		pv := &resources.PersistentVolumes[i]
-		if pv.Spec.PersistentVolumeReclaimPolicy == corev1.PersistentVolumeReclaimDelete {
+		if pv.Spec.PersistentVolumeReclaimPolicy != corev1.PersistentVolumeReclaimDelete {
 			count++
 			result.Details = append(result.Details, checks.ResourceDetail{
 				Kind: "PersistentVolume", Name: pv.Name,
 				Compliant: false,
-				Message:   "PersistentVolume reclaimPolicy is Delete",
+				Message:   fmt.Sprintf("PersistentVolume reclaimPolicy is %s, must be Delete", pv.Spec.PersistentVolumeReclaimPolicy),
 			})
 		}
 	}
 	if count > 0 {
 		result.ComplianceStatus = checks.StatusNonCompliant
-		result.Reason = fmt.Sprintf("%d PersistentVolume(s) have reclaimPolicy Delete", count)
+		result.Reason = fmt.Sprintf("%d PersistentVolume(s) do not have reclaimPolicy Delete", count)
 	}
 	return result
 }

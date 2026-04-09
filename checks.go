@@ -123,6 +123,15 @@ const (
 	StatusError        = "Error"
 )
 
+// IgnoredContainerName is a container name that should be excluded from checks.
+// Istio-proxy sidecars are injected by the service mesh and are not part of the workload.
+const IgnoredContainerName = "istio-proxy"
+
+// IsIgnoredContainer returns true if the container name should be skipped by checks.
+func IsIgnoredContainer(name string) bool {
+	return name == IgnoredContainerName
+}
+
 // CheckFunc is the signature for a best practice check function.
 type CheckFunc func(resources *DiscoveredResources) CheckResult
 

@@ -10,6 +10,8 @@ import (
 )
 
 func TestCheckICMPv4Connectivity_Compliant(t *testing.T) {
+	probePod := &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: "probe-pod", Namespace: "probe-ns"}}
+
 	mockProbe := testutil.NewMockProbeExecutor(map[string]testutil.MockProbeResponse{
 		"ping -4 -c 5 10.0.0.2": {
 			Stdout: "5 packets transmitted, 5 received, 0% packet loss\n",
@@ -22,18 +24,21 @@ func TestCheckICMPv4Connectivity_Compliant(t *testing.T) {
 		Pods: []corev1.Pod{
 			{
 				ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "test-ns"},
-				Spec:       corev1.PodSpec{},
+				Spec:       corev1.PodSpec{NodeName: "node1"},
 				Status: corev1.PodStatus{
 					PodIPs: []corev1.PodIP{{IP: "10.0.0.1"}},
 				},
 			},
 			{
 				ObjectMeta: metav1.ObjectMeta{Name: "pod2", Namespace: "test-ns"},
-				Spec:       corev1.PodSpec{},
+				Spec:       corev1.PodSpec{NodeName: "node1"},
 				Status: corev1.PodStatus{
 					PodIPs: []corev1.PodIP{{IP: "10.0.0.2"}},
 				},
 			},
+		},
+		ProbePods: map[string]*corev1.Pod{
+			"node1": probePod,
 		},
 		ProbeExecutor: mockProbe,
 	}
@@ -50,6 +55,8 @@ func TestCheckICMPv4Connectivity_Compliant(t *testing.T) {
 }
 
 func TestCheckICMPv4Connectivity_NonCompliant(t *testing.T) {
+	probePod := &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: "probe-pod", Namespace: "probe-ns"}}
+
 	mockProbe := testutil.NewMockProbeExecutor(map[string]testutil.MockProbeResponse{
 		"ping -4 -c 5 10.0.0.2": {
 			Stdout: "5 packets transmitted, 0 received, 100% packet loss\n",
@@ -62,18 +69,21 @@ func TestCheckICMPv4Connectivity_NonCompliant(t *testing.T) {
 		Pods: []corev1.Pod{
 			{
 				ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "test-ns"},
-				Spec:       corev1.PodSpec{},
+				Spec:       corev1.PodSpec{NodeName: "node1"},
 				Status: corev1.PodStatus{
 					PodIPs: []corev1.PodIP{{IP: "10.0.0.1"}},
 				},
 			},
 			{
 				ObjectMeta: metav1.ObjectMeta{Name: "pod2", Namespace: "test-ns"},
-				Spec:       corev1.PodSpec{},
+				Spec:       corev1.PodSpec{NodeName: "node1"},
 				Status: corev1.PodStatus{
 					PodIPs: []corev1.PodIP{{IP: "10.0.0.2"}},
 				},
 			},
+		},
+		ProbePods: map[string]*corev1.Pod{
+			"node1": probePod,
 		},
 		ProbeExecutor: mockProbe,
 	}
@@ -86,6 +96,8 @@ func TestCheckICMPv4Connectivity_NonCompliant(t *testing.T) {
 }
 
 func TestCheckICMPv6Connectivity_Compliant(t *testing.T) {
+	probePod := &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: "probe-pod", Namespace: "probe-ns"}}
+
 	mockProbe := testutil.NewMockProbeExecutor(map[string]testutil.MockProbeResponse{
 		"ping -6 -c 5 2001:db8::2": {
 			Stdout: "5 packets transmitted, 5 received, 0% packet loss\n",
@@ -98,18 +110,21 @@ func TestCheckICMPv6Connectivity_Compliant(t *testing.T) {
 		Pods: []corev1.Pod{
 			{
 				ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "test-ns"},
-				Spec:       corev1.PodSpec{},
+				Spec:       corev1.PodSpec{NodeName: "node1"},
 				Status: corev1.PodStatus{
 					PodIPs: []corev1.PodIP{{IP: "2001:db8::1"}},
 				},
 			},
 			{
 				ObjectMeta: metav1.ObjectMeta{Name: "pod2", Namespace: "test-ns"},
-				Spec:       corev1.PodSpec{},
+				Spec:       corev1.PodSpec{NodeName: "node1"},
 				Status: corev1.PodStatus{
 					PodIPs: []corev1.PodIP{{IP: "2001:db8::2"}},
 				},
 			},
+		},
+		ProbePods: map[string]*corev1.Pod{
+			"node1": probePod,
 		},
 		ProbeExecutor: mockProbe,
 	}
@@ -122,14 +137,20 @@ func TestCheckICMPv6Connectivity_Compliant(t *testing.T) {
 }
 
 func TestCheckICMPv4Connectivity_NotEnoughPods(t *testing.T) {
+	probePod := &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: "probe-pod", Namespace: "probe-ns"}}
+
 	resources := &checks.DiscoveredResources{
 		Pods: []corev1.Pod{
 			{
 				ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "test-ns"},
+				Spec:       corev1.PodSpec{NodeName: "node1"},
 				Status: corev1.PodStatus{
 					PodIPs: []corev1.PodIP{{IP: "10.0.0.1"}},
 				},
 			},
+		},
+		ProbePods: map[string]*corev1.Pod{
+			"node1": probePod,
 		},
 		ProbeExecutor: testutil.NewMockProbeExecutor(nil),
 	}
@@ -162,20 +183,27 @@ func TestCheckICMPv4Connectivity_NoProbeExecutor(t *testing.T) {
 }
 
 func TestCheckICMPv4Connectivity_NoIPv4Addresses(t *testing.T) {
+	probePod := &corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: "probe-pod", Namespace: "probe-ns"}}
+
 	resources := &checks.DiscoveredResources{
 		Pods: []corev1.Pod{
 			{
 				ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "test-ns"},
+				Spec:       corev1.PodSpec{NodeName: "node1"},
 				Status: corev1.PodStatus{
 					PodIPs: []corev1.PodIP{{IP: "2001:db8::1"}}, // Only IPv6
 				},
 			},
 			{
 				ObjectMeta: metav1.ObjectMeta{Name: "pod2", Namespace: "test-ns"},
+				Spec:       corev1.PodSpec{NodeName: "node1"},
 				Status: corev1.PodStatus{
 					PodIPs: []corev1.PodIP{{IP: "2001:db8::2"}}, // Only IPv6
 				},
 			},
+		},
+		ProbePods: map[string]*corev1.Pod{
+			"node1": probePod,
 		},
 		ProbeExecutor: testutil.NewMockProbeExecutor(nil),
 	}

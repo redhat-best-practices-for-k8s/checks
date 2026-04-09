@@ -142,38 +142,45 @@ func CheckUndeclaredContainerPorts(resources *checks.DiscoveredResources) checks
 	return result
 }
 
+// getContainerIDFromPod extracts the container runtime ID from the pod's container statuses.
+// The container ID in the status has the format "runtime://hash", and we return just the hash.
+func getContainerIDFromPod(pod *corev1.Pod) (string, error) {
+	if len(pod.Status.ContainerStatuses) == 0 {
+		return "", fmt.Errorf("no container statuses found for pod %s/%s", pod.Namespace, pod.Name)
+	}
+
+	// Use the first container's status to get its ID (same approach as certsuite)
+	containerID := pod.Status.ContainerStatuses[0].ContainerID
+	parts := strings.SplitN(containerID, "://", 2)
+	if len(parts) < 2 || parts[1] == "" {
+		return "", fmt.Errorf("could not parse container ID %q for pod %s/%s", containerID, pod.Namespace, pod.Name)
+	}
+
+	return parts[1], nil
+}
+
 // getListeningPorts executes ss command and parses output to get listening ports
 func getListeningPorts(ctx context.Context, executor checks.ProbeExecutor, probePod *corev1.Pod, targetPod *corev1.Pod) (map[portInfo]bool, error) {
-	// Build nsenter command to execute in target pod's network namespace
-	// We need to find the container PID and nsenter into it
-	containerName := targetPod.Spec.Containers[0].Name
-
-	// First, get the container ID
-	getCIDCmd := fmt.Sprintf("crictl ps --name %s -q 2>/dev/null | head -1", containerName)
-	cidOut, _, err := executor.ExecCommand(ctx, probePod, getCIDCmd)
+	// Get the container ID from the pod's container status (pod-scoped, not name-based)
+	containerID, err := getContainerIDFromPod(targetPod)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get container ID: %w", err)
 	}
 
-	cidOut = strings.TrimSpace(cidOut)
-	if cidOut == "" {
-		return nil, fmt.Errorf("container %s not found", containerName)
-	}
-
-	// Get the PID of the container
-	getPIDCmd := fmt.Sprintf("crictl inspect %s 2>/dev/null | jq -r '.info.pid' 2>/dev/null", cidOut)
+	// Get the PID of the container using crictl inspect with the container ID
+	getPIDCmd := fmt.Sprintf("chroot /host crictl inspect --output go-template --template '{{.info.pid}}' %s 2>/dev/null", containerID)
 	pidOut, _, err := executor.ExecCommand(ctx, probePod, getPIDCmd)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get container PID: %w", err)
 	}
 
 	pidOut = strings.TrimSpace(pidOut)
-	if pidOut == "" || pidOut == "null" {
-		return nil, fmt.Errorf("could not determine PID for container %s", containerName)
+	if pidOut == "" || pidOut == "null" || pidOut == "0" {
+		return nil, fmt.Errorf("could not determine PID for container %s in pod %s/%s", containerID, targetPod.Namespace, targetPod.Name)
 	}
 
-	// Execute ss command in the container's network namespace
-	cmd := fmt.Sprintf("nsenter --target %s --mount --pid -- %s", pidOut, getListeningPortsCmd)
+	// Execute ss command in the container's network namespace using nsenter with -n (network namespace only)
+	cmd := fmt.Sprintf("nsenter -t %s -n %s", pidOut, getListeningPortsCmd)
 	stdout, _, err := executor.ExecCommand(ctx, probePod, cmd)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute ss command: %w", err)

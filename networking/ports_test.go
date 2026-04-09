@@ -69,6 +69,11 @@ func TestCheckUndeclaredContainerPorts(t *testing.T) {
 								},
 							},
 						},
+						Status: corev1.PodStatus{
+							ContainerStatuses: []corev1.ContainerStatus{
+								{Name: "app", ContainerID: "cri-o://abc123"},
+							},
+						},
 					},
 				},
 				ProbePods: map[string]*corev1.Pod{
@@ -76,9 +81,8 @@ func TestCheckUndeclaredContainerPorts(t *testing.T) {
 				},
 				ProbeExecutor: &mockProbeExecutor{
 					responses: map[string]string{
-						"crictl ps --name app -q 2>/dev/null | head -1":                         "abc123\n",
-						"crictl inspect abc123 2>/dev/null | jq -r '.info.pid' 2>/dev/null":    "12345\n",
-						"nsenter --target 12345 --mount --pid -- ss -tulwnH": "TCP   LISTEN 0      128       0.0.0.0:8080      0.0.0.0:*\nTCP   LISTEN 0      128       0.0.0.0:9090      0.0.0.0:*\n",
+						"chroot /host crictl inspect --output go-template --template '{{.info.pid}}' abc123 2>/dev/null": "12345\n",
+						"nsenter -t 12345 -n ss -tulwnH": "TCP   LISTEN 0      128       0.0.0.0:8080      0.0.0.0:*\nTCP   LISTEN 0      128       0.0.0.0:9090      0.0.0.0:*\n",
 					},
 				},
 			},
@@ -101,6 +105,11 @@ func TestCheckUndeclaredContainerPorts(t *testing.T) {
 								},
 							},
 						},
+						Status: corev1.PodStatus{
+							ContainerStatuses: []corev1.ContainerStatus{
+								{Name: "app", ContainerID: "cri-o://abc123"},
+							},
+						},
 					},
 				},
 				ProbePods: map[string]*corev1.Pod{
@@ -108,9 +117,8 @@ func TestCheckUndeclaredContainerPorts(t *testing.T) {
 				},
 				ProbeExecutor: &mockProbeExecutor{
 					responses: map[string]string{
-						"crictl ps --name app -q 2>/dev/null | head -1":                         "abc123\n",
-						"crictl inspect abc123 2>/dev/null | jq -r '.info.pid' 2>/dev/null":    "12345\n",
-						"nsenter --target 12345 --mount --pid -- ss -tulwnH": "TCP   LISTEN 0      128       0.0.0.0:8080      0.0.0.0:*\nTCP   LISTEN 0      128       0.0.0.0:9999      0.0.0.0:*\n",
+						"chroot /host crictl inspect --output go-template --template '{{.info.pid}}' abc123 2>/dev/null": "12345\n",
+						"nsenter -t 12345 -n ss -tulwnH": "TCP   LISTEN 0      128       0.0.0.0:8080      0.0.0.0:*\nTCP   LISTEN 0      128       0.0.0.0:9999      0.0.0.0:*\n",
 					},
 				},
 			},
@@ -130,6 +138,12 @@ func TestCheckUndeclaredContainerPorts(t *testing.T) {
 								{Name: "istio-proxy"}, // Istio sidecar present
 							},
 						},
+						Status: corev1.PodStatus{
+							ContainerStatuses: []corev1.ContainerStatus{
+								{Name: "app", ContainerID: "cri-o://abc123"},
+								{Name: "istio-proxy", ContainerID: "cri-o://def456"},
+							},
+						},
 					},
 				},
 				ProbePods: map[string]*corev1.Pod{
@@ -137,9 +151,8 @@ func TestCheckUndeclaredContainerPorts(t *testing.T) {
 				},
 				ProbeExecutor: &mockProbeExecutor{
 					responses: map[string]string{
-						"crictl ps --name app -q 2>/dev/null | head -1":                      "abc123\n",
-						"crictl inspect abc123 2>/dev/null | jq -r '.info.pid' 2>/dev/null": "12345\n",
-						"nsenter --target 12345 --mount --pid -- ss -tulwnH":                 "TCP   LISTEN 0      128       0.0.0.0:15090     0.0.0.0:*\n", // Istio port
+						"chroot /host crictl inspect --output go-template --template '{{.info.pid}}' abc123 2>/dev/null": "12345\n",
+						"nsenter -t 12345 -n ss -tulwnH": "TCP   LISTEN 0      128       0.0.0.0:15090     0.0.0.0:*\n", // Istio port
 					},
 				},
 			},
@@ -157,6 +170,11 @@ func TestCheckUndeclaredContainerPorts(t *testing.T) {
 								{Name: "app"},
 							},
 						},
+						Status: corev1.PodStatus{
+							ContainerStatuses: []corev1.ContainerStatus{
+								{Name: "app", ContainerID: "cri-o://abc123"},
+							},
+						},
 					},
 				},
 				ProbePods: map[string]*corev1.Pod{
@@ -164,9 +182,8 @@ func TestCheckUndeclaredContainerPorts(t *testing.T) {
 				},
 				ProbeExecutor: &mockProbeExecutor{
 					responses: map[string]string{
-						"crictl ps --name app -q 2>/dev/null | head -1":                      "abc123\n",
-						"crictl inspect abc123 2>/dev/null | jq -r '.info.pid' 2>/dev/null": "12345\n",
-						"nsenter --target 12345 --mount --pid -- ss -tulwnH":                 "", // No listening ports
+						"chroot /host crictl inspect --output go-template --template '{{.info.pid}}' abc123 2>/dev/null": "12345\n",
+						"nsenter -t 12345 -n ss -tulwnH": "", // No listening ports
 					},
 				},
 			},

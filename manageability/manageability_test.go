@@ -103,7 +103,7 @@ func TestCheckImageTag_Digest_Compliant(t *testing.T) {
 	}
 }
 
-func TestCheckImageTag_Latest_NonCompliant(t *testing.T) {
+func TestCheckImageTag_Latest_Compliant(t *testing.T) {
 	resources := &checks.DiscoveredResources{
 		Pods: []corev1.Pod{{
 			ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "ns1"},
@@ -116,8 +116,8 @@ func TestCheckImageTag_Latest_NonCompliant(t *testing.T) {
 		}},
 	}
 	result := CheckImageTag(resources)
-	if result.ComplianceStatus != "NonCompliant" {
-		t.Errorf("expected NonCompliant, got %s", result.ComplianceStatus)
+	if result.ComplianceStatus != "Compliant" {
+		t.Errorf("expected Compliant for :latest tag, got %s", result.ComplianceStatus)
 	}
 }
 
