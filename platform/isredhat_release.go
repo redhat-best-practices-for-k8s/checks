@@ -65,7 +65,7 @@ func CheckIsRedHatRelease(resources *checks.DiscoveredResources) checks.CheckRes
 			containerName := fmt.Sprintf("%s/%s/%s", pod.Namespace, pod.Name, container.Name)
 
 			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-			stdout, stderr, err := resources.ProbeExecutor.ExecCommand(ctx, pod, redhatReleaseCommand)
+			stdout, stderr, err := resources.ProbeExecutor.ExecCommandInContainer(ctx, pod, container.Name, redhatReleaseCommand)
 			cancel()
 
 			_ = stderr // stderr may contain harmless warnings (e.g., locale)

@@ -21,6 +21,10 @@ type mockProbeExecutor struct {
 	responses map[string]mockProbeResponse
 }
 
+func (m *mockProbeExecutor) ExecCommandInContainer(ctx context.Context, pod *corev1.Pod, containerName, command string) (string, string, error) {
+	return m.ExecCommand(ctx, pod, command)
+}
+
 func (m *mockProbeExecutor) ExecCommand(_ context.Context, _ *corev1.Pod, command string) (string, string, error) {
 	if r, ok := m.responses[command]; ok {
 		return r.stdout, r.stderr, r.err

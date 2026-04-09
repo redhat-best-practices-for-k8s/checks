@@ -97,7 +97,10 @@ type ScalableResource struct {
 
 // ProbeExecutor allows checks to exec commands in containers.
 type ProbeExecutor interface {
+	// ExecCommand executes a command in the first container of the given pod.
 	ExecCommand(ctx context.Context, pod *corev1.Pod, command string) (stdout, stderr string, err error)
+	// ExecCommandInContainer executes a command in a specific container of the given pod.
+	ExecCommandInContainer(ctx context.Context, pod *corev1.Pod, containerName, command string) (stdout, stderr string, err error)
 }
 
 // HelmChartRelease represents a Helm chart release discovered in the cluster.

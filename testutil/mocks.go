@@ -30,6 +30,11 @@ type MockProbeExecutor struct {
 	CommandLog []string
 }
 
+// ExecCommandInContainer implements the ProbeExecutor interface for testing.
+func (m *MockProbeExecutor) ExecCommandInContainer(ctx context.Context, pod *corev1.Pod, containerName, command string) (string, string, error) {
+	return m.ExecCommand(ctx, pod, command)
+}
+
 // ExecCommand implements the ProbeExecutor interface for testing.
 func (m *MockProbeExecutor) ExecCommand(_ context.Context, pod *corev1.Pod, command string) (string, string, error) {
 	if m.CommandLog != nil {
