@@ -70,10 +70,6 @@ func CheckIsRedHatRelease(resources *checks.DiscoveredResources) checks.CheckRes
 
 			_ = stderr // stderr may contain harmless warnings (e.g., locale)
 			if err != nil {
-				// Pod may have been recreated between autodiscovery and this check.
-				if strings.Contains(err.Error(), "not found") {
-					continue
-				}
 				failedContainers++
 				result.Details = append(result.Details, checks.ResourceDetail{
 					Kind:      "Container",
