@@ -22,8 +22,10 @@ func CheckHugepages1GiOnly(resources *checks.DiscoveredResources) checks.CheckRe
 		pod := &resources.Pods[i]
 		for j := range pod.Spec.Containers {
 			container := &pod.Spec.Containers[j]
+			has2Mi := false
 			for resourceName := range container.Resources.Requests {
 				if resourceName == corev1.ResourceName("hugepages-2Mi") {
+					has2Mi = true
 					count++
 					result.Details = append(result.Details, checks.ResourceDetail{
 						Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
@@ -34,6 +36,7 @@ func CheckHugepages1GiOnly(resources *checks.DiscoveredResources) checks.CheckRe
 			}
 			for resourceName := range container.Resources.Limits {
 				if resourceName == corev1.ResourceName("hugepages-2Mi") {
+					has2Mi = true
 					count++
 					result.Details = append(result.Details, checks.ResourceDetail{
 						Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
@@ -41,6 +44,13 @@ func CheckHugepages1GiOnly(resources *checks.DiscoveredResources) checks.CheckRe
 						Message:   fmt.Sprintf("Container %q has 2Mi hugepages limit", container.Name),
 					})
 				}
+			}
+			if !has2Mi {
+				result.Details = append(result.Details, checks.ResourceDetail{
+					Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
+					Compliant: true,
+					Message:   fmt.Sprintf("Container %q does not use 2Mi hugepages", container.Name),
+				})
 			}
 		}
 	}

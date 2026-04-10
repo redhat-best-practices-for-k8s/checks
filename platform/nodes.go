@@ -30,8 +30,10 @@ func CheckServiceMeshUsage(resources *checks.DiscoveredResources) checks.CheckRe
 			})
 			continue
 		}
+		hasSidecar := false
 		for _, c := range pod.Spec.Containers {
 			if c.Name == "istio-proxy" || strings.Contains(c.Image, "istio/proxyv2") {
+				hasSidecar = true
 				count++
 				result.Details = append(result.Details, checks.ResourceDetail{
 					Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
@@ -40,6 +42,13 @@ func CheckServiceMeshUsage(resources *checks.DiscoveredResources) checks.CheckRe
 				})
 				break
 			}
+		}
+		if !hasSidecar {
+			result.Details = append(result.Details, checks.ResourceDetail{
+				Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
+				Compliant: true,
+				Message:   "Pod does not use service mesh sidecars",
+			})
 		}
 	}
 	if count > 0 {
@@ -63,8 +72,10 @@ func CheckHugepages2MiOnly(resources *checks.DiscoveredResources) checks.CheckRe
 		pod := &resources.Pods[i]
 		for j := range pod.Spec.Containers {
 			container := &pod.Spec.Containers[j]
+			has1Gi := false
 			for resourceName := range container.Resources.Requests {
 				if resourceName == corev1.ResourceName("hugepages-1Gi") {
+					has1Gi = true
 					count++
 					result.Details = append(result.Details, checks.ResourceDetail{
 						Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
@@ -75,6 +86,7 @@ func CheckHugepages2MiOnly(resources *checks.DiscoveredResources) checks.CheckRe
 			}
 			for resourceName := range container.Resources.Limits {
 				if resourceName == corev1.ResourceName("hugepages-1Gi") {
+					has1Gi = true
 					count++
 					result.Details = append(result.Details, checks.ResourceDetail{
 						Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
@@ -82,6 +94,13 @@ func CheckHugepages2MiOnly(resources *checks.DiscoveredResources) checks.CheckRe
 						Message:   fmt.Sprintf("Container %q has 1Gi hugepages limit", container.Name),
 					})
 				}
+			}
+			if !has1Gi {
+				result.Details = append(result.Details, checks.ResourceDetail{
+					Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
+					Compliant: true,
+					Message:   fmt.Sprintf("Container %q does not use 1Gi hugepages", container.Name),
+				})
 			}
 		}
 	}
@@ -118,6 +137,12 @@ func CheckNodeCount(resources *checks.DiscoveredResources) checks.CheckResult {
 		result.Details = append(result.Details, checks.ResourceDetail{
 			Kind: "Cluster", Name: "nodes",
 			Compliant: false,
+			Message:   fmt.Sprintf("%d total nodes, %d workers", len(resources.Nodes), workerCount),
+		})
+	} else {
+		result.Details = append(result.Details, checks.ResourceDetail{
+			Kind: "Cluster", Name: "nodes",
+			Compliant: true,
 			Message:   fmt.Sprintf("%d total nodes, %d workers", len(resources.Nodes), workerCount),
 		})
 	}

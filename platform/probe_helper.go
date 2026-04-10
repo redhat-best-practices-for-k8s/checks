@@ -74,10 +74,18 @@ func ExecuteProbeCheck(
 			continue
 		}
 
-		// Collect violations
+		// Collect violations or record compliant node
 		if len(nodeResult.Violations) > 0 {
 			violationCount += len(nodeResult.Violations)
 			result.Details = append(result.Details, nodeResult.Violations...)
+		} else {
+			result.Details = append(result.Details, checks.ResourceDetail{
+				Kind:      "Node",
+				Name:      nodeName,
+				Namespace: "",
+				Compliant: true,
+				Message:   "Node passed probe check",
+			})
 		}
 	}
 

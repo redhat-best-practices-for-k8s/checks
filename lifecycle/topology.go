@@ -21,6 +21,11 @@ func CheckTopologySpreadConstraints(resources *checks.DiscoveredResources) check
 		deploy := &resources.Deployments[i]
 		constraints := deploy.Spec.Template.Spec.TopologySpreadConstraints
 		if len(constraints) == 0 {
+			result.Details = append(result.Details, checks.ResourceDetail{
+				Kind: "Deployment", Name: deploy.Name, Namespace: deploy.Namespace,
+				Compliant: true,
+				Message:   "No TopologySpreadConstraints defined (compliant by default)",
+			})
 			continue
 		}
 

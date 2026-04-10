@@ -130,6 +130,14 @@ func CheckUndeclaredContainerPorts(resources *checks.DiscoveredResources) checks
 
 		if hasUndeclaredPorts {
 			count++
+		} else {
+			result.Details = append(result.Details, checks.ResourceDetail{
+				Kind:      "Pod",
+				Name:      pod.Name,
+				Namespace: pod.Namespace,
+				Compliant: true,
+				Message:   "All listening ports are declared in container spec",
+			})
 		}
 	}
 

@@ -47,6 +47,12 @@ func CheckOCPLifecycle(resources *checks.DiscoveredResources) checks.CheckResult
 			status = "unknown lifecycle status"
 		}
 		result.Reason = fmt.Sprintf("OCP version %s is in %s", resources.OpenshiftVersion, status)
+		result.Details = append(result.Details, checks.ResourceDetail{
+			Kind:      "ClusterVersion",
+			Name:      resources.OpenshiftVersion,
+			Compliant: true,
+			Message:   fmt.Sprintf("OpenShift version is in %s", status),
+		})
 	}
 
 	return result
@@ -93,6 +99,13 @@ func CheckOCPNodeOSLifecycle(resources *checks.DiscoveredResources) checks.Check
 					Name:      nodeName,
 					Compliant: false,
 					Message:   fmt.Sprintf("Control plane node has incompatible OS: %s", osImage),
+				})
+			} else {
+				result.Details = append(result.Details, checks.ResourceDetail{
+					Kind:      "Node",
+					Name:      nodeName,
+					Compliant: true,
+					Message:   fmt.Sprintf("Control plane node has compatible OS: %s", osImage),
 				})
 			}
 		}
