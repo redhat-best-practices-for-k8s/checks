@@ -8,6 +8,7 @@ import (
 	"github.com/redhat-best-practices-for-k8s/checks/testutil"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	apiextv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -56,6 +57,18 @@ func makeStatefulSet(name, namespace string, replicas int32) *appsv1.StatefulSet
 		Status: appsv1.StatefulSetStatus{
 			Replicas:      replicas,
 			ReadyReplicas: replicas,
+		},
+	}
+}
+
+// makeCRDs creates a CRD slice with a single CRD having the given name and kind.
+func makeCRDs(name, kind string) []apiextv1.CustomResourceDefinition {
+	return []apiextv1.CustomResourceDefinition{
+		{
+			ObjectMeta: metav1.ObjectMeta{Name: name},
+			Spec: apiextv1.CustomResourceDefinitionSpec{
+				Names: apiextv1.CustomResourceDefinitionNames{Kind: kind},
+			},
 		},
 	}
 }
@@ -275,6 +288,259 @@ func TestScaleDeployment_NilReplicas(t *testing.T) {
 	err := scaleDeployment(client, deploy)
 	// Fake client won't update status, so we just verify it doesn't panic
 	_ = err
+}
+
+func TestIsManaged(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		managed  []string
+		expected bool
+	}{
+		{"found", "deploy-a", []string{"deploy-a", "deploy-b"}, true},
+		{"not found", "deploy-c", []string{"deploy-a", "deploy-b"}, false},
+		{"empty list", "deploy-a", nil, false},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := isManaged(tc.input, tc.managed); got != tc.expected {
+				t.Errorf("isManaged(%q) = %v, want %v", tc.input, got, tc.expected)
+			}
+		})
+	}
+}
+
+func TestIsInSkipList(t *testing.T) {
+	skipList := []checks.SkipScalingEntry{
+		{Name: "skip-deploy", Namespace: "ns1"},
+	}
+
+	if !isInSkipList("skip-deploy", "ns1", skipList) {
+		t.Error("Expected skip-deploy/ns1 to be in skip list")
+	}
+	if isInSkipList("skip-deploy", "ns2", skipList) {
+		t.Error("Expected skip-deploy/ns2 to NOT be in skip list (wrong namespace)")
+	}
+	if isInSkipList("other", "ns1", skipList) {
+		t.Error("Expected other/ns1 to NOT be in skip list")
+	}
+	if isInSkipList("skip-deploy", "ns1", nil) {
+		t.Error("Expected false for nil skip list")
+	}
+}
+
+func TestCheckOwnerReference(t *testing.T) {
+	crds := []checks.CRDInfo{
+		{Name: "myresources.example.com", Kind: "MyResource"},
+	}
+	ownerRefs := []metav1.OwnerReference{
+		{Kind: "MyResource", Name: "my-cr-1"},
+	}
+
+	// Scalable CRD filter -> should return true
+	scalableFilters := []checks.CRDFilter{
+		{NameSuffix: "example.com", Scalable: true},
+	}
+	if !checkOwnerReference(ownerRefs, scalableFilters, crds) {
+		t.Error("Expected true for scalable CRD filter")
+	}
+
+	// Non-scalable CRD filter -> should return false
+	nonScalableFilters := []checks.CRDFilter{
+		{NameSuffix: "example.com", Scalable: false},
+	}
+	if checkOwnerReference(ownerRefs, nonScalableFilters, crds) {
+		t.Error("Expected false for non-scalable CRD filter")
+	}
+
+	// No matching owner refs
+	if checkOwnerReference(nil, scalableFilters, crds) {
+		t.Error("Expected false for empty owner refs")
+	}
+
+	// No matching CRD filter
+	unmatchedFilters := []checks.CRDFilter{
+		{NameSuffix: "other.com", Scalable: true},
+	}
+	if checkOwnerReference(ownerRefs, unmatchedFilters, crds) {
+		t.Error("Expected false for unmatched CRD filter suffix")
+	}
+}
+
+func TestCheckDeploymentScaling_SkipList(t *testing.T) {
+	deploy := makeDeployment("skip-me", "ns1", 2)
+	client := testutil.NewMockK8sClient(deploy)
+
+	resources := &checks.DiscoveredResources{
+		K8sClientset: client,
+		Deployments:  []appsv1.Deployment{*deploy},
+		SkipScalingDeployments: []checks.SkipScalingEntry{
+			{Name: "skip-me", Namespace: "ns1"},
+		},
+	}
+
+	result := CheckDeploymentScaling(resources)
+
+	// Skipped deployments produce no details. With all deployments skipped,
+	// the result stays Compliant with no details (mirrors certsuite behavior
+	// where an empty compliant list leads to SKIPPED at the framework level).
+	if result.ComplianceStatus != checks.StatusCompliant {
+		t.Errorf("Expected Compliant, got %s", result.ComplianceStatus)
+	}
+	if len(result.Details) != 0 {
+		t.Errorf("Expected 0 details for skipped deployment, got %d", len(result.Details))
+	}
+}
+
+func TestCheckDeploymentScaling_ManagedScalable(t *testing.T) {
+	deploy := makeDeployment("managed-deploy", "ns1", 2)
+	deploy.OwnerReferences = []metav1.OwnerReference{
+		{Kind: "MyApp", Name: "my-app-cr"},
+	}
+	client := testutil.NewMockK8sClient(deploy)
+
+	resources := &checks.DiscoveredResources{
+		K8sClientset:       client,
+		Deployments:        []appsv1.Deployment{*deploy},
+		ManagedDeployments: []string{"managed-deploy"},
+		CRDFilters: []checks.CRDFilter{
+			{NameSuffix: "example.com", Scalable: true},
+		},
+		CRDs: makeCRDs("myapps.example.com", "MyApp"),
+	}
+
+	result := CheckDeploymentScaling(resources)
+
+	// Managed + scalable CRD -> skipped (no detail added).
+	if result.ComplianceStatus != checks.StatusCompliant {
+		t.Errorf("Expected Compliant, got %s", result.ComplianceStatus)
+	}
+	if len(result.Details) != 0 {
+		t.Errorf("Expected 0 details for managed scalable deployment, got %d", len(result.Details))
+	}
+}
+
+func TestCheckDeploymentScaling_ManagedNonScalable(t *testing.T) {
+	deploy := makeDeployment("managed-deploy", "ns1", 2)
+	deploy.OwnerReferences = []metav1.OwnerReference{
+		{Kind: "MyApp", Name: "my-app-cr"},
+	}
+	client := testutil.NewMockK8sClient(deploy)
+
+	resources := &checks.DiscoveredResources{
+		K8sClientset:       client,
+		Deployments:        []appsv1.Deployment{*deploy},
+		ManagedDeployments: []string{"managed-deploy"},
+		CRDFilters: []checks.CRDFilter{
+			{NameSuffix: "example.com", Scalable: false},
+		},
+		CRDs: makeCRDs("myapps.example.com", "MyApp"),
+	}
+
+	result := CheckDeploymentScaling(resources)
+
+	// Managed + non-scalable CRD -> non-compliant.
+	if result.ComplianceStatus != checks.StatusNonCompliant {
+		t.Errorf("Expected NonCompliant, got %s", result.ComplianceStatus)
+	}
+	if len(result.Details) != 1 {
+		t.Fatalf("Expected 1 detail, got %d", len(result.Details))
+	}
+	if result.Details[0].Compliant {
+		t.Error("Expected detail to be non-compliant")
+	}
+}
+
+func TestCheckStatefulSetScaling_SkipList(t *testing.T) {
+	sts := makeStatefulSet("skip-me", "ns1", 2)
+	client := testutil.NewMockK8sClient(sts)
+
+	resources := &checks.DiscoveredResources{
+		K8sClientset: client,
+		StatefulSets: []appsv1.StatefulSet{*sts},
+		SkipScalingStatefulSets: []checks.SkipScalingEntry{
+			{Name: "skip-me", Namespace: "ns1"},
+		},
+	}
+
+	result := CheckStatefulSetScaling(resources)
+
+	if result.ComplianceStatus != checks.StatusCompliant {
+		t.Errorf("Expected Compliant, got %s", result.ComplianceStatus)
+	}
+	if len(result.Details) != 0 {
+		t.Errorf("Expected 0 details for skipped statefulset, got %d", len(result.Details))
+	}
+}
+
+func TestCheckStatefulSetScaling_ManagedScalable(t *testing.T) {
+	sts := makeStatefulSet("managed-sts", "ns1", 2)
+	sts.OwnerReferences = []metav1.OwnerReference{
+		{Kind: "MyApp", Name: "my-app-cr"},
+	}
+	client := testutil.NewMockK8sClient(sts)
+
+	resources := &checks.DiscoveredResources{
+		K8sClientset:        client,
+		StatefulSets:        []appsv1.StatefulSet{*sts},
+		ManagedStatefulSets: []string{"managed-sts"},
+		CRDFilters: []checks.CRDFilter{
+			{NameSuffix: "example.com", Scalable: true},
+		},
+		CRDs: makeCRDs("myapps.example.com", "MyApp"),
+	}
+
+	result := CheckStatefulSetScaling(resources)
+
+	if result.ComplianceStatus != checks.StatusCompliant {
+		t.Errorf("Expected Compliant, got %s", result.ComplianceStatus)
+	}
+	if len(result.Details) != 0 {
+		t.Errorf("Expected 0 details for managed scalable statefulset, got %d", len(result.Details))
+	}
+}
+
+func TestCheckStatefulSetScaling_ManagedNonScalable(t *testing.T) {
+	sts := makeStatefulSet("managed-sts", "ns1", 2)
+	sts.OwnerReferences = []metav1.OwnerReference{
+		{Kind: "MyApp", Name: "my-app-cr"},
+	}
+	client := testutil.NewMockK8sClient(sts)
+
+	resources := &checks.DiscoveredResources{
+		K8sClientset:        client,
+		StatefulSets:        []appsv1.StatefulSet{*sts},
+		ManagedStatefulSets: []string{"managed-sts"},
+		CRDFilters: []checks.CRDFilter{
+			{NameSuffix: "example.com", Scalable: false},
+		},
+		CRDs: makeCRDs("myapps.example.com", "MyApp"),
+	}
+
+	result := CheckStatefulSetScaling(resources)
+
+	if result.ComplianceStatus != checks.StatusNonCompliant {
+		t.Errorf("Expected NonCompliant, got %s", result.ComplianceStatus)
+	}
+	if len(result.Details) != 1 {
+		t.Fatalf("Expected 1 detail, got %d", len(result.Details))
+	}
+	if result.Details[0].Compliant {
+		t.Error("Expected detail to be non-compliant")
+	}
+}
+
+func TestBuildCRDInfos(t *testing.T) {
+	resources := &checks.DiscoveredResources{
+		CRDs: makeCRDs("foos.example.com", "Foo"),
+	}
+	infos := buildCRDInfos(resources)
+	if len(infos) != 1 {
+		t.Fatalf("Expected 1 CRD info, got %d", len(infos))
+	}
+	if infos[0].Name != "foos.example.com" || infos[0].Kind != "Foo" {
+		t.Errorf("Unexpected CRD info: %+v", infos[0])
+	}
 }
 
 func TestCheckDeploymentScaling_WithObjects(t *testing.T) {

@@ -76,6 +76,13 @@ type DiscoveredResources struct {
 	// Scalable custom resources (CRDs with scale subresource)
 	ScalableResources []ScalableResource
 
+	// Scaling configuration (from certsuite config)
+	ManagedDeployments      []string           // Names of deployments managed by CRD operators
+	ManagedStatefulSets     []string           // Names of statefulsets managed by CRD operators
+	SkipScalingDeployments  []SkipScalingEntry // Deployments to skip in scaling tests
+	SkipScalingStatefulSets []SkipScalingEntry // StatefulSets to skip in scaling tests
+	CRDFilters              []CRDFilter        // CRD filter config for managed workload owner checks
+
 	// CRInstances maps CRD name -> namespace -> []CR name for all custom resource
 	// instances discovered in the cluster. Used to validate CRs exist only in
 	// configured namespaces.
@@ -98,6 +105,26 @@ type ScalableResource struct {
 	Namespace     string
 	Replicas      int32
 	GroupResource schema.GroupResource
+}
+
+// CRDInfo holds the name and kind of a CRD, used for owner reference checks
+// without requiring the full apiextv1.CustomResourceDefinition type.
+type CRDInfo struct {
+	Name string // Full CRD name (e.g., "myresources.example.com")
+	Kind string // CRD kind (e.g., "MyResource")
+}
+
+// SkipScalingEntry identifies a workload to skip in scaling tests by name and namespace.
+type SkipScalingEntry struct {
+	Name      string
+	Namespace string
+}
+
+// CRDFilter defines a CRD config filter used to determine if a managed workload's
+// owner CRD is scalable.
+type CRDFilter struct {
+	NameSuffix string
+	Scalable   bool
 }
 
 // ProbeExecutor allows checks to exec commands in containers.

@@ -3,6 +3,7 @@ package lifecycle
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/redhat-best-practices-for-k8s/checks"
@@ -17,6 +18,44 @@ var (
 	scalingTimeout     = 5 * time.Minute
 	readinessPollDelay = time.Second
 )
+
+// isManaged checks if a workload name is in the managed list.
+func isManaged(name string, managedList []string) bool {
+	for _, m := range managedList {
+		if m == name {
+			return true
+		}
+	}
+	return false
+}
+
+// checkOwnerReference checks if any OwnerReference's Kind matches a CRD whose
+// name suffix is in the CRD filter list. Returns whether the matching CRD filter
+// has Scalable set to true.
+func checkOwnerReference(ownerRefs []metav1.OwnerReference, crdFilters []checks.CRDFilter, crds []checks.CRDInfo) bool {
+	for _, owner := range ownerRefs {
+		for _, crd := range crds {
+			if crd.Kind == owner.Kind {
+				for _, f := range crdFilters {
+					if strings.HasSuffix(crd.Name, f.NameSuffix) {
+						return f.Scalable
+					}
+				}
+			}
+		}
+	}
+	return false
+}
+
+// isInSkipList checks if a workload name/namespace pair is in the skip list.
+func isInSkipList(name, namespace string, skipList []checks.SkipScalingEntry) bool {
+	for _, e := range skipList {
+		if e.Name == name && e.Namespace == namespace {
+			return true
+		}
+	}
+	return false
+}
 
 // CheckDeploymentScaling verifies that Deployments can scale up and down.
 func CheckDeploymentScaling(resources *checks.DiscoveredResources) checks.CheckResult {
@@ -35,10 +74,36 @@ func CheckDeploymentScaling(resources *checks.DiscoveredResources) checks.CheckR
 		return result
 	}
 
+	// Build CRD info from discovered CRDs for owner reference checks.
+	crdInfos := buildCRDInfos(resources)
+
 	var failures int
 	for i := range resources.Deployments {
 		deploy := &resources.Deployments[i]
 		name := fmt.Sprintf("%s/%s", deploy.Namespace, deploy.Name)
+
+		// Check skip list first -- skip entirely with no detail.
+		if isInSkipList(deploy.Name, deploy.Namespace, resources.SkipScalingDeployments) {
+			continue
+		}
+
+		// Check if managed by a CRD operator.
+		if isManaged(deploy.Name, resources.ManagedDeployments) {
+			if checkOwnerReference(deploy.OwnerReferences, resources.CRDFilters, crdInfos) {
+				// Owner CRD is scalable -- skip this deployment (will be tested via CRD scaling).
+				continue
+			}
+			// Owner CRD is NOT scalable -- non-compliant.
+			failures++
+			result.Details = append(result.Details, checks.ResourceDetail{
+				Kind:      "Deployment",
+				Name:      name,
+				Namespace: deploy.Namespace,
+				Compliant: false,
+				Message:   "Managed deployment has no scalable owner CRD",
+			})
+			continue
+		}
 
 		if err := scaleDeployment(k8sClient, deploy); err != nil {
 			failures++
@@ -85,10 +150,36 @@ func CheckStatefulSetScaling(resources *checks.DiscoveredResources) checks.Check
 		return result
 	}
 
+	// Build CRD info from discovered CRDs for owner reference checks.
+	crdInfos := buildCRDInfos(resources)
+
 	var failures int
 	for i := range resources.StatefulSets {
 		sts := &resources.StatefulSets[i]
 		name := fmt.Sprintf("%s/%s", sts.Namespace, sts.Name)
+
+		// Check skip list first -- skip entirely with no detail.
+		if isInSkipList(sts.Name, sts.Namespace, resources.SkipScalingStatefulSets) {
+			continue
+		}
+
+		// Check if managed by a CRD operator.
+		if isManaged(sts.Name, resources.ManagedStatefulSets) {
+			if checkOwnerReference(sts.OwnerReferences, resources.CRDFilters, crdInfos) {
+				// Owner CRD is scalable -- skip this statefulset (will be tested via CRD scaling).
+				continue
+			}
+			// Owner CRD is NOT scalable -- non-compliant.
+			failures++
+			result.Details = append(result.Details, checks.ResourceDetail{
+				Kind:      "StatefulSet",
+				Name:      name,
+				Namespace: sts.Namespace,
+				Compliant: false,
+				Message:   "Managed statefulset has no scalable owner CRD",
+			})
+			continue
+		}
 
 		if err := scaleStatefulSet(k8sClient, sts); err != nil {
 			failures++
@@ -267,4 +358,17 @@ func waitForStatefulSetReady(client kubernetes.Interface, namespace, name string
 		time.Sleep(readinessPollDelay)
 	}
 	return fmt.Errorf("timed out waiting for StatefulSet %s/%s to be ready", namespace, name)
+}
+
+// buildCRDInfos extracts CRD name and kind from the discovered CRDs.
+func buildCRDInfos(resources *checks.DiscoveredResources) []checks.CRDInfo {
+	infos := make([]checks.CRDInfo, 0, len(resources.CRDs))
+	for i := range resources.CRDs {
+		crd := &resources.CRDs[i]
+		infos = append(infos, checks.CRDInfo{
+			Name: crd.Name,
+			Kind: crd.Spec.Names.Kind,
+		})
+	}
+	return infos
 }
