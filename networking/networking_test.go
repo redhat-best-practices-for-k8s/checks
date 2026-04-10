@@ -80,6 +80,42 @@ func TestCheckDualStackService_Compliant_IPv6SingleStack(t *testing.T) {
 	}
 }
 
+func TestCheckDualStackService_NonCompliant_PreferDualStack_ZeroClusterIPs(t *testing.T) {
+	policy := corev1.IPFamilyPolicyPreferDualStack
+	resources := &checks.DiscoveredResources{
+		Services: []corev1.Service{{
+			ObjectMeta: metav1.ObjectMeta{Name: "svc1", Namespace: "ns1"},
+			Spec: corev1.ServiceSpec{
+				ClusterIP:      "",
+				ClusterIPs:     []string{},
+				IPFamilyPolicy: &policy,
+			},
+		}},
+	}
+	result := CheckDualStackService(resources)
+	if result.ComplianceStatus != "NonCompliant" {
+		t.Errorf("expected NonCompliant for PreferDualStack with zero ClusterIPs, got %s", result.ComplianceStatus)
+	}
+}
+
+func TestCheckDualStackService_NonCompliant_RequireDualStack_SingleIP(t *testing.T) {
+	policy := corev1.IPFamilyPolicyRequireDualStack
+	resources := &checks.DiscoveredResources{
+		Services: []corev1.Service{{
+			ObjectMeta: metav1.ObjectMeta{Name: "svc1", Namespace: "ns1"},
+			Spec: corev1.ServiceSpec{
+				ClusterIP:      "10.0.0.1",
+				ClusterIPs:     []string{"10.0.0.1"},
+				IPFamilyPolicy: &policy,
+			},
+		}},
+	}
+	result := CheckDualStackService(resources)
+	if result.ComplianceStatus != "NonCompliant" {
+		t.Errorf("expected NonCompliant for RequireDualStack with single IPv4 ClusterIP, got %s", result.ComplianceStatus)
+	}
+}
+
 func TestCheckDualStackService_Headless_Skipped(t *testing.T) {
 	resources := &checks.DiscoveredResources{
 		Services: []corev1.Service{{

@@ -1244,76 +1244,89 @@ func TestCheckCrdRoles_MultipleRulesMultipleGroups(t *testing.T) {
 }
 
 // --- CheckNamespace additional scenarios ---
+// The namespace check validates configured namespaces (not pods) for invalid prefixes,
+// matching the certsuite's testNamespace which iterates env.Namespaces.
 
 func TestCheckNamespace_DefaultNS_NonCompliant(t *testing.T) {
 	resources := &checks.DiscoveredResources{
-		Pods: []corev1.Pod{
-			{ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "default"}},
-		},
+		Namespaces: []string{"default"},
 	}
 	result := CheckNamespace(resources)
 	if result.ComplianceStatus != "NonCompliant" {
-		t.Errorf("expected NonCompliant for pod in 'default' namespace, got %s", result.ComplianceStatus)
+		t.Errorf("expected NonCompliant for 'default' namespace, got %s", result.ComplianceStatus)
 	}
 }
 
 func TestCheckNamespace_DefaultPrefixNS_NonCompliant(t *testing.T) {
 	resources := &checks.DiscoveredResources{
-		Pods: []corev1.Pod{
-			{ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "default-test"}},
-		},
+		Namespaces: []string{"default-test"},
 	}
 	result := CheckNamespace(resources)
 	if result.ComplianceStatus != "NonCompliant" {
-		t.Errorf("expected NonCompliant for pod in 'default-test' namespace, got %s", result.ComplianceStatus)
+		t.Errorf("expected NonCompliant for 'default-test' namespace, got %s", result.ComplianceStatus)
 	}
 }
 
 func TestCheckNamespace_OpenShiftNS_NonCompliant(t *testing.T) {
 	resources := &checks.DiscoveredResources{
-		Pods: []corev1.Pod{
-			{ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "openshift-monitoring"}},
-		},
+		Namespaces: []string{"openshift-monitoring"},
 	}
 	result := CheckNamespace(resources)
 	if result.ComplianceStatus != "NonCompliant" {
-		t.Errorf("expected NonCompliant for pod in 'openshift-monitoring' namespace, got %s", result.ComplianceStatus)
+		t.Errorf("expected NonCompliant for 'openshift-monitoring' namespace, got %s", result.ComplianceStatus)
 	}
 }
 
 func TestCheckNamespace_IstioNS_NonCompliant(t *testing.T) {
 	resources := &checks.DiscoveredResources{
-		Pods: []corev1.Pod{
-			{ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "istio-system"}},
-		},
+		Namespaces: []string{"istio-system"},
 	}
 	result := CheckNamespace(resources)
 	if result.ComplianceStatus != "NonCompliant" {
-		t.Errorf("expected NonCompliant for pod in 'istio-system' namespace, got %s", result.ComplianceStatus)
+		t.Errorf("expected NonCompliant for 'istio-system' namespace, got %s", result.ComplianceStatus)
 	}
 }
 
 func TestCheckNamespace_AspenMeshNS_NonCompliant(t *testing.T) {
 	resources := &checks.DiscoveredResources{
-		Pods: []corev1.Pod{
-			{ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "aspenmesh-system"}},
-		},
+		Namespaces: []string{"aspenmesh-system"},
 	}
 	result := CheckNamespace(resources)
 	if result.ComplianceStatus != "NonCompliant" {
-		t.Errorf("expected NonCompliant for pod in 'aspenmesh-system' namespace, got %s", result.ComplianceStatus)
+		t.Errorf("expected NonCompliant for 'aspenmesh-system' namespace, got %s", result.ComplianceStatus)
 	}
 }
 
 func TestCheckNamespace_CustomNS_Compliant(t *testing.T) {
 	resources := &checks.DiscoveredResources{
-		Pods: []corev1.Pod{
-			{ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "my-app"}},
-		},
+		Namespaces: []string{"my-app"},
 	}
 	result := CheckNamespace(resources)
 	if result.ComplianceStatus != "Compliant" {
-		t.Errorf("expected Compliant for pod in 'my-app' namespace, got %s", result.ComplianceStatus)
+		t.Errorf("expected Compliant for 'my-app' namespace, got %s", result.ComplianceStatus)
+	}
+}
+
+func TestCheckNamespace_NoNamespaces_Compliant(t *testing.T) {
+	resources := &checks.DiscoveredResources{}
+	result := CheckNamespace(resources)
+	if result.ComplianceStatus != "Compliant" {
+		t.Errorf("expected Compliant for no namespaces, got %s", result.ComplianceStatus)
+	}
+}
+
+func TestCheckNamespace_ValidNS_HasDetails(t *testing.T) {
+	// When all namespaces are valid, the check should produce compliant details
+	// so the adapter doesn't treat it as SKIPPED.
+	resources := &checks.DiscoveredResources{
+		Namespaces: []string{"my-app"},
+	}
+	result := CheckNamespace(resources)
+	if len(result.Details) == 0 {
+		t.Errorf("expected compliant details for valid namespace, got none")
+	}
+	if !result.Details[0].Compliant {
+		t.Errorf("expected first detail to be compliant, got non-compliant")
 	}
 }
 

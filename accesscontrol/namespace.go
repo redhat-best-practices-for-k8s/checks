@@ -26,32 +26,28 @@ func isInvalidNamespace(namespace string) bool {
 	return false
 }
 
-// CheckNamespace verifies pods run in allowed namespaces.
+// CheckNamespace verifies that configured namespaces do not use system prefixes.
+// This matches the certsuite's testNamespace which iterates env.Namespaces (the
+// configured namespace list), NOT individual pods.
 func CheckNamespace(resources *checks.DiscoveredResources) checks.CheckResult {
 	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
-	if len(resources.Pods) == 0 {
-		result.ComplianceStatus = checks.StatusCompliant
-		result.Reason = "No pods found"
-		return result
-	}
 
 	var count int
 
-	// Check pod namespaces for invalid prefixes
-	for i := range resources.Pods {
-		pod := &resources.Pods[i]
-		if isInvalidNamespace(pod.Namespace) {
+	// Check configured namespaces for invalid prefixes (matches certsuite logic)
+	for _, namespace := range resources.Namespaces {
+		if isInvalidNamespace(namespace) {
 			count++
 			result.Details = append(result.Details, checks.ResourceDetail{
-				Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
+				Kind: "Namespace", Name: namespace, Namespace: namespace,
 				Compliant: false,
-				Message:   fmt.Sprintf("Pod is running in system namespace %q", pod.Namespace),
+				Message:   fmt.Sprintf("Namespace %q has invalid prefix", namespace),
 			})
 		} else {
 			result.Details = append(result.Details, checks.ResourceDetail{
-				Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
+				Kind: "Namespace", Name: namespace, Namespace: namespace,
 				Compliant: true,
-				Message:   fmt.Sprintf("Pod is running in allowed namespace %q", pod.Namespace),
+				Message:   fmt.Sprintf("Namespace %q has valid prefix", namespace),
 			})
 		}
 	}

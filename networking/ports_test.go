@@ -163,6 +163,42 @@ func TestCheckUndeclaredContainerPorts(t *testing.T) {
 			expectedStatus: "Compliant", // Should be compliant because Istio port is ignored
 		},
 		{
+			name: "compliant when port is declared but not listening",
+			resources: &checks.DiscoveredResources{
+				Pods: []corev1.Pod{
+					{
+						ObjectMeta: metav1.ObjectMeta{Name: "test-pod", Namespace: "default"},
+						Spec: corev1.PodSpec{
+							NodeName: "node1",
+							Containers: []corev1.Container{
+								{
+									Name: "app",
+									Ports: []corev1.ContainerPort{
+										{ContainerPort: 8081, Protocol: corev1.ProtocolTCP},
+									},
+								},
+							},
+						},
+						Status: corev1.PodStatus{
+							ContainerStatuses: []corev1.ContainerStatus{
+								{Name: "app", ContainerID: "cri-o://abc123"},
+							},
+						},
+					},
+				},
+				ProbePods: map[string]*corev1.Pod{
+					"node1": {ObjectMeta: metav1.ObjectMeta{Name: "probe-pod"}},
+				},
+				ProbeExecutor: &mockProbeExecutor{
+					responses: map[string]string{
+						"chroot /host crictl inspect --output go-template --template '{{.info.pid}}' abc123 2>/dev/null": "12345\n",
+						"nsenter -t 12345 -n ss -tulwnH": "", // No listening ports
+					},
+				},
+			},
+			expectedStatus: "Compliant", // Declared but unused port is fine
+		},
+		{
 			name: "compliant when no ports are listening",
 			resources: &checks.DiscoveredResources{
 				Pods: []corev1.Pod{

@@ -101,6 +101,13 @@ func CheckUndeclaredContainerPorts(resources *checks.DiscoveredResources) checks
 
 		// If no ports are listening, that's compliant
 		if len(listeningPorts) == 0 {
+			result.Details = append(result.Details, checks.ResourceDetail{
+				Kind:      "Pod",
+				Name:      pod.Name,
+				Namespace: pod.Namespace,
+				Compliant: true,
+				Message:   "No listening ports found",
+			})
 			continue
 		}
 
