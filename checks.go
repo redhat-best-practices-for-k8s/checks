@@ -76,6 +76,11 @@ type DiscoveredResources struct {
 	// Scalable custom resources (CRDs with scale subresource)
 	ScalableResources []ScalableResource
 
+	// CRInstances maps CRD name -> namespace -> []CR name for all custom resource
+	// instances discovered in the cluster. Used to validate CRs exist only in
+	// configured namespaces.
+	CRInstances map[string]map[string][]string
+
 	// Execution helpers (injected by certsuite adapter)
 	ProbeExecutor ProbeExecutor
 	K8sClientset  interface{} // kubernetes.Interface - avoid import

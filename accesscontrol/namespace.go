@@ -36,6 +36,8 @@ func CheckNamespace(resources *checks.DiscoveredResources) checks.CheckResult {
 	}
 
 	var count int
+
+	// Check pod namespaces for invalid prefixes
 	for i := range resources.Pods {
 		pod := &resources.Pods[i]
 		if isInvalidNamespace(pod.Namespace) {
@@ -47,9 +49,32 @@ func CheckNamespace(resources *checks.DiscoveredResources) checks.CheckResult {
 			})
 		}
 	}
+
+	// Check that CRs exist only in configured namespaces
+	if len(resources.CRInstances) > 0 && len(resources.Namespaces) > 0 {
+		nsSet := make(map[string]bool, len(resources.Namespaces))
+		for _, ns := range resources.Namespaces {
+			nsSet[ns] = true
+		}
+		for crdName, nsCRs := range resources.CRInstances {
+			for ns, crNames := range nsCRs {
+				if !nsSet[ns] {
+					for _, crName := range crNames {
+						count++
+						result.Details = append(result.Details, checks.ResourceDetail{
+							Kind: "CustomResource", Name: crName, Namespace: ns,
+							Compliant: false,
+							Message:   fmt.Sprintf("CR from CRD %q exists in namespace %q which is not a configured namespace", crdName, ns),
+						})
+					}
+				}
+			}
+		}
+	}
+
 	if count > 0 {
 		result.ComplianceStatus = checks.StatusNonCompliant
-		result.Reason = fmt.Sprintf("%d pod(s) are running in system namespaces", count)
+		result.Reason = fmt.Sprintf("%d namespace violation(s) found", count)
 	}
 	return result
 }

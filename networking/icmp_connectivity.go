@@ -158,19 +158,30 @@ type icmpTestPair struct {
 	targetIP  string
 }
 
+const (
+	skipConnectivityLabel = "redhat-best-practices-for-k8s.com/skip_connectivity_tests"
+)
+
 func buildICMPTestPairs(pods []corev1.Pod, ipVersion string, multus bool) []icmpTestPair {
 	var pairs []icmpTestPair
 
-	// Use first pod as source
-	if len(pods) == 0 {
+	// Filter out pods with the skip_connectivity_tests label
+	var filtered []corev1.Pod
+	for i := range pods {
+		if _, skip := pods[i].Labels[skipConnectivityLabel]; skip {
+			continue
+		}
+		filtered = append(filtered, pods[i])
+	}
+
+	if len(filtered) < 2 {
 		return pairs
 	}
 
-	sourcePod := &pods[0]
+	sourcePod := &filtered[0]
 
-	// Ping all other pods from the first pod
-	for i := 1; i < len(pods); i++ {
-		targetPod := &pods[i]
+	for i := 1; i < len(filtered); i++ {
+		targetPod := &filtered[i]
 
 		// Get appropriate IP address
 		var targetIP string
