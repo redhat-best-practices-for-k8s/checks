@@ -24,6 +24,11 @@ func CheckNodePortService(resources *checks.DiscoveredResources) checks.CheckRes
 				Kind: "Service", Name: svc.Name, Namespace: svc.Namespace,
 				Compliant: false, Message: "Service type is NodePort",
 			})
+		} else {
+			result.Details = append(result.Details, checks.ResourceDetail{
+				Kind: "Service", Name: svc.Name, Namespace: svc.Namespace,
+				Compliant: true, Message: fmt.Sprintf("Service type is %s", svc.Spec.Type),
+			})
 		}
 	}
 	if count > 0 {

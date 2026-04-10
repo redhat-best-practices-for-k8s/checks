@@ -27,6 +27,13 @@ func CheckTerminationPolicy(resources *checks.DiscoveredResources) checks.CheckR
 				Message: fmt.Sprintf("Container %q terminationMessagePolicy is %q, expected FallbackToLogsOnError",
 					container.Name, container.TerminationMessagePolicy),
 			})
+		} else {
+			result.Details = append(result.Details, checks.ResourceDetail{
+				Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
+				Compliant: true,
+				Message: fmt.Sprintf("Container %q terminationMessagePolicy is FallbackToLogsOnError",
+					container.Name),
+			})
 		}
 	})
 	if count > 0 {

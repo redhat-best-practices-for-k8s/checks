@@ -26,6 +26,12 @@ func CheckStartupProbe(resources *checks.DiscoveredResources) checks.CheckResult
 				Compliant: false,
 				Message:   fmt.Sprintf("Container %q does not have a startupProbe", container.Name),
 			})
+		} else {
+			result.Details = append(result.Details, checks.ResourceDetail{
+				Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
+				Compliant: true,
+				Message:   fmt.Sprintf("Container %q has a startupProbe", container.Name),
+			})
 		}
 	})
 
@@ -54,6 +60,12 @@ func CheckReadinessProbe(resources *checks.DiscoveredResources) checks.CheckResu
 				Compliant: false,
 				Message:   fmt.Sprintf("Container %q does not have a readinessProbe", container.Name),
 			})
+		} else {
+			result.Details = append(result.Details, checks.ResourceDetail{
+				Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
+				Compliant: true,
+				Message:   fmt.Sprintf("Container %q has a readinessProbe", container.Name),
+			})
 		}
 	})
 
@@ -81,6 +93,12 @@ func CheckLivenessProbe(resources *checks.DiscoveredResources) checks.CheckResul
 				Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
 				Compliant: false,
 				Message:   fmt.Sprintf("Container %q does not have a livenessProbe", container.Name),
+			})
+		} else {
+			result.Details = append(result.Details, checks.ResourceDetail{
+				Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
+				Compliant: true,
+				Message:   fmt.Sprintf("Container %q has a livenessProbe", container.Name),
 			})
 		}
 	})

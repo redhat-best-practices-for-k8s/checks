@@ -34,6 +34,12 @@ func CheckExclusiveCPUPool(resources *checks.DiscoveredResources) checks.CheckRe
 					Compliant: false,
 					Message:   fmt.Sprintf("Container %q requests %s whole CPUs but limits (%s) do not match", container.Name, cpuReq.String(), cpuLim.String()),
 				})
+			} else {
+				result.Details = append(result.Details, checks.ResourceDetail{
+					Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
+					Compliant: true,
+					Message:   fmt.Sprintf("Container %q has matching CPU requests and limits (%s)", container.Name, cpuReq.String()),
+				})
 			}
 		}
 	}
@@ -70,6 +76,12 @@ func CheckRTAppsNoExecProbes(resources *checks.DiscoveredResources) checks.Check
 					Compliant: false,
 					Message:   fmt.Sprintf("RT container %q uses exec probe", container.Name),
 				})
+			} else {
+				result.Details = append(result.Details, checks.ResourceDetail{
+					Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
+					Compliant: true,
+					Message:   fmt.Sprintf("RT container %q does not use exec probes", container.Name),
+				})
 			}
 		}
 	}
@@ -101,6 +113,12 @@ func CheckMemoryLimit(resources *checks.DiscoveredResources) checks.CheckResult 
 					Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
 					Compliant: false,
 					Message:   fmt.Sprintf("Container %q does not have memory limits set", container.Name),
+				})
+			} else {
+				result.Details = append(result.Details, checks.ResourceDetail{
+					Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
+					Compliant: true,
+					Message:   fmt.Sprintf("Container %q has memory limits set (%s)", container.Name, memLim.String()),
 				})
 			}
 		}

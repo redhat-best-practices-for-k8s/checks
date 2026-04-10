@@ -37,6 +37,12 @@ func CheckSysPtrace(resources *checks.DiscoveredResources) checks.CheckResult {
 				Compliant: false,
 				Message:   "Pod has shareProcessNamespace=true but no container has SYS_PTRACE capability",
 			})
+		} else {
+			result.Details = append(result.Details, checks.ResourceDetail{
+				Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
+				Compliant: true,
+				Message:   "Pod has shareProcessNamespace=true and a container has SYS_PTRACE capability",
+			})
 		}
 	}
 	if sharedCount == 0 {

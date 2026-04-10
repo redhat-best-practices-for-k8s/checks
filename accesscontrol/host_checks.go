@@ -29,6 +29,11 @@ func checkPodHostField(resources *checks.DiscoveredResources, checkFunc podCheck
 				Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
 				Compliant: false, Message: fmt.Sprintf("%s is set to true", fieldName),
 			})
+		} else {
+			result.Details = append(result.Details, checks.ResourceDetail{
+				Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
+				Compliant: true, Message: fmt.Sprintf("Pod does not use %s", fieldName),
+			})
 		}
 	}
 	if count > 0 {
@@ -57,9 +62,11 @@ func CheckHostPath(resources *checks.DiscoveredResources) checks.CheckResult {
 	var count int
 	for i := range resources.Pods {
 		pod := &resources.Pods[i]
+		hasHostPath := false
 		for _, vol := range pod.Spec.Volumes {
 			if vol.HostPath != nil && vol.HostPath.Path != "" {
 				count++
+				hasHostPath = true
 				result.Details = append(result.Details, checks.ResourceDetail{
 					Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
 					Compliant: false,
@@ -67,6 +74,13 @@ func CheckHostPath(resources *checks.DiscoveredResources) checks.CheckResult {
 				})
 				break // one detail per pod
 			}
+		}
+		if !hasHostPath {
+			result.Details = append(result.Details, checks.ResourceDetail{
+				Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
+				Compliant: true,
+				Message:   "Pod does not use HostPath volumes",
+			})
 		}
 	}
 	if count > 0 {
@@ -101,15 +115,25 @@ func CheckContainerHostPort(resources *checks.DiscoveredResources) checks.CheckR
 
 	var count int
 	checks.ForEachContainer(resources.Pods, func(pod *corev1.Pod, container *corev1.Container) {
+		hasHostPort := false
 		for _, port := range container.Ports {
 			if port.HostPort != 0 {
+				hasHostPort = true
 				count++
 				result.Details = append(result.Details, checks.ResourceDetail{
 					Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
 					Compliant: false,
 					Message:   fmt.Sprintf("Container %q uses HostPort %d", container.Name, port.HostPort),
 				})
+				break // one detail per container
 			}
+		}
+		if !hasHostPort {
+			result.Details = append(result.Details, checks.ResourceDetail{
+				Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
+				Compliant: true,
+				Message:   fmt.Sprintf("Container %q does not use HostPort", container.Name),
+			})
 		}
 	})
 	if count > 0 {

@@ -47,6 +47,12 @@ func CheckNamespace(resources *checks.DiscoveredResources) checks.CheckResult {
 				Compliant: false,
 				Message:   fmt.Sprintf("Pod is running in system namespace %q", pod.Namespace),
 			})
+		} else {
+			result.Details = append(result.Details, checks.ResourceDetail{
+				Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
+				Compliant: true,
+				Message:   fmt.Sprintf("Pod is running in allowed namespace %q", pod.Namespace),
+			})
 		}
 	}
 
@@ -104,6 +110,12 @@ func CheckNamespaceResourceQuota(resources *checks.DiscoveredResources) checks.C
 				Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
 				Compliant: false,
 				Message:   "Pod is running in a namespace that does not have a ResourceQuota applied",
+			})
+		} else {
+			result.Details = append(result.Details, checks.ResourceDetail{
+				Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
+				Compliant: true,
+				Message:   "Pod is running in a namespace with a ResourceQuota applied",
 			})
 		}
 	}

@@ -34,6 +34,12 @@ func CheckLimitedExecProbes(resources *checks.DiscoveredResources) checks.CheckR
 			Compliant: false,
 			Message:   fmt.Sprintf("Total exec probes: %d (threshold: 10)", totalExecProbes),
 		})
+	} else {
+		result.Details = append(result.Details, checks.ResourceDetail{
+			Kind: "Cluster", Name: "exec-probes",
+			Compliant: true,
+			Message:   fmt.Sprintf("Total exec probes: %d (threshold: 10)", totalExecProbes),
+		})
 	}
 	return result
 }
@@ -61,6 +67,12 @@ func CheckCPUPinningNoExecProbes(resources *checks.DiscoveredResources) checks.C
 					Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
 					Compliant: false,
 					Message:   fmt.Sprintf("CPU-pinned container %q uses exec probes", container.Name),
+				})
+			} else {
+				result.Details = append(result.Details, checks.ResourceDetail{
+					Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
+					Compliant: true,
+					Message:   fmt.Sprintf("CPU-pinned container %q does not use exec probes", container.Name),
 				})
 			}
 		}

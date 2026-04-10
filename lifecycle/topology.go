@@ -41,6 +41,12 @@ func CheckTopologySpreadConstraints(resources *checks.DiscoveredResources) check
 				Compliant: false,
 				Message:   fmt.Sprintf("TopologySpreadConstraints defined but missing required keys (hostname=%t, zone=%t)", hasHostname, hasZone),
 			})
+		} else {
+			result.Details = append(result.Details, checks.ResourceDetail{
+				Kind: "Deployment", Name: deploy.Name, Namespace: deploy.Namespace,
+				Compliant: true,
+				Message:   "TopologySpreadConstraints include both hostname and zone keys",
+			})
 		}
 	}
 	if count > 0 {

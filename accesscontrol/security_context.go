@@ -27,6 +27,12 @@ func CheckNonRootUser(resources *checks.DiscoveredResources) checks.CheckResult 
 				Compliant: false,
 				Message:   fmt.Sprintf("Container %q does not have runAsNonRoot=true or runAsUser!=0", container.Name),
 			})
+		} else {
+			result.Details = append(result.Details, checks.ResourceDetail{
+				Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
+				Compliant: true,
+				Message:   fmt.Sprintf("Container %q runs as non-root", container.Name),
+			})
 		}
 	})
 	if count > 0 {
@@ -76,6 +82,12 @@ func CheckPrivilegeEscalation(resources *checks.DiscoveredResources) checks.Chec
 				Compliant: false,
 				Message:   fmt.Sprintf("Container %q has allowPrivilegeEscalation set to true", container.Name),
 			})
+		} else {
+			result.Details = append(result.Details, checks.ResourceDetail{
+				Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
+				Compliant: true,
+				Message:   fmt.Sprintf("Container %q does not allow privilege escalation", container.Name),
+			})
 		}
 	})
 	if count > 0 {
@@ -104,6 +116,12 @@ func CheckReadOnlyFilesystem(resources *checks.DiscoveredResources) checks.Check
 				Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
 				Compliant: false,
 				Message:   fmt.Sprintf("Container %q does not set readOnlyRootFilesystem to true", container.Name),
+			})
+		} else {
+			result.Details = append(result.Details, checks.ResourceDetail{
+				Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
+				Compliant: true,
+				Message:   fmt.Sprintf("Container %q has readOnlyRootFilesystem set to true", container.Name),
 			})
 		}
 	})
@@ -134,6 +152,12 @@ func Check1337UID(resources *checks.DiscoveredResources) checks.CheckResult {
 				Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
 				Compliant: false,
 				Message:   "Pod SecurityContext RunAsUser is set to 1337 (reserved by Istio)",
+			})
+		} else {
+			result.Details = append(result.Details, checks.ResourceDetail{
+				Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
+				Compliant: true,
+				Message:   "Pod does not use UID 1337",
 			})
 		}
 	}
@@ -166,6 +190,12 @@ func CheckSecurityContext(resources *checks.DiscoveredResources) checks.CheckRes
 					Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
 					Compliant: false,
 					Message:   fmt.Sprintf("Container %q requires elevated SCC (category %d)", container.Name, category),
+				})
+			} else {
+				result.Details = append(result.Details, checks.ResourceDetail{
+					Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
+					Compliant: true,
+					Message:   fmt.Sprintf("Container %q does not require elevated SCC (category %d)", container.Name, category),
 				})
 			}
 		}

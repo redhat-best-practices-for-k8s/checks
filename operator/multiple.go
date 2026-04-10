@@ -42,6 +42,15 @@ func CheckMultipleSameOperators(resources *checks.DiscoveredResources) checks.Ch
 	var nonCompliant int
 	for baseName, csvs := range baseNameMap {
 		if len(csvs) <= 1 {
+			for _, csv := range csvs {
+				result.Details = append(result.Details, checks.ResourceDetail{
+					Kind:      "ClusterServiceVersion",
+					Name:      csv.name,
+					Namespace: csv.namespace,
+					Compliant: true,
+					Message:   fmt.Sprintf("Operator %q installed once (version %s)", baseName, csv.version),
+				})
+			}
 			continue
 		}
 		nonCompliant++

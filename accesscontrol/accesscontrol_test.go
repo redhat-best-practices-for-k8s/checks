@@ -1103,8 +1103,8 @@ func TestCheckSecurityContext_MultipleContainersMixed(t *testing.T) {
 	if result.ComplianceStatus != "NonCompliant" {
 		t.Errorf("expected NonCompliant, got %s", result.ComplianceStatus)
 	}
-	if len(result.Details) != 1 {
-		t.Errorf("expected exactly 1 detail for the privileged container, got %d", len(result.Details))
+	if len(result.Details) != 2 {
+		t.Errorf("expected 2 details (1 compliant + 1 non-compliant), got %d", len(result.Details))
 	}
 }
 

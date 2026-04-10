@@ -30,6 +30,12 @@ func CheckImagePullPolicy(resources *checks.DiscoveredResources) checks.CheckRes
 				Compliant: false,
 				Message:   fmt.Sprintf("Container %q has imagePullPolicy %q, must be IfNotPresent", container.Name, container.ImagePullPolicy),
 			})
+		} else {
+			result.Details = append(result.Details, checks.ResourceDetail{
+				Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
+				Compliant: true,
+				Message:   fmt.Sprintf("Container %q has imagePullPolicy IfNotPresent", container.Name),
+			})
 		}
 	})
 	if count > 0 {
@@ -64,6 +70,12 @@ func CheckPodOwnerType(resources *checks.DiscoveredResources) checks.CheckResult
 				Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
 				Compliant: false,
 				Message:   "Pod is not owned by ReplicaSet, StatefulSet, DaemonSet, or Job",
+			})
+		} else {
+			result.Details = append(result.Details, checks.ResourceDetail{
+				Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
+				Compliant: true,
+				Message:   "Pod is owned by a workload controller",
 			})
 		}
 	}
@@ -120,6 +132,12 @@ func CheckPodScheduling(resources *checks.DiscoveredResources) checks.CheckResul
 				Compliant: false,
 				Message:   fmt.Sprintf("Pod has scheduling constraints: %s", strings.Join(reasons, ", ")),
 			})
+		} else {
+			result.Details = append(result.Details, checks.ResourceDetail{
+				Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
+				Compliant: true,
+				Message:   "Pod has no nodeSelector or nodeAffinity scheduling constraints",
+			})
 		}
 	}
 	if count > 0 {
@@ -152,6 +170,12 @@ func CheckHighAvailability(resources *checks.DiscoveredResources) checks.CheckRe
 				Compliant: false,
 				Message:   fmt.Sprintf("Deployment has %d replica(s), expected at least 2", replicas),
 			})
+		} else {
+			result.Details = append(result.Details, checks.ResourceDetail{
+				Kind: "Deployment", Name: deploy.Name, Namespace: deploy.Namespace,
+				Compliant: true,
+				Message:   fmt.Sprintf("Deployment has %d replica(s)", replicas),
+			})
 		}
 	}
 	if count > 0 {
@@ -180,6 +204,12 @@ func CheckCPUIsolation(resources *checks.DiscoveredResources) checks.CheckResult
 				Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
 				Compliant: false,
 				Message:   fmt.Sprintf("Container %q CPU requests (%s) != limits (%s)", container.Name, cpuReq.String(), cpuLim.String()),
+			})
+		} else {
+			result.Details = append(result.Details, checks.ResourceDetail{
+				Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
+				Compliant: true,
+				Message:   fmt.Sprintf("Container %q CPU requests (%s) == limits (%s)", container.Name, cpuReq.String(), cpuLim.String()),
 			})
 		}
 	})
@@ -243,6 +273,12 @@ func CheckAffinityRequired(resources *checks.DiscoveredResources) checks.CheckRe
 				Compliant: false,
 				Message:   "Pod has AffinityRequired label but is missing pod affinity or node affinity rules",
 			})
+		} else {
+			result.Details = append(result.Details, checks.ResourceDetail{
+				Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
+				Compliant: true,
+				Message:   "Pod has AffinityRequired label with proper affinity rules configured",
+			})
 		}
 	}
 
@@ -281,8 +317,10 @@ func CheckTolerationBypass(resources *checks.DiscoveredResources) checks.CheckRe
 	var count int
 	for i := range resources.Pods {
 		pod := &resources.Pods[i]
+		hasModifiedToleration := false
 		for _, tol := range pod.Spec.Tolerations {
 			if isTolerationModified(tol, pod.Status.QOSClass) {
+				hasModifiedToleration = true
 				count++
 				result.Details = append(result.Details, checks.ResourceDetail{
 					Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
@@ -291,6 +329,13 @@ func CheckTolerationBypass(resources *checks.DiscoveredResources) checks.CheckRe
 				})
 				break
 			}
+		}
+		if !hasModifiedToleration {
+			result.Details = append(result.Details, checks.ResourceDetail{
+				Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
+				Compliant: true,
+				Message:   "Pod has no modified tolerations",
+			})
 		}
 	}
 	if count > 0 {
@@ -359,6 +404,12 @@ func CheckPVReclaimPolicy(resources *checks.DiscoveredResources) checks.CheckRes
 				Kind: "PersistentVolume", Name: pv.Name,
 				Compliant: false,
 				Message:   fmt.Sprintf("PersistentVolume reclaimPolicy is %s, must be Delete", pv.Spec.PersistentVolumeReclaimPolicy),
+			})
+		} else {
+			result.Details = append(result.Details, checks.ResourceDetail{
+				Kind: "PersistentVolume", Name: pv.Name,
+				Compliant: true,
+				Message:   "PersistentVolume reclaimPolicy is Delete",
 			})
 		}
 	}

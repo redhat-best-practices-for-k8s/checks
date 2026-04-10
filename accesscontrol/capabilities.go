@@ -28,6 +28,14 @@ func checkForbiddenCapability(resources *checks.DiscoveredResources, capName str
 				Compliant: false,
 				Message:   fmt.Sprintf("Container %q has %s capability", container.Name, capName),
 			})
+		} else {
+			result.Details = append(result.Details, checks.ResourceDetail{
+				Kind:      "Pod",
+				Name:      pod.Name,
+				Namespace: pod.Namespace,
+				Compliant: true,
+				Message:   fmt.Sprintf("Container %q does not have %s capability", container.Name, capName),
+			})
 		}
 	})
 

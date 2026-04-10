@@ -34,6 +34,12 @@ func CheckSRIOVRestartLabel(resources *checks.DiscoveredResources) checks.CheckR
 				Compliant: false,
 				Message:   "SR-IOV pod missing restart-on-reboot=true label",
 			})
+		} else {
+			result.Details = append(result.Details, checks.ResourceDetail{
+				Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
+				Compliant: true,
+				Message:   "SR-IOV pod has restart-on-reboot=true label",
+			})
 		}
 	}
 	if sriovCount == 0 {

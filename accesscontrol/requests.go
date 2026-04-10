@@ -28,6 +28,12 @@ func CheckPodRequests(resources *checks.DiscoveredResources) checks.CheckResult 
 				Compliant: false,
 				Message:   fmt.Sprintf("Container %q missing resource requests (cpu: %s, memory: %s)", container.Name, cpuReq.String(), memReq.String()),
 			})
+		} else {
+			result.Details = append(result.Details, checks.ResourceDetail{
+				Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
+				Compliant: true,
+				Message:   fmt.Sprintf("Container %q has resource requests set (cpu: %s, memory: %s)", container.Name, cpuReq.String(), memReq.String()),
+			})
 		}
 	})
 

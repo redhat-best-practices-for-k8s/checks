@@ -25,6 +25,12 @@ func CheckCRDStatus(resources *checks.DiscoveredResources) checks.CheckResult {
 				Compliant: false,
 				Message:   fmt.Sprintf("CRD %q does not define a .status subresource", crd.Name),
 			})
+		} else {
+			result.Details = append(result.Details, checks.ResourceDetail{
+				Kind: "CustomResourceDefinition", Name: crd.Name, Namespace: "",
+				Compliant: true,
+				Message:   fmt.Sprintf("CRD %q defines a .status subresource", crd.Name),
+			})
 		}
 	}
 	if count > 0 {

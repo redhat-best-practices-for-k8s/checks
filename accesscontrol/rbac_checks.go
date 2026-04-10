@@ -27,6 +27,11 @@ func CheckServiceAccount(resources *checks.DiscoveredResources) checks.CheckResu
 				Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
 				Compliant: false, Message: "Pod uses the default service account",
 			})
+		} else {
+			result.Details = append(result.Details, checks.ResourceDetail{
+				Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
+				Compliant: true, Message: fmt.Sprintf("Pod uses service account %q", pod.Spec.ServiceAccountName),
+			})
 		}
 	}
 	if count > 0 {
@@ -68,6 +73,14 @@ func CheckRoleBindings(resources *checks.DiscoveredResources) checks.CheckResult
 		violations := findCrossNamespaceRoleBindings(pod, resources.RoleBindings, targetNS)
 		count += len(violations)
 		result.Details = append(result.Details, violations...)
+
+		if len(violations) == 0 {
+			result.Details = append(result.Details, checks.ResourceDetail{
+				Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
+				Compliant: true,
+				Message:   "Pod has no cross-namespace role binding issues",
+			})
+		}
 	}
 
 	if count > 0 {
@@ -137,12 +150,14 @@ func CheckClusterRoleBindings(resources *checks.DiscoveredResources) checks.Chec
 			sa = "default"
 		}
 
+		podViolations := 0
 		for j := range resources.ClusterRoleBindings {
 			crb := &resources.ClusterRoleBindings[j]
 			for _, subject := range crb.Subjects {
 				if subject.Kind == rbacv1.ServiceAccountKind &&
 					subject.Name == sa &&
 					subject.Namespace == pod.Namespace {
+					podViolations++
 					count++
 					result.Details = append(result.Details, checks.ResourceDetail{
 						Kind: "ClusterRoleBinding", Name: crb.Name, Namespace: "",
@@ -152,6 +167,13 @@ func CheckClusterRoleBindings(resources *checks.DiscoveredResources) checks.Chec
 					})
 				}
 			}
+		}
+		if podViolations == 0 {
+			result.Details = append(result.Details, checks.ResourceDetail{
+				Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
+				Compliant: true,
+				Message:   "Pod ServiceAccount is not bound by any ClusterRoleBinding",
+			})
 		}
 	}
 	if count > 0 {
@@ -194,6 +216,11 @@ func CheckAutomountToken(resources *checks.DiscoveredResources) checks.CheckResu
 			result.Details = append(result.Details, checks.ResourceDetail{
 				Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
 				Compliant: false, Message: "Service account token is automounted",
+			})
+		} else {
+			result.Details = append(result.Details, checks.ResourceDetail{
+				Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
+				Compliant: true, Message: "Service account token is not automounted",
 			})
 		}
 	}

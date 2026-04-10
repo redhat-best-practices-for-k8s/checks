@@ -53,6 +53,14 @@ func CheckSysNiceRealtime(resources *checks.DiscoveredResources) checks.CheckRes
 					Compliant: false,
 					Message:   fmt.Sprintf("Container %q on RT node %q lacks SYS_NICE capability", container.Name, pod.Spec.NodeName),
 				})
+			} else {
+				result.Details = append(result.Details, checks.ResourceDetail{
+					Kind:      "Pod",
+					Name:      pod.Name,
+					Namespace: pod.Namespace,
+					Compliant: true,
+					Message:   fmt.Sprintf("Container %q on RT node %q has SYS_NICE capability", container.Name, pod.Spec.NodeName),
+				})
 			}
 		}
 	}

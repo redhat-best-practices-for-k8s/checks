@@ -154,8 +154,10 @@ func checkPortUsage(resources *checks.DiscoveredResources, portSet map[int32]boo
 
 	var count int
 	checks.ForEachContainer(resources.Pods, func(pod *corev1.Pod, container *corev1.Container) {
+		hasReservedPort := false
 		for _, port := range container.Ports {
 			if portSet[port.ContainerPort] {
+				hasReservedPort = true
 				count++
 				result.Details = append(result.Details, checks.ResourceDetail{
 					Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
@@ -163,6 +165,13 @@ func checkPortUsage(resources *checks.DiscoveredResources, portSet map[int32]boo
 					Message:   fmt.Sprintf("Container %q uses %s %d", container.Name, label, port.ContainerPort),
 				})
 			}
+		}
+		if !hasReservedPort {
+			result.Details = append(result.Details, checks.ResourceDetail{
+				Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
+				Compliant: true,
+				Message:   fmt.Sprintf("Container %q does not use any %ss", container.Name, label),
+			})
 		}
 	})
 	if count > 0 {

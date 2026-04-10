@@ -26,14 +26,24 @@ func CheckMaxResourcesExecProbes(resources *checks.DiscoveredResources) checks.C
 		for j := range pod.Spec.Containers {
 			container := &pod.Spec.Containers[j]
 			issues := checkExecProbePeriod(container)
-			for _, issue := range issues {
-				nonCompliant++
+			if len(issues) > 0 {
+				for _, issue := range issues {
+					nonCompliant++
+					result.Details = append(result.Details, checks.ResourceDetail{
+						Kind:      "Pod",
+						Name:      pod.Name,
+						Namespace: pod.Namespace,
+						Compliant: false,
+						Message:   fmt.Sprintf("Container %q: %s", container.Name, issue),
+					})
+				}
+			} else {
 				result.Details = append(result.Details, checks.ResourceDetail{
 					Kind:      "Pod",
 					Name:      pod.Name,
 					Namespace: pod.Namespace,
-					Compliant: false,
-					Message:   fmt.Sprintf("Container %q: %s", container.Name, issue),
+					Compliant: true,
+					Message:   fmt.Sprintf("Container %q has compliant exec probe periods", container.Name),
 				})
 			}
 		}

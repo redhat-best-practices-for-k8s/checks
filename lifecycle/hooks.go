@@ -29,6 +29,12 @@ func checkLifecycleHook(resources *checks.DiscoveredResources, checkFunc lifecyc
 				Compliant: false,
 				Message:   fmt.Sprintf("Container %q does not have a %s lifecycle hook", container.Name, hookName),
 			})
+		} else {
+			result.Details = append(result.Details, checks.ResourceDetail{
+				Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
+				Compliant: true,
+				Message:   fmt.Sprintf("Container %q has a %s lifecycle hook", container.Name, hookName),
+			})
 		}
 	})
 	if count > 0 {

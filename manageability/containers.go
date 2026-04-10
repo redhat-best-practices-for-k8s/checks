@@ -38,11 +38,13 @@ func CheckPortNameFormat(resources *checks.DiscoveredResources) checks.CheckResu
 
 	var count int
 	checks.ForEachContainer(resources.Pods, func(pod *corev1.Pod, container *corev1.Container) {
+		hasInvalidPort := false
 		for _, port := range container.Ports {
 			if port.Name == "" {
 				continue
 			}
 			if !portNameFormatCheck(port.Name) {
+				hasInvalidPort = true
 				count++
 				result.Details = append(result.Details, checks.ResourceDetail{
 					Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
@@ -50,6 +52,13 @@ func CheckPortNameFormat(resources *checks.DiscoveredResources) checks.CheckResu
 					Message:   fmt.Sprintf("Container %q port name %q does not follow the naming convention <protocol>[-<suffix>]", container.Name, port.Name),
 				})
 			}
+		}
+		if !hasInvalidPort {
+			result.Details = append(result.Details, checks.ResourceDetail{
+				Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
+				Compliant: true,
+				Message:   fmt.Sprintf("Container %q port names follow the naming convention", container.Name),
+			})
 		}
 	})
 	if count > 0 {
@@ -78,6 +87,12 @@ func CheckImageTag(resources *checks.DiscoveredResources) checks.CheckResult {
 				Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
 				Compliant: false,
 				Message:   fmt.Sprintf("Container %q uses image %q with no tag", container.Name, container.Image),
+			})
+		} else {
+			result.Details = append(result.Details, checks.ResourceDetail{
+				Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
+				Compliant: true,
+				Message:   fmt.Sprintf("Container %q uses tagged image %q", container.Name, container.Image),
 			})
 		}
 	})
