@@ -27,6 +27,11 @@ func CheckCRDScaling(resources *checks.DiscoveredResources) checks.CheckResult {
 	if len(resources.ScalableResources) == 0 {
 		result.ComplianceStatus = checks.StatusCompliant
 		result.Reason = "No scalable custom resources found"
+		result.Details = append(result.Details, checks.ResourceDetail{
+			Kind:      "CustomResource",
+			Compliant: true,
+			Message:   "No scalable custom resources found",
+		})
 		return result
 	}
 

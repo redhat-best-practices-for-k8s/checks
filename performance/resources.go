@@ -4,9 +4,13 @@ import (
 	"fmt"
 
 	"github.com/redhat-best-practices-for-k8s/checks"
+	corev1 "k8s.io/api/core/v1"
 )
 
-// CheckExclusiveCPUPool verifies containers requesting whole CPUs have Guaranteed QoS.
+// CheckExclusiveCPUPool verifies that no pod mixes containers from the exclusive
+// CPU pool with containers from the shared CPU pool. A container has exclusive
+// CPUs when it has integer CPU limits, non-zero memory limits, and all resource
+// requests equal their corresponding limits (Guaranteed QoS with whole CPUs).
 func CheckExclusiveCPUPool(resources *checks.DiscoveredResources) checks.CheckResult {
 	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.Pods) == 0 {
@@ -18,36 +22,62 @@ func CheckExclusiveCPUPool(resources *checks.DiscoveredResources) checks.CheckRe
 	var count int
 	for i := range resources.Pods {
 		pod := &resources.Pods[i]
+		exclusiveCount := 0
+		sharedCount := 0
+
 		for j := range pod.Spec.Containers {
-			container := &pod.Spec.Containers[j]
-			cpuReq := container.Resources.Requests.Cpu()
-			cpuLim := container.Resources.Limits.Cpu()
-
-			if cpuReq.IsZero() || cpuReq.MilliValue()%1000 != 0 {
-				continue
-			}
-
-			if cpuLim.IsZero() || !cpuReq.Equal(*cpuLim) {
-				count++
-				result.Details = append(result.Details, checks.ResourceDetail{
-					Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
-					Compliant: false,
-					Message:   fmt.Sprintf("Container %q requests %s whole CPUs but limits (%s) do not match", container.Name, cpuReq.String(), cpuLim.String()),
-				})
+			if hasExclusiveCPUs(&pod.Spec.Containers[j]) {
+				exclusiveCount++
 			} else {
-				result.Details = append(result.Details, checks.ResourceDetail{
-					Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
-					Compliant: true,
-					Message:   fmt.Sprintf("Container %q has matching CPU requests and limits (%s)", container.Name, cpuReq.String()),
-				})
+				sharedCount++
 			}
 		}
+
+		if exclusiveCount > 0 && sharedCount > 0 {
+			count++
+			result.Details = append(result.Details, checks.ResourceDetail{
+				Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
+				Compliant: false,
+				Message: fmt.Sprintf("Pod has containers whose CPUs belong to different pools (shared: %d, exclusive: %d)",
+					sharedCount, exclusiveCount),
+			})
+		} else {
+			result.Details = append(result.Details, checks.ResourceDetail{
+				Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
+				Compliant: true,
+				Message:   "Pod has no containers whose CPUs belong to different pools",
+			})
+		}
 	}
+
 	if count > 0 {
 		result.ComplianceStatus = checks.StatusNonCompliant
-		result.Reason = fmt.Sprintf("%d container(s) have mismatched exclusive CPU pool configuration", count)
+		result.Reason = fmt.Sprintf("%d pod(s) mix exclusive and shared CPU pool containers", count)
 	}
 	return result
+}
+
+// hasExclusiveCPUs checks whether a container has exclusive CPUs assigned.
+// A container runs in the exclusive CPU pool when it has Guaranteed QoS
+// (requests == limits for both CPU and memory) with integer CPU limits.
+func hasExclusiveCPUs(container *corev1.Container) bool {
+	cpuLim := container.Resources.Limits.Cpu()
+	memLim := container.Resources.Limits.Memory()
+
+	if cpuLim.IsZero() || memLim.IsZero() {
+		return false
+	}
+
+	// CPU limits must be a whole number (not fractional like 500m).
+	if cpuLim.MilliValue()%1000 != 0 {
+		return false
+	}
+
+	// Guaranteed QoS: requests must equal limits for both CPU and memory.
+	cpuReq := container.Resources.Requests.Cpu()
+	memReq := container.Resources.Requests.Memory()
+
+	return cpuLim.Cmp(*cpuReq) == 0 && memLim.Cmp(*memReq) == 0
 }
 
 // CheckRTAppsNoExecProbes verifies RT containers don't use exec probes.

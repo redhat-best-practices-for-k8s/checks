@@ -15,12 +15,22 @@ func CheckAPICompatibilityWithNextOCPRelease(resources *checks.DiscoveredResourc
 	if resources.OpenshiftVersion == "" {
 		result.ComplianceStatus = checks.StatusCompliant
 		result.Reason = "Not an OpenShift cluster"
+		result.Details = append(result.Details, checks.ResourceDetail{
+			Kind:      "Cluster",
+			Compliant: true,
+			Message:   "Not an OpenShift cluster; API compatibility check not applicable",
+		})
 		return result
 	}
 
 	if len(resources.APIRequestCounts) == 0 {
 		result.ComplianceStatus = checks.StatusCompliant
 		result.Reason = "No API request count data available"
+		result.Details = append(result.Details, checks.ResourceDetail{
+			Kind:      "API",
+			Compliant: true,
+			Message:   "No API request count data available",
+		})
 		return result
 	}
 

@@ -57,7 +57,7 @@ func TestCheckMemoryLimit_NoPods(t *testing.T) {
 
 // --- Exclusive CPU pool ---
 
-func TestCheckExclusiveCPUPool_Compliant(t *testing.T) {
+func TestCheckExclusiveCPUPool_Compliant_AllExclusive(t *testing.T) {
 	resources := &checks.DiscoveredResources{
 		Pods: []corev1.Pod{{
 			ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "ns1"},
@@ -65,8 +65,14 @@ func TestCheckExclusiveCPUPool_Compliant(t *testing.T) {
 				Containers: []corev1.Container{{
 					Name: "c1",
 					Resources: corev1.ResourceRequirements{
-						Requests: corev1.ResourceList{corev1.ResourceCPU: resource.MustParse("2")},
-						Limits:   corev1.ResourceList{corev1.ResourceCPU: resource.MustParse("2")},
+						Requests: corev1.ResourceList{
+							corev1.ResourceCPU:    resource.MustParse("2"),
+							corev1.ResourceMemory: resource.MustParse("256Mi"),
+						},
+						Limits: corev1.ResourceList{
+							corev1.ResourceCPU:    resource.MustParse("2"),
+							corev1.ResourceMemory: resource.MustParse("256Mi"),
+						},
 					},
 				}},
 			},
@@ -74,11 +80,68 @@ func TestCheckExclusiveCPUPool_Compliant(t *testing.T) {
 	}
 	result := CheckExclusiveCPUPool(resources)
 	if result.ComplianceStatus != "Compliant" {
-		t.Errorf("expected Compliant, got %s", result.ComplianceStatus)
+		t.Errorf("expected Compliant for all-exclusive pod, got %s", result.ComplianceStatus)
+	}
+}
+
+func TestCheckExclusiveCPUPool_Compliant_AllShared(t *testing.T) {
+	resources := &checks.DiscoveredResources{
+		Pods: []corev1.Pod{{
+			ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "ns1"},
+			Spec: corev1.PodSpec{
+				Containers: []corev1.Container{{
+					Name: "c1",
+					Resources: corev1.ResourceRequirements{
+						Requests: corev1.ResourceList{corev1.ResourceCPU: resource.MustParse("500m")},
+						Limits:   corev1.ResourceList{corev1.ResourceCPU: resource.MustParse("1")},
+					},
+				}},
+			},
+		}},
+	}
+	result := CheckExclusiveCPUPool(resources)
+	if result.ComplianceStatus != "Compliant" {
+		t.Errorf("expected Compliant for all-shared pod, got %s", result.ComplianceStatus)
 	}
 }
 
 func TestCheckExclusiveCPUPool_NonCompliant(t *testing.T) {
+	resources := &checks.DiscoveredResources{
+		Pods: []corev1.Pod{{
+			ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "ns1"},
+			Spec: corev1.PodSpec{
+				Containers: []corev1.Container{
+					{
+						// Exclusive: integer CPU, memory limits == requests (Guaranteed QoS)
+						Name: "exclusive",
+						Resources: corev1.ResourceRequirements{
+							Requests: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("2"),
+								corev1.ResourceMemory: resource.MustParse("256Mi"),
+							},
+							Limits: corev1.ResourceList{
+								corev1.ResourceCPU:    resource.MustParse("2"),
+								corev1.ResourceMemory: resource.MustParse("256Mi"),
+							},
+						},
+					},
+					{
+						// Shared: no resource limits
+						Name: "shared",
+					},
+				},
+			},
+		}},
+	}
+	result := CheckExclusiveCPUPool(resources)
+	if result.ComplianceStatus != "NonCompliant" {
+		t.Errorf("expected NonCompliant, got %s", result.ComplianceStatus)
+	}
+}
+
+func TestCheckExclusiveCPUPool_SingleContainer_MismatchedLimits_Compliant(t *testing.T) {
+	// A single container with mismatched CPU req/lim is in the shared pool only.
+	// No mixing occurs, so the pod is compliant.
 	resources := &checks.DiscoveredResources{
 		Pods: []corev1.Pod{{
 			ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "ns1"},
@@ -94,8 +157,8 @@ func TestCheckExclusiveCPUPool_NonCompliant(t *testing.T) {
 		}},
 	}
 	result := CheckExclusiveCPUPool(resources)
-	if result.ComplianceStatus != "NonCompliant" {
-		t.Errorf("expected NonCompliant, got %s", result.ComplianceStatus)
+	if result.ComplianceStatus != "Compliant" {
+		t.Errorf("expected Compliant (single container, no mixing), got %s", result.ComplianceStatus)
 	}
 }
 
@@ -166,7 +229,7 @@ func TestCheckExclusiveCPUPool_MemoryMismatch(t *testing.T) {
 	}
 	result := CheckExclusiveCPUPool(resources)
 	if result.ComplianceStatus != "Compliant" {
-		t.Errorf("expected Compliant (CPU matches, memory mismatch is irrelevant to this check), got %s", result.ComplianceStatus)
+		t.Errorf("expected Compliant (memory mismatch means container is in shared pool, single container means no mixing), got %s", result.ComplianceStatus)
 	}
 }
 
