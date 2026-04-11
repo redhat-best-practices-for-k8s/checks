@@ -76,6 +76,9 @@ type DiscoveredResources struct {
 	// Scalable custom resources (CRDs with scale subresource)
 	ScalableResources []ScalableResource
 
+	// HPA resources for scaling check awareness
+	HPAs []HPAInfo
+
 	// Scaling configuration (from certsuite config)
 	ManagedDeployments      []string           // Names of deployments managed by CRD operators
 	ManagedStatefulSets     []string           // Names of statefulsets managed by CRD operators
@@ -116,6 +119,14 @@ type ScalableResource struct {
 	Namespace     string
 	Replicas      int32
 	GroupResource schema.GroupResource
+}
+
+// HPAInfo holds information about a HorizontalPodAutoscaler target.
+type HPAInfo struct {
+	Name      string // HPA name
+	Namespace string
+	TargetKind string // e.g., "Deployment", "StatefulSet"
+	TargetName string
 }
 
 // CRDInfo holds the name and kind of a CRD, used for owner reference checks

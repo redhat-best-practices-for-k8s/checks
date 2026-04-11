@@ -26,10 +26,6 @@ func CheckDualStackService(resources *checks.DiscoveredResources) checks.CheckRe
 	var count int
 	for i := range resources.Services {
 		svc := &resources.Services[i]
-		if svc.Spec.ClusterIP == "None" || svc.Spec.Type == corev1.ServiceTypeExternalName {
-			continue
-		}
-
 		ipVersion := getServiceIPVersion(svc)
 		if ipVersion == ipVersionUndefined || ipVersion == ipVersionIPv4 {
 			count++

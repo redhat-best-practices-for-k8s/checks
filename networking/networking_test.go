@@ -116,7 +116,7 @@ func TestCheckDualStackService_NonCompliant_RequireDualStack_SingleIP(t *testing
 	}
 }
 
-func TestCheckDualStackService_Headless_Skipped(t *testing.T) {
+func TestCheckDualStackService_Headless_NonCompliant(t *testing.T) {
 	resources := &checks.DiscoveredResources{
 		Services: []corev1.Service{{
 			ObjectMeta: metav1.ObjectMeta{Name: "svc1", Namespace: "ns1"},
@@ -126,8 +126,8 @@ func TestCheckDualStackService_Headless_Skipped(t *testing.T) {
 		}},
 	}
 	result := CheckDualStackService(resources)
-	if result.ComplianceStatus != "Compliant" {
-		t.Errorf("expected Compliant (headless skipped), got %s", result.ComplianceStatus)
+	if result.ComplianceStatus != "NonCompliant" {
+		t.Errorf("expected NonCompliant for headless service with no IPFamilyPolicy, got %s", result.ComplianceStatus)
 	}
 }
 

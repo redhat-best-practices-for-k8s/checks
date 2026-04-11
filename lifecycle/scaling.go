@@ -19,6 +19,16 @@ var (
 	readinessPollDelay = time.Second
 )
 
+// isHPAManaged checks if a workload is controlled by a HorizontalPodAutoscaler.
+func isHPAManaged(name, namespace, kind string, hpas []checks.HPAInfo) bool {
+	for _, hpa := range hpas {
+		if hpa.TargetKind == kind && hpa.TargetName == name && hpa.Namespace == namespace {
+			return true
+		}
+	}
+	return false
+}
+
 // isManaged checks if a workload name is in the managed list.
 func isManaged(name string, managedList []string) bool {
 	for _, m := range managedList {
@@ -90,10 +100,8 @@ func CheckDeploymentScaling(resources *checks.DiscoveredResources) checks.CheckR
 		// Check if managed by a CRD operator.
 		if isManaged(deploy.Name, resources.ManagedDeployments) {
 			if checkOwnerReference(deploy.OwnerReferences, resources.CRDFilters, crdInfos) {
-				// Owner CRD is scalable -- skip this deployment (will be tested via CRD scaling).
 				continue
 			}
-			// Owner CRD is NOT scalable -- non-compliant.
 			failures++
 			result.Details = append(result.Details, checks.ResourceDetail{
 				Kind:      "Deployment",
@@ -102,6 +110,11 @@ func CheckDeploymentScaling(resources *checks.DiscoveredResources) checks.CheckR
 				Compliant: false,
 				Message:   "Managed deployment has no scalable owner CRD",
 			})
+			continue
+		}
+
+		// HPA-managed workloads: skip with no detail (tested via HPA, matching certsuite behavior).
+		if isHPAManaged(deploy.Name, deploy.Namespace, "Deployment", resources.HPAs) {
 			continue
 		}
 
@@ -178,6 +191,11 @@ func CheckStatefulSetScaling(resources *checks.DiscoveredResources) checks.Check
 				Compliant: false,
 				Message:   "Managed statefulset has no scalable owner CRD",
 			})
+			continue
+		}
+
+		// HPA-managed workloads: skip with no detail (tested via HPA, matching certsuite behavior).
+		if isHPAManaged(sts.Name, sts.Namespace, "StatefulSet", resources.HPAs) {
 			continue
 		}
 
