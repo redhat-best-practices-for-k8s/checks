@@ -88,6 +88,10 @@ type DiscoveredResources struct {
 	// configured namespaces.
 	CRInstances map[string]map[string][]string
 
+	// PodMultusNetworks maps pod key ("namespace/name") to its Multus network interfaces.
+	// Populated by the adapter from the k8s.v1.cni.cncf.io/network-status annotation.
+	PodMultusNetworks map[string][]MultusNetwork
+
 	// Execution helpers (injected by certsuite adapter)
 	ProbeExecutor ProbeExecutor
 	K8sClientset  interface{} // kubernetes.Interface - avoid import
@@ -97,6 +101,13 @@ type DiscoveredResources struct {
 	// Mutation checks (cordon/drain) will skip this node to avoid self-eviction.
 	// Empty when the scanner runs outside the cluster.
 	ScannerPodNodeName string
+}
+
+// MultusNetwork represents a secondary (non-default) network interface on a pod.
+type MultusNetwork struct {
+	Name          string   // Network name (e.g., "ns1/my-net-attach")
+	InterfaceName string   // Interface name (e.g., "net1")
+	IPs           []string // IP addresses on this interface
 }
 
 // ScalableResource represents a custom resource that supports the scale subresource.
