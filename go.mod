@@ -2,7 +2,7 @@ module github.com/redhat-best-practices-for-k8s/checks
 
 go 1.26.0
 
-toolchain go1.26.2
+toolchain go1.26.3
 
 require (
 	github.com/blang/semver/v4 v4.0.0
