@@ -1,14 +1,12 @@
 module github.com/redhat-best-practices-for-k8s/checks
 
-go 1.26.0
-
-toolchain go1.26.3
+go 1.26.3
 
 require (
 	github.com/blang/semver/v4 v4.0.0
 	github.com/k8snetworkplumbingwg/network-attachment-definition-client v1.7.7
 	github.com/openshift/api v0.0.0-20260204104751-e09e5a4ebcd0
-	github.com/operator-framework/api v0.42.0
+	github.com/operator-framework/api v0.43.0
 	github.com/operator-framework/operator-lifecycle-manager v0.43.0
 	k8s.io/api v0.36.1
 	k8s.io/apiextensions-apiserver v0.36.1
@@ -37,7 +35,7 @@ require (
 	github.com/go-openapi/swag/stringutils v0.25.4 // indirect
 	github.com/go-openapi/swag/typeutils v0.25.4 // indirect
 	github.com/go-openapi/swag/yamlutils v0.25.4 // indirect
-	github.com/google/cel-go v0.27.0 // indirect
+	github.com/google/cel-go v0.28.1 // indirect
 	github.com/google/gnostic-models v0.7.1 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/h2non/filetype v1.1.3 // indirect
