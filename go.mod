@@ -1,6 +1,7 @@
 module github.com/redhat-best-practices-for-k8s/checks
 
 go 1.26.3
+
 toolchain go1.26.4
 
 require (
@@ -9,10 +10,10 @@ require (
 	github.com/openshift/api v0.0.0-20260204104751-e09e5a4ebcd0
 	github.com/operator-framework/api v0.43.0
 	github.com/operator-framework/operator-lifecycle-manager v0.43.0
-	k8s.io/api v0.36.1
-	k8s.io/apiextensions-apiserver v0.36.1
-	k8s.io/apimachinery v0.36.1
-	k8s.io/client-go v0.36.1
+	k8s.io/api v0.36.2
+	k8s.io/apiextensions-apiserver v0.36.2
+	k8s.io/apimachinery v0.36.2
+	k8s.io/client-go v0.36.2
 )
 
 require (
