@@ -451,9 +451,9 @@ func Register() {
 		})
 
 		checks.Register(checks.CheckInfo{
-			Name:     "access-control-security-context-read-only-file-system",
+			Name:     "access-control-security-context-read-only-root-file-system",
 			Category: checks.CategoryAccessControl,
-			CatalogID: "access-control-security-context-read-only-file-system",
+			CatalogID: "access-control-security-context-read-only-root-file-system",
 			Fn:       CheckReadOnlyFilesystem,
 			Description: AccessControlSecurityContextReadOnlyFileSystemDescription,
 			Remediation: AccessControlSecurityContextReadOnlyFileSystemRemediation,
