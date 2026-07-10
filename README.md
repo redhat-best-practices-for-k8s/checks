@@ -41,14 +41,15 @@ acChecks := checks.ByCategory("access-control")
 | Category | Checks | Description |
 |---|---|---|
 | `accesscontrol` | 28 | Security context, capabilities, RBAC, host access, namespaces |
-| `lifecycle` | 15 | Probes, scheduling, HA, storage, image pull policy |
-| `networking` | 5 | Dual-stack, network policies, reserved ports, SR-IOV |
-| `observability` | 3 | CRD status, termination policy, pod disruption budgets |
-| `performance` | 6 | CPU pinning, exec probes, memory limits, exclusive CPU pools |
-| `platform` | 9 | Boot params, hugepages, sysctl, SELinux, node count |
-| `operator` | 10 | OLM install status, versioning, CRD ownership, skip range |
+| `certification` | 4 | Container, operator, and Helm chart Red Hat certification |
+| `lifecycle` | 19 | Probes, scheduling, HA, scaling, storage, image pull policy |
 | `manageability` | 2 | Port naming, image tags |
-| **Total** | **78** | |
+| `networking` | 11 | Dual-stack, ICMP connectivity, network policies, reserved ports, SR-IOV |
+| `observability` | 5 | CRD status, termination policy, pod disruption budgets, logging, API compat |
+| `operator` | 12 | OLM install status, versioning, CRD ownership, skip range, namespacing |
+| `performance` | 9 | CPU pinning, exec probes, memory limits, scheduling policies |
+| `platform` | 15 | Boot params, hugepages, sysctl, SELinux, base image, OCP lifecycle |
+| **Total** | **105** | |
 
 ## Checks Reference
 
@@ -87,6 +88,15 @@ Check names link to their corresponding test documentation in the [certsuite CAT
 | [`access-control-ssh-daemons`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#access-control-ssh-daemons) | No SSH daemons in containers | Yes |
 | [`access-control-sys-nice-realtime-capability`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#access-control-sys-nice-realtime-capability) | RT kernel pods have SYS_NICE capability | Yes |
 
+### affiliated-certification
+
+| Check Name | Description | Covered by UT |
+|---|---|---|
+| [`affiliated-certification-container-is-certified-digest`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#container-is-certified-digest) | Containers passed Red Hat Container Certification | Yes |
+| [`affiliated-certification-helm-version`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#helm-version) | Helm charts use v3 | Yes |
+| [`affiliated-certification-helmchart-is-certified`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#helmchart-is-certified) | Helm charts passed Red Hat Helm Certification | Yes |
+| [`affiliated-certification-operator-is-certified`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#operator-is-certified) | Operators passed Red Hat Operator Certification | Yes |
+
 ### lifecycle
 
 | Check Name | Description | Covered by UT |
@@ -101,9 +111,13 @@ Check names link to their corresponding test documentation in the [certsuite CAT
 | [`lifecycle-pod-scheduling`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#lifecycle-pod-scheduling) | Pods have scheduling directives | Yes |
 | [`lifecycle-pod-high-availability`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#lifecycle-pod-high-availability) | Deployments have replicas > 1 | Yes |
 | [`lifecycle-cpu-isolation`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#lifecycle-cpu-isolation) | CPU requests equal CPU limits | Yes |
+| [`lifecycle-crd-scaling`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#lifecycle-crd-scaling) | CRD supports scale in/out operations | Yes |
+| [`lifecycle-deployment-scaling`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#lifecycle-deployment-scaling) | Deployments support scale in/out operations | Yes |
 | [`lifecycle-affinity-required-pods`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#lifecycle-affinity-required-pods) | Pods have anti-affinity rules | Yes |
 | [`lifecycle-pod-toleration-bypass`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#lifecycle-pod-toleration-bypass) | No unnecessary master taint tolerations | Yes |
 | [`lifecycle-persistent-volume-reclaim-policy`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#lifecycle-persistent-volume-reclaim-policy) | PV reclaimPolicy is not Delete | Yes |
+| [`lifecycle-pod-recreation`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#lifecycle-pod-recreation) | Pods are recreated after node drain/reboot | Yes |
+| [`lifecycle-statefulset-scaling`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#lifecycle-statefulset-scaling) | StatefulSets support scale in/out operations | Yes |
 | [`lifecycle-storage-provisioner`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#lifecycle-storage-provisioner) | StorageClass has valid provisioner | Yes |
 | [`lifecycle-topology-spread-constraint`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#lifecycle-topology-spread-constraint) | TopologySpreadConstraints cover hostname and zone | Yes |
 
@@ -112,58 +126,77 @@ Check names link to their corresponding test documentation in the [certsuite CAT
 | Check Name | Description | Covered by UT |
 |---|---|---|
 | [`networking-dual-stack-service`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#networking-dual-stack-service) | Services support dual-stack | Yes |
+| [`networking-icmpv4-connectivity`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#icmpv4-connectivity) | Containers can communicate via ICMPv4 | Yes |
+| [`networking-icmpv4-connectivity-multus`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#icmpv4-connectivity-multus) | Containers can communicate via ICMPv4 on Multus networks | Yes |
+| [`networking-icmpv6-connectivity`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#icmpv6-connectivity) | Containers can communicate via ICMPv6 | Yes |
+| [`networking-icmpv6-connectivity-multus`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#icmpv6-connectivity-multus) | Containers can communicate via ICMPv6 on Multus networks | Yes |
+| [`networking-network-attachment-definition-sriov-mtu`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#network-attachment-definition-sriov-mtu) | SR-IOV NetworkAttachmentDefinitions have correct MTU | Yes |
 | [`networking-network-policy-deny-all`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#networking-network-policy-deny-all) | Default-deny NetworkPolicy exists | Yes |
-| [`networking-reserved-partner-ports`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#networking-reserved-partner-ports) | No use of reserved partner ports | Yes |
 | [`networking-ocp-reserved-ports-usage`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#networking-ocp-reserved-ports-usage) | No use of OCP reserved ports | Yes |
+| [`networking-reserved-partner-ports`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#networking-reserved-partner-ports) | No use of reserved partner ports | Yes |
 | [`networking-restart-on-reboot-sriov-pod`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#networking-restart-on-reboot-sriov-pod) | SR-IOV pods have restart label | Yes |
+| [`networking-undeclared-container-ports-usage`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#networking-undeclared-container-ports-usage) | Containers do not listen on undeclared ports | Yes |
 
 ### observability
 
 | Check Name | Description | Covered by UT |
 |---|---|---|
+| [`observability-compatibility-with-next-ocp-release`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#compatibility-with-next-ocp-release) | APIs are compatible with next OCP release | Yes |
+| [`observability-container-logging`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#container-logging) | Containers log to stderr and stdout | Yes |
 | [`observability-crd-status`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#observability-crd-status) | CRDs define status subresource | Yes |
-| [`observability-termination-policy`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#observability-termination-policy) | terminationMessagePolicy is FallbackToLogsOnError | Yes |
 | [`observability-pod-disruption-budget`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#observability-pod-disruption-budget) | PDBs exist for HA workloads | Yes |
+| [`observability-termination-policy`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#observability-termination-policy) | terminationMessagePolicy is FallbackToLogsOnError | Yes |
 
 ### performance
 
 | Check Name | Description | Covered by UT |
 |---|---|---|
-| [`performance-exclusive-cpu-pool`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#performance-exclusive-cpu-pool) | Whole-CPU containers use Guaranteed QoS | Yes |
-| [`performance-rt-apps-no-exec-probes`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#performance-rt-apps-no-exec-probes) | RT containers avoid exec probes | Yes |
-| `performance-limit-memory-allocation` | Containers have memory limits | Yes |
-| `performance-limited-use-of-exec-probes` | Cluster-wide exec probe count below threshold | Yes |
 | [`performance-cpu-pinning-no-exec-probes`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#performance-cpu-pinning-no-exec-probes) | CPU-pinned pods avoid exec probes | Yes |
+| [`performance-exclusive-cpu-pool`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#performance-exclusive-cpu-pool) | Whole-CPU containers use Guaranteed QoS | Yes |
+| [`performance-exclusive-cpu-pool-rt-scheduling-policy`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#exclusive-cpu-pool-rt-scheduling-policy) | Exclusive CPU pool uses RT scheduling policy | Yes |
+| [`performance-isolated-cpu-pool-rt-scheduling-policy`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#isolated-cpu-pool-rt-scheduling-policy) | Isolated CPU pool uses RT scheduling policy | Yes |
+| [`performance-limit-memory-allocation`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#performance-limit-memory-allocation) | Containers have memory limits | Yes |
+| [`performance-limited-use-of-exec-probes`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#performance-limited-use-of-exec-probes) | Cluster-wide exec probe count below threshold | Yes |
 | [`performance-max-resources-exec-probes`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#performance-max-resources-exec-probes) | Exec probes have periodSeconds >= 10 | Yes |
+| [`performance-rt-apps-no-exec-probes`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#performance-rt-apps-no-exec-probes) | RT containers avoid exec probes | Yes |
+| [`performance-shared-cpu-pool-non-rt-scheduling-policy`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#shared-cpu-pool-non-rt-scheduling-policy) | Shared CPU pool uses non-RT scheduling policy | Yes |
 
 ### platform
 
 | Check Name | Description | Covered by UT |
 |---|---|---|
+| [`platform-alteration-base-image`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#base-image) | Container base image is not altered post-startup | Yes |
 | [`platform-alteration-boot-params`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#platform-alteration-boot-params) | No non-standard kernel boot parameters | Yes |
+| [`platform-alteration-cluster-operator-health`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#cluster-operator-health) | All cluster operators are healthy | Yes |
+| [`platform-alteration-hugepages-1g-only`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#platform-alteration-hugepages-1g-only) | Only 1Gi hugepages used | Yes |
+| [`platform-alteration-hugepages-2m-only`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#platform-alteration-hugepages-2m-only) | Only 2Mi hugepages used | Yes |
 | [`platform-alteration-hugepages-config`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#platform-alteration-hugepages-config) | Hugepage configuration is consistent | Yes |
+| [`platform-alteration-hyperthread-enable`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#hyperthread-enable) | Baremetal workers have hyperthreading enabled | Yes |
+| [`platform-alteration-is-selinux-enforcing`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#platform-alteration-is-selinux-enforcing) | SELinux is in Enforcing mode | Yes |
+| [`platform-alteration-isredhat-release`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#isredhat-release) | Container base image is Red Hat | Yes |
+| [`platform-alteration-ocp-lifecycle`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#ocp-lifecycle) | Running OCP version is not end of life | Yes |
+| [`platform-alteration-ocp-node-count`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#platform-alteration-ocp-node-count) | Minimum worker node count met | Yes |
+| [`platform-alteration-ocp-node-os-lifecycle`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#ocp-node-os-lifecycle) | Node OS is compatible with OCP version | Yes |
+| [`platform-alteration-service-mesh-usage`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#platform-alteration-service-mesh-usage) | Pods do not use Istio sidecars | Yes |
 | [`platform-alteration-sysctl-config`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#platform-alteration-sysctl-config) | Sysctl settings managed via MachineConfig | Yes |
 | [`platform-alteration-tainted-node-kernel`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#platform-alteration-tainted-node-kernel) | Kernel is not tainted | Yes |
-| [`platform-alteration-service-mesh-usage`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#platform-alteration-service-mesh-usage) | Pods do not use Istio sidecars | Yes |
-| [`platform-alteration-hugepages-2m-only`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#platform-alteration-hugepages-2m-only) | Only 2Mi hugepages used | Yes |
-| `platform-alteration-ocp-node-count` | Minimum worker node count met | Yes |
-| [`platform-alteration-hugepages-1g-only`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#platform-alteration-hugepages-1g-only) | Only 1Gi hugepages used | Yes |
-| [`platform-alteration-is-selinux-enforcing`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#platform-alteration-is-selinux-enforcing) | SELinux is in Enforcing mode | Yes |
 
 ### operator
 
 | Check Name | Description | Covered by UT |
 |---|---|---|
-| [`operator-install-status-succeeded`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#operator-install-status-succeeded) | CSVs report Succeeded status | Yes |
-| [`operator-install-status-no-privileges`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#operator-install-status-no-privileges) | CSVs do not grant SCC access | Yes |
-| [`operator-install-source`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#operator-install-source) | Operators installed via OLM | Yes |
-| [`operator-semantic-versioning`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#operator-semantic-versioning) | CSVs use semantic versioning | Yes |
-| [`operator-crd-versioning`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#operator-crd-versioning) | CRD versions follow K8s conventions | Yes |
+| [`operator-catalogsource-bundle-count`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#catalogsource-bundle-count) | CatalogSource bundle count below threshold | Yes |
 | [`operator-crd-openapi-schema`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#operator-crd-openapi-schema) | CRDs have OpenAPI v3 schema | Yes |
-| [`operator-single-crd-owner`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#operator-single-crd-owner) | Each CRD owned by one operator | Yes |
-| [`operator-pods-no-hugepages`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#operator-pods-no-hugepages) | Operator pods do not request hugepages | Yes |
-| [`operator-olm-skip-range`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#operator-olm-skip-range) | CSVs have olm.skipRange annotation | Yes |
+| [`operator-crd-versioning`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#operator-crd-versioning) | CRD versions follow K8s conventions | Yes |
+| [`operator-install-source`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#operator-install-source) | Operators installed via OLM | Yes |
+| [`operator-install-status-no-privileges`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#operator-install-status-no-privileges) | CSVs do not grant SCC access | Yes |
+| [`operator-install-status-succeeded`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#operator-install-status-succeeded) | CSVs report Succeeded status | Yes |
 | [`operator-multiple-same-operators`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#operator-multiple-same-operators) | No duplicate operator installations | Yes |
+| [`operator-olm-skip-range`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#operator-olm-skip-range) | CSVs have olm.skipRange annotation | Yes |
+| [`operator-pods-no-hugepages`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#operator-pods-no-hugepages) | Operator pods do not request hugepages | Yes |
+| [`operator-semantic-versioning`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#operator-semantic-versioning) | CSVs use semantic versioning | Yes |
+| [`operator-single-crd-owner`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#operator-single-crd-owner) | Each CRD owned by one operator | Yes |
+| [`operator-single-or-multi-namespaced-allowed-in-tenant-namespaces`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#single-or-multi-namespaced-allowed-in-tenant-namespaces) | Only single/multi namespaced operators in tenant namespaces | Yes |
 
 ### manageability
 
@@ -196,6 +229,7 @@ import (
 
     // Register all check categories
     _ "github.com/redhat-best-practices-for-k8s/checks/accesscontrol"
+    _ "github.com/redhat-best-practices-for-k8s/checks/certification"
     _ "github.com/redhat-best-practices-for-k8s/checks/lifecycle"
     _ "github.com/redhat-best-practices-for-k8s/checks/manageability"
     _ "github.com/redhat-best-practices-for-k8s/checks/networking"
@@ -221,9 +255,9 @@ func main() {
 
 ## Dependencies
 
-- `k8s.io/api`, `k8s.io/apimachinery`, `k8s.io/apiextensions-apiserver` v0.35.1
-- `github.com/operator-framework/api` v0.41.0 (for OLM ClusterServiceVersion types)
-- Go 1.26.1+
+- `k8s.io/api`, `k8s.io/apimachinery`, `k8s.io/apiextensions-apiserver` v0.36.2
+- `github.com/operator-framework/api` v0.44.0 (for OLM ClusterServiceVersion types)
+- Go 1.26.3+
 
 ## License
 
