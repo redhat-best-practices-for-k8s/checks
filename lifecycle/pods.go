@@ -98,6 +98,11 @@ func hasAllowedOwner(pod *corev1.Pod) bool {
 // CheckPodScheduling verifies pods do not use nodeSelector or nodeAffinity.
 // Pods should be schedulable on any node; using nodeSelector or nodeAffinity
 // restricts scheduling and is non-compliant.
+//
+// A nodeSelector that appears together with spec.runtimeClassName is ignored.
+// RuntimeClass admission merges scheduling.nodeSelector into the live pod,
+// so that selector was not authored by the workload. nodeAffinity is still
+// checked in that case.
 func CheckPodScheduling(resources *checks.DiscoveredResources) checks.CheckResult {
 	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if len(resources.Pods) == 0 {
@@ -117,6 +122,9 @@ func CheckPodScheduling(resources *checks.DiscoveredResources) checks.CheckResul
 
 		hasNodeSelector := len(pod.Spec.NodeSelector) > 0
 		hasNodeAffinity := pod.Spec.Affinity != nil && pod.Spec.Affinity.NodeAffinity != nil
+		if hasNodeSelector && pod.Spec.RuntimeClassName != nil {
+			hasNodeSelector = false
+		}
 
 		if hasNodeSelector || hasNodeAffinity {
 			count++

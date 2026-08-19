@@ -2,6 +2,7 @@ package lifecycle
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -658,6 +659,86 @@ func TestCheckPodScheduling_MixedAffinityRequired(t *testing.T) {
 	}
 }
 
+func strPtr(s string) *string {
+	return &s
+}
+
+func TestCheckPodScheduling_Compliant_RuntimeClassInjectedNodeSelector(t *testing.T) {
+	resources := &checks.DiscoveredResources{
+		Pods: []corev1.Pod{{
+			ObjectMeta: metav1.ObjectMeta{Name: "upf-testpod-0-0", Namespace: "upf1"},
+			Spec: corev1.PodSpec{
+				RuntimeClassName: strPtr("performance-performance-master"),
+				NodeSelector:     map[string]string{"node-role.kubernetes.io/master": ""},
+			},
+		}},
+	}
+	result := CheckPodScheduling(resources)
+	if result.ComplianceStatus != "Compliant" {
+		t.Errorf("expected Compliant for RuntimeClass-injected nodeSelector, got %s", result.ComplianceStatus)
+	}
+}
+
+func TestCheckPodScheduling_NonCompliant_NodeAffinityWithRuntimeClass(t *testing.T) {
+	resources := &checks.DiscoveredResources{
+		Pods: []corev1.Pod{{
+			ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "ns1"},
+			Spec: corev1.PodSpec{
+				RuntimeClassName: strPtr("performance-worker"),
+				Affinity: &corev1.Affinity{
+					NodeAffinity: &corev1.NodeAffinity{
+						RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+							NodeSelectorTerms: []corev1.NodeSelectorTerm{{
+								MatchExpressions: []corev1.NodeSelectorRequirement{
+									{Key: "node-role.kubernetes.io/worker", Operator: corev1.NodeSelectorOpExists},
+								},
+							}},
+						},
+					},
+				},
+			},
+		}},
+	}
+	result := CheckPodScheduling(resources)
+	if result.ComplianceStatus != "NonCompliant" {
+		t.Errorf("expected NonCompliant for nodeAffinity even when RuntimeClass is set, got %s", result.ComplianceStatus)
+	}
+}
+
+func TestCheckPodScheduling_NonCompliant_RuntimeClassNodeSelectorPlusAffinity(t *testing.T) {
+	resources := &checks.DiscoveredResources{
+		Pods: []corev1.Pod{{
+			ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "ns1"},
+			Spec: corev1.PodSpec{
+				RuntimeClassName: strPtr("performance-performance-master"),
+				NodeSelector:     map[string]string{"node-role.kubernetes.io/master": ""},
+				Affinity: &corev1.Affinity{
+					NodeAffinity: &corev1.NodeAffinity{
+						RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+							NodeSelectorTerms: []corev1.NodeSelectorTerm{{
+								MatchExpressions: []corev1.NodeSelectorRequirement{
+									{Key: "custom-key", Operator: corev1.NodeSelectorOpExists},
+								},
+							}},
+						},
+					},
+				},
+			},
+		}},
+	}
+	result := CheckPodScheduling(resources)
+	if result.ComplianceStatus != "NonCompliant" {
+		t.Errorf("expected NonCompliant for affinity when RuntimeClass skips nodeSelector, got %s", result.ComplianceStatus)
+	}
+	if len(result.Details) != 1 {
+		t.Errorf("expected 1 detail, got %d", len(result.Details))
+	} else if !strings.Contains(result.Details[0].Message, "nodeAffinity") {
+		t.Errorf("expected failure reason to mention nodeAffinity only, got %q", result.Details[0].Message)
+	} else if strings.Contains(result.Details[0].Message, "nodeSelector") {
+		t.Errorf("expected RuntimeClass-injected nodeSelector to be ignored, got %q", result.Details[0].Message)
+	}
+}
+
 func TestCheckAffinityRequired_PodAffinity_Compliant(t *testing.T) {
 	resources := &checks.DiscoveredResources{
 		Pods: []corev1.Pod{{
@@ -821,7 +902,7 @@ func storageTestResources(scName, provisioner string, nodeCount int) *checks.Dis
 		Pods: []corev1.Pod{{
 			ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "ns1"},
 			Spec: corev1.PodSpec{Volumes: []corev1.Volume{{
-				Name: "vol1",
+				Name:         "vol1",
 				VolumeSource: corev1.VolumeSource{PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{ClaimName: "pvc1"}},
 			}}},
 		}},
@@ -911,7 +992,7 @@ func TestCheckStorageProvisioner_PVCNoStorageClass_Compliant(t *testing.T) {
 		Pods: []corev1.Pod{{
 			ObjectMeta: metav1.ObjectMeta{Name: "pod1", Namespace: "ns1"},
 			Spec: corev1.PodSpec{Volumes: []corev1.Volume{{
-				Name: "vol1",
+				Name:         "vol1",
 				VolumeSource: corev1.VolumeSource{PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{ClaimName: "pvc1"}},
 			}}},
 		}},

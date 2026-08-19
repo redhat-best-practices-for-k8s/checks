@@ -176,7 +176,7 @@ const (
 
 	AccessControlPodServiceAccountBestPracticeRef = `https://redhat-best-practices-for-k8s.github.io/guide/#k8s-best-practices-scc-permissions-for-an-application`
 
-	AccessControlRequestsBestPracticeRef = `https://redhat-best-practices-for-k8s.github.io/guide/#k8s-best-practices-requests-limits`
+	AccessControlRequestsBestPracticeRef = `https://redhat-best-practices-for-k8s.github.io/guide/#_requests_and_limits_in_kubernetes`
 
 	AccessControlSecurityContextBestPracticeRef = `https://redhat-best-practices-for-k8s.github.io/guide/#k8s-best-practices-linux-capabilities`
 

@@ -58,7 +58,7 @@ const (
 
 	PerformanceIsolatedCpuPoolRtSchedulingPolicyBestPracticeRef = checks.NoDocLinkFarEdge
 
-	PerformanceLimitMemoryAllocationBestPracticeRef = `https://redhat-best-practices-for-k8s.github.io/guide/#k8s-best-practices-requests-limits`
+	PerformanceLimitMemoryAllocationBestPracticeRef = `https://redhat-best-practices-for-k8s.github.io/guide/#_requests_and_limits_in_kubernetes`
 
 	PerformanceLimitedUseOfExecProbesBestPracticeRef = `https://redhat-best-practices-for-k8s.github.io/guide/#k8s-best-practices-cpu-manager-pinning`
 
