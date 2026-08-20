@@ -7,10 +7,10 @@ import (
 	"context"
 
 	netattdefv1 "github.com/k8snetworkplumbingwg/network-attachment-definition-client/pkg/apis/k8s.cni.cncf.io/v1"
-	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
-	olmpackagev1 "github.com/operator-framework/operator-lifecycle-manager/pkg/package-server/apis/operators/v1"
 	apiserverv1 "github.com/openshift/api/apiserver/v1"
 	configv1 "github.com/openshift/api/config/v1"
+	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
+	olmpackagev1 "github.com/operator-framework/operator-lifecycle-manager/pkg/package-server/apis/operators/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -24,30 +24,33 @@ import (
 
 // DiscoveredResources holds all resources discovered in the target namespace.
 type DiscoveredResources struct {
-	Pods                 []corev1.Pod
-	Services             []corev1.Service
-	ServiceAccounts      []corev1.ServiceAccount
-	Roles                []rbacv1.Role
-	RoleBindings         []rbacv1.RoleBinding
-	ClusterRoleBindings  []rbacv1.ClusterRoleBinding
-	CRDs                 []apiextv1.CustomResourceDefinition
-	Namespaces           []string
-	ProbePods            map[string]*corev1.Pod // node name -> probe pod
-	Deployments          []appsv1.Deployment
-	StatefulSets         []appsv1.StatefulSet
-	DaemonSets           []appsv1.DaemonSet
-	NetworkPolicies      []networkingv1.NetworkPolicy
-	ResourceQuotas       []corev1.ResourceQuota
-	Nodes                []corev1.Node
+	Pods                   []corev1.Pod
+	Services               []corev1.Service
+	ServiceAccounts        []corev1.ServiceAccount
+	Roles                  []rbacv1.Role
+	RoleBindings           []rbacv1.RoleBinding
+	ClusterRoleBindings    []rbacv1.ClusterRoleBinding
+	CRDs                   []apiextv1.CustomResourceDefinition
+	Namespaces             []string
+	ProbePods              map[string]*corev1.Pod // node name -> probe pod
+	Deployments            []appsv1.Deployment
+	StatefulSets           []appsv1.StatefulSet
+	DaemonSets             []appsv1.DaemonSet
+	NetworkPolicies        []networkingv1.NetworkPolicy
+	ResourceQuotas         []corev1.ResourceQuota
+	Nodes                  []corev1.Node
 	PersistentVolumes      []corev1.PersistentVolume
 	PersistentVolumeClaims []corev1.PersistentVolumeClaim
 	StorageClasses         []storagev1.StorageClass
-	PodDisruptionBudgets []policyv1.PodDisruptionBudget
-	CSVs                 []olmv1alpha1.ClusterServiceVersion
+	PodDisruptionBudgets   []policyv1.PodDisruptionBudget
+	CSVs                   []olmv1alpha1.ClusterServiceVersion
 
 	// OpenShift-specific resources
 	ClusterVersion   *configv1.ClusterVersion
 	ClusterOperators []configv1.ClusterOperator
+	// TLSSecurityProfile is the APIServer CR's TLS security profile.
+	// Nil means non-OCP or fetch failed; TLS checks fall back to Intermediate.
+	TLSSecurityProfile *configv1.TLSSecurityProfile
 
 	// OLM resources
 	CatalogSources   []olmv1alpha1.CatalogSource
@@ -123,8 +126,8 @@ type ScalableResource struct {
 
 // HPAInfo holds information about a HorizontalPodAutoscaler target.
 type HPAInfo struct {
-	Name      string // HPA name
-	Namespace string
+	Name       string // HPA name
+	Namespace  string
 	TargetKind string // e.g., "Deployment", "StatefulSet"
 	TargetName string
 }

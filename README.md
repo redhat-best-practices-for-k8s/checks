@@ -44,12 +44,12 @@ acChecks := checks.ByCategory("access-control")
 | `certification` | 4 | Container, operator, and Helm chart Red Hat certification |
 | `lifecycle` | 19 | Probes, scheduling, HA, scaling, storage, image pull policy |
 | `manageability` | 2 | Port naming, image tags |
-| `networking` | 11 | Dual-stack, ICMP connectivity, network policies, reserved ports, SR-IOV |
+| `networking` | 13 | Dual-stack, ICMP connectivity, network policies, reserved ports, SR-IOV, TLS |
 | `observability` | 5 | CRD status, termination policy, pod disruption budgets, logging, API compat |
 | `operator` | 12 | OLM install status, versioning, CRD ownership, skip range, namespacing |
 | `performance` | 9 | CPU pinning, exec probes, memory limits, scheduling policies |
 | `platform` | 15 | Boot params, hugepages, sysctl, SELinux, base image, OCP lifecycle |
-| **Total** | **105** | |
+| **Total** | **107** | |
 
 ## Checks Reference
 
@@ -135,7 +135,9 @@ Check names link to their corresponding test documentation in the [certsuite CAT
 | [`networking-ocp-reserved-ports-usage`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#networking-ocp-reserved-ports-usage) | No use of OCP reserved ports | Yes |
 | [`networking-reserved-partner-ports`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#networking-reserved-partner-ports) | No use of reserved partner ports | Yes |
 | [`networking-restart-on-reboot-sriov-pod`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#networking-restart-on-reboot-sriov-pod) | SR-IOV pods have restart label | Yes |
+| [`networking-tls-minimum-version`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#networking-tls-minimum-version) | Services honor the cluster TLS security profile | Yes |
 | [`networking-undeclared-container-ports-usage`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#networking-undeclared-container-ports-usage) | Containers do not listen on undeclared ports | Yes |
+| [`networking-unsecured-container-ports`](https://github.com/redhat-best-practices-for-k8s/certsuite/blob/main/CATALOG.md#networking-unsecured-container-ports) | Listening TCP ports use TLS encryption | Yes |
 
 ### observability
 
