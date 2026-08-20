@@ -28,6 +28,9 @@ const (
 
 	NetworkingUndeclaredContainerPortsUsageDescription = `Check that containers do not listen on ports that weren't declared in their specification. Platforms may be configured to block undeclared ports.`
 
+	NetworkingTLSMinimumVersionDescription = `Checks that TLS-enabled services in target namespaces honor the cluster's TLS security profile. On OpenShift, the profile is read from the APIServer CR (default: Intermediate, min TLS 1.2). On non-OpenShift clusters, Intermediate is used as default. Validates both minimum TLS version and cipher suite compliance. Non-TLS ports are reported as informational only. Note: this test is skipped on OpenShift clusters running versions below 4.22.`
+
+	NetworkingUnsecuredContainerPortsDescription = `Check that TCP ports listening inside containers use TLS encryption. Ports accepting plaintext connections are flagged as non-compliant.`
 )
 
 // Remediations
@@ -54,6 +57,9 @@ const (
 
 	NetworkingUndeclaredContainerPortsUsageRemediation = `Ensure the workload's apps do not listen on undeclared containers' ports.`
 
+	NetworkingTLSMinimumVersionRemediation = `Configure workload services to honor the cluster's TLS security profile. On OpenShift, the minimum TLS version and allowed ciphers are determined by the APIServer CR's TLSSecurityProfile (default: Intermediate, min TLS 1.2). Ensure server TLS settings enforce at least the profile's minimum version and only accept ciphers from the profile's allowed list.`
+
+	NetworkingUnsecuredContainerPortsRemediation = `Ensure all listening TCP ports use TLS. If a port intentionally serves plaintext (e.g., health probes behind network policies), annotate the pod with certsuite.redhat.com/non-tls-ports: "port1,port2".`
 )
 
 // Best practice references
@@ -80,6 +86,9 @@ const (
 
 	NetworkingUndeclaredContainerPortsUsageBestPracticeRef = `https://redhat-best-practices-for-k8s.github.io/guide/#k8s-best-practices-requirements-cnf-reqs`
 
+	NetworkingTLSMinimumVersionBestPracticeRef = checks.NoDocLinkExtended
+
+	NetworkingUnsecuredContainerPortsBestPracticeRef = checks.NoDocLinkExtended
 )
 
 // Exception processes
@@ -106,6 +115,9 @@ const (
 
 	NetworkingUndeclaredContainerPortsUsageExceptionProcess = checks.NoExceptionProcessExtended
 
+	NetworkingTLSMinimumVersionExceptionProcess = checks.NoExceptionProcessExtended
+
+	NetworkingUnsecuredContainerPortsExceptionProcess = checks.NoExceptionProcessExtended
 )
 
 // Impact statements
@@ -132,4 +144,7 @@ const (
 
 	NetworkingUndeclaredContainerPortsUsageImpactStatement = `Undeclared ports can be blocked by security policies, causing unexpected connectivity issues and making troubleshooting difficult.`
 
+	NetworkingTLSMinimumVersionImpactStatement = `Services accepting TLS versions below 1.3 are vulnerable to known protocol attacks (BEAST, POODLE, Lucky13) and may fail security compliance audits required for telco/CNF deployments.`
+
+	NetworkingUnsecuredContainerPortsImpactStatement = `Unsecured ports accepting plaintext traffic expose sensitive data to eavesdropping and man-in-the-middle attacks, violating security compliance requirements.`
 )
