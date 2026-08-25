@@ -91,6 +91,46 @@ func Register() {
 		})
 
 		checks.Register(checks.CheckInfo{
+			Name:     "access-control-dac-override-capability-check",
+			Category: checks.CategoryAccessControl,
+			CatalogID: "access-control-dac-override-capability-check",
+			Fn:       CheckDACOverride,
+			Description: AccessControlDacOverrideCapabilityCheckDescription,
+			Remediation: AccessControlDacOverrideCapabilityCheckRemediation,
+			BestPracticeReference: AccessControlDacOverrideCapabilityCheckBestPracticeRef,
+			ExceptionProcess: AccessControlDacOverrideCapabilityCheckExceptionProcess,
+			ImpactStatement: AccessControlDacOverrideCapabilityCheckImpactStatement,
+			Qe: true,
+			Tags: []string{checks.TagCommon},
+			CategoryClassification: map[string]string{
+				checks.FarEdge: checks.Mandatory,
+				checks.Telco: checks.Mandatory,
+				checks.NonTelco: checks.Mandatory,
+				checks.Extended: checks.Mandatory,
+			},
+		})
+
+		checks.Register(checks.CheckInfo{
+			Name:     "access-control-dac-read-search-capability-check",
+			Category: checks.CategoryAccessControl,
+			CatalogID: "access-control-dac-read-search-capability-check",
+			Fn:       CheckDACReadSearch,
+			Description: AccessControlDacReadSearchCapabilityCheckDescription,
+			Remediation: AccessControlDacReadSearchCapabilityCheckRemediation,
+			BestPracticeReference: AccessControlDacReadSearchCapabilityCheckBestPracticeRef,
+			ExceptionProcess: AccessControlDacReadSearchCapabilityCheckExceptionProcess,
+			ImpactStatement: AccessControlDacReadSearchCapabilityCheckImpactStatement,
+			Qe: true,
+			Tags: []string{checks.TagCommon},
+			CategoryClassification: map[string]string{
+				checks.FarEdge: checks.Mandatory,
+				checks.Telco: checks.Mandatory,
+				checks.NonTelco: checks.Mandatory,
+				checks.Extended: checks.Mandatory,
+			},
+		})
+
+		checks.Register(checks.CheckInfo{
 			Name:     "access-control-ipc-lock-capability-check",
 			Category: checks.CategoryAccessControl,
 			CatalogID: "access-control-ipc-lock-capability-check",
@@ -520,6 +560,26 @@ func Register() {
 			BestPracticeReference: AccessControlSysAdminCapabilityCheckBestPracticeRef,
 			ExceptionProcess: AccessControlSysAdminCapabilityCheckExceptionProcess,
 			ImpactStatement: AccessControlSysAdminCapabilityCheckImpactStatement,
+			Qe: true,
+			Tags: []string{checks.TagCommon},
+			CategoryClassification: map[string]string{
+				checks.FarEdge: checks.Mandatory,
+				checks.Telco: checks.Mandatory,
+				checks.NonTelco: checks.Mandatory,
+				checks.Extended: checks.Mandatory,
+			},
+		})
+
+		checks.Register(checks.CheckInfo{
+			Name:     "access-control-sys-module-capability-check",
+			Category: checks.CategoryAccessControl,
+			CatalogID: "access-control-sys-module-capability-check",
+			Fn:       CheckSysModule,
+			Description: AccessControlSysModuleCapabilityCheckDescription,
+			Remediation: AccessControlSysModuleCapabilityCheckRemediation,
+			BestPracticeReference: AccessControlSysModuleCapabilityCheckBestPracticeRef,
+			ExceptionProcess: AccessControlSysModuleCapabilityCheckExceptionProcess,
+			ImpactStatement: AccessControlSysModuleCapabilityCheckImpactStatement,
 			Qe: true,
 			Tags: []string{checks.TagCommon},
 			CategoryClassification: map[string]string{

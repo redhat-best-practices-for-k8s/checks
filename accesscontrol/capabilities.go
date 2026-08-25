@@ -82,3 +82,18 @@ func CheckIPCLock(resources *checks.DiscoveredResources) checks.CheckResult {
 func CheckBPF(resources *checks.DiscoveredResources) checks.CheckResult {
 	return checkForbiddenCapability(resources, "BPF")
 }
+
+// CheckSysModule checks for SYS_MODULE capability.
+func CheckSysModule(resources *checks.DiscoveredResources) checks.CheckResult {
+	return checkForbiddenCapability(resources, "SYS_MODULE")
+}
+
+// CheckDACOverride checks for DAC_OVERRIDE capability.
+func CheckDACOverride(resources *checks.DiscoveredResources) checks.CheckResult {
+	return checkForbiddenCapability(resources, "DAC_OVERRIDE")
+}
+
+// CheckDACReadSearch checks for DAC_READ_SEARCH capability.
+func CheckDACReadSearch(resources *checks.DiscoveredResources) checks.CheckResult {
+	return checkForbiddenCapability(resources, "DAC_READ_SEARCH")
+}

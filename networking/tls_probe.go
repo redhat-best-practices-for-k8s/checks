@@ -113,11 +113,9 @@ func IsPortTLS(ctx context.Context, executor checks.ProbeExecutor, probePod *cor
 	}
 
 	if !strings.Contains(stdout, opensslCipherNone) {
-		if strings.Contains(stdout, "Cipher    :") || strings.Contains(stdout, "Cipher:") {
-			cipher := extractOpenSSLCipher(stdout)
-			if cipher != "" && cipher != "0000" && cipher != "(NONE)" {
-				return true, true, fmt.Sprintf("TLS negotiated (cipher: %s)", cipher)
-			}
+		cipher := extractOpenSSLCipher(stdout)
+		if cipher != "" && cipher != "0000" && cipher != "(NONE)" && cipher != reasonUnknown {
+			return true, true, fmt.Sprintf("TLS negotiated (cipher: %s)", cipher)
 		}
 	}
 
@@ -271,8 +269,8 @@ func probeExecCipherCompliance(ctx context.Context, executor checks.ProbeExecuto
 		return nil
 	}
 
-	if strings.Contains(stdout, "Cipher    :") || strings.Contains(stdout, "Cipher:") {
-		cipherName := extractOpenSSLCipher(stdout)
+	cipherName := extractOpenSSLCipher(stdout)
+	if cipherName != reasonUnknown {
 		return &TLSProbeResult{
 			Compliant:     false,
 			IsTLS:         true,
@@ -303,6 +301,11 @@ func computeDisallowedOpenSSLCiphers(policy TLSPolicy) []string {
 func extractOpenSSLCipher(stdout string) string {
 	for line := range strings.SplitSeq(stdout, "\n") {
 		trimmed := strings.TrimSpace(line)
+		// OpenSSL 3.x format
+		if after, ok := strings.CutPrefix(trimmed, "Cipher is "); ok {
+			return strings.TrimSpace(after)
+		}
+		// OpenSSL 1.x formats
 		if after, ok := strings.CutPrefix(trimmed, "Cipher    :"); ok {
 			return strings.TrimSpace(after)
 		}
