@@ -100,6 +100,12 @@ func IsPortTLS(ctx context.Context, executor checks.ProbeExecutor, probePod *cor
 	cmd := fmt.Sprintf("echo | timeout 5 openssl s_client -connect %s 2>&1", endpoint)
 	stdout, err := execOpenSSL(ctx, executor, probePod, cmd)
 
+	// DEBUG: dump OpenSSL output for diagnosis
+	fmt.Printf("[TLS-DEBUG] Port %s:%d OpenSSL stdout (first 500 chars): %s\n", address, port, truncate(stdout, 500))
+	if err != nil {
+		fmt.Printf("[TLS-DEBUG] Port %s:%d OpenSSL error: %v\n", address, port, err)
+	}
+
 	if err != nil && !hasOpensslOutput(stdout) {
 		return false, false, fmt.Sprintf("exec probe failed: %v", err)
 	}
@@ -117,23 +123,30 @@ func IsPortTLS(ctx context.Context, executor checks.ProbeExecutor, probePod *cor
 	if strings.Contains(stdout, opensslWrongVersion) ||
 		strings.Contains(stdout, opensslUnknownProto) ||
 		strings.Contains(stdout, opensslProtoMismatch) {
-		return false, true, "plaintext service (protocol mismatch)"
+		result := "plaintext service (protocol mismatch)"
+		fmt.Printf("[TLS-DEBUG] Port %s:%d detected as plaintext (matched error pattern)\n", address, port)
+		return false, true, result
 	}
 
 	// TLS alert messages indicate a real TLS server (server sent proper TLS alert)
 	// These only appear when openssl successfully negotiated TLS handshake and server rejected
 	if strings.Contains(stdout, opensslAlertProtoVer) ||
 		strings.Contains(stdout, opensslAlertHandshake) {
-		return true, true, "TLS server detected (handshake alert)"
+		result := "TLS server detected (handshake alert)"
+		fmt.Printf("[TLS-DEBUG] Port %s:%d detected as TLS (handshake alert)\n", address, port)
+		return true, true, result
 	}
 
 	if !strings.Contains(stdout, opensslCipherNone) {
 		cipher := extractOpenSSLCipher(stdout)
 		if cipher != "" && cipher != "0000" && cipher != "(NONE)" && cipher != reasonUnknown {
-			return true, true, fmt.Sprintf("TLS negotiated (cipher: %s)", cipher)
+			result := fmt.Sprintf("TLS negotiated (cipher: %s)", cipher)
+			fmt.Printf("[TLS-DEBUG] Port %s:%d detected as TLS (cipher: %s)\n", address, port, cipher)
+			return true, true, result
 		}
 	}
 
+	fmt.Printf("[TLS-DEBUG] Port %s:%d detected as plaintext (no TLS indicators)\n", address, port)
 	return false, true, "plaintext service (no TLS)"
 }
 
