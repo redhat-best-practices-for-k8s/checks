@@ -14,6 +14,10 @@ const (
 
 	AccessControlCrdRolesDescription = `If an application creates CRDs it must supply a role to access those CRDs and no other API resources/permission. This test checks that there is at least one role present in each namespaces under test that only refers to CRDs under test.`
 
+	AccessControlDacOverrideCapabilityCheckDescription = `Ensures that containers do not use DAC_OVERRIDE capability. DAC_OVERRIDE bypasses file permission checks and usually indicates incorrect file ownership in the container image.`
+
+	AccessControlDacReadSearchCapabilityCheckDescription = `Ensures that containers do not use DAC_READ_SEARCH capability. DAC_READ_SEARCH enables open_by_handle_at()-style access and is a known container escape risk.`
+
 	AccessControlIpcLockCapabilityCheckDescription = `Ensures that containers do not use IPC_LOCK capability. Workloads should avoid accessing host resources - spec.HostIpc should be false.`
 
 	AccessControlNamespaceDescription = `Tests that all workload resources (PUTs and CRs) belong to valid namespaces. A valid namespace meets
@@ -72,6 +76,8 @@ for instance the Performance Addon Operator (PAO) or istio.`
 
 	AccessControlSysAdminCapabilityCheckDescription = `Ensures that containers do not use SYS_ADMIN capability`
 
+	AccessControlSysModuleCapabilityCheckDescription = `Ensures that containers do not use SYS_MODULE capability. SYS_MODULE allows loading kernel modules from a container and creates a host/cluster takeover risk.`
+
 	AccessControlSysNiceRealtimeCapabilityDescription = `Check that pods running on nodes with realtime kernel enabled have the SYS_NICE capability enabled in their spec. In the case that a workolad is running on a node using the real-time kernel, SYS_NICE will be used to allow DPDK application to switch to SCHED_FIFO.`
 
 	AccessControlSysPtraceCapabilityDescription = `Check that if process namespace sharing is enabled for a Pod then the SYS_PTRACE capability is allowed. This capability is required when using Process Namespace Sharing. This is used when processes from one Container need to be exposed to another Container. For example, to send signals like SIGHUP from a process in a Container to another process in another Container. For more information on these capabilities refer to https://cloud.redhat.com/blog/linux-capabilities-in-openshift and https://kubernetes.io/docs/tasks/configure-pod-container/share-process-namespace/`
@@ -87,6 +93,10 @@ const (
 	AccessControlContainerHostPortRemediation = `Remove hostPort configuration from the container. Workloads should avoid accessing host resources - containers should not configure HostPort.`
 
 	AccessControlCrdRolesRemediation = `Roles providing access to CRDs should not refer to any other api or resources. Change the generation of the CRD role accordingly`
+
+	AccessControlDacOverrideCapabilityCheckRemediation = `Remove the DAC_OVERRIDE capability from the container/pod definitions. Fix file ownership in the container image (for example, chown the application files to the non-root runtime UID in the Dockerfile) instead of bypassing permission checks.`
+
+	AccessControlDacReadSearchCapabilityCheckRemediation = `Remove the DAC_READ_SEARCH capability from the container/pod definitions. Containers must not use this capability due to container escape risk. If the application needs to read files it does not own, fix file ownership or permissions in the Dockerfile instead of granting this capability.`
 
 	AccessControlIpcLockCapabilityCheckRemediation = `Exception possible if a workload uses mlock(), mlockall(), shmctl(), mmap(); exception will be considered for DPDK applications. Must identify which container requires the capability and detail why.`
 
@@ -132,6 +142,8 @@ const (
 
 	AccessControlSysAdminCapabilityCheckRemediation = `Exception possible if a workload uses mlock(), mlockall(), shmctl(), mmap(); exception will be considered for DPDK applications. Must identify which container requires the capability and detail why. Containers should not use the SYS_ADMIN Linux capability.`
 
+	AccessControlSysModuleCapabilityCheckRemediation = `Remove the SYS_MODULE capability from the container/pod definitions. Containers must not load kernel modules. If kernel modules are needed, they should be loaded on the host via a MachineConfig or at node provisioning time.`
+
 	AccessControlSysNiceRealtimeCapabilityRemediation = `If pods are scheduled to realtime kernel nodes, they must add SYS_NICE capability to their spec.`
 
 	AccessControlSysPtraceCapabilityRemediation = `Allow the SYS_PTRACE capability when enabling process namespace sharing for a Pod`
@@ -147,6 +159,10 @@ const (
 	AccessControlContainerHostPortBestPracticeRef = `https://redhat-best-practices-for-k8s.github.io/guide/#k8s-best-practices-avoid-accessing-resource-on-host`
 
 	AccessControlCrdRolesBestPracticeRef = `https://redhat-best-practices-for-k8s.github.io/guide/#k8s-best-practices-custom-role-to-access-application-crds`
+
+	AccessControlDacOverrideCapabilityCheckBestPracticeRef = `https://redhat-best-practices-for-k8s.github.io/guide/#k8s-best-practices-linux-capabilities`
+
+	AccessControlDacReadSearchCapabilityCheckBestPracticeRef = `https://redhat-best-practices-for-k8s.github.io/guide/#k8s-best-practices-linux-capabilities`
 
 	AccessControlIpcLockCapabilityCheckBestPracticeRef = `https://redhat-best-practices-for-k8s.github.io/guide/#k8s-best-practices-ipc_lock`
 
@@ -192,6 +208,8 @@ const (
 
 	AccessControlSysAdminCapabilityCheckBestPracticeRef = `https://redhat-best-practices-for-k8s.github.io/guide/#k8s-best-practices-avoid-sys_admin`
 
+	AccessControlSysModuleCapabilityCheckBestPracticeRef = `https://redhat-best-practices-for-k8s.github.io/guide/#k8s-best-practices-linux-capabilities`
+
 	AccessControlSysNiceRealtimeCapabilityBestPracticeRef = `https://redhat-best-practices-for-k8s.github.io/guide/#k8s-best-practices-sys_nice`
 
 	AccessControlSysPtraceCapabilityBestPracticeRef = `https://redhat-best-practices-for-k8s.github.io/guide/#k8s-best-practices-sys_ptrace`
@@ -207,6 +225,10 @@ const (
 	AccessControlContainerHostPortExceptionProcess = `Exception for host resource access tests will only be considered in rare cases where it is absolutely needed`
 
 	AccessControlCrdRolesExceptionProcess = checks.NoExceptionProcessExtended
+
+	AccessControlDacOverrideCapabilityCheckExceptionProcess = checks.NoExceptions
+
+	AccessControlDacReadSearchCapabilityCheckExceptionProcess = checks.NoExceptions
 
 	AccessControlIpcLockCapabilityCheckExceptionProcess = `Exception possible if a workload uses mlock(), mlockall(), shmctl(), mmap(); exception will be considered for DPDK applications. Must identify which container requires the capability and detail why.`
 
@@ -252,6 +274,8 @@ const (
 
 	AccessControlSysAdminCapabilityCheckExceptionProcess = checks.NoExceptions
 
+	AccessControlSysModuleCapabilityCheckExceptionProcess = checks.NoExceptions
+
 	AccessControlSysNiceRealtimeCapabilityExceptionProcess = checks.NoExceptionProcess
 
 	AccessControlSysPtraceCapabilityExceptionProcess = checks.NoExceptionProcess
@@ -267,6 +291,10 @@ const (
 	AccessControlContainerHostPortImpactStatement = `Host port usage can create port conflicts with host services and expose containers directly to the host network, bypassing network security controls.`
 
 	AccessControlCrdRolesImpactStatement = `Improper CRD role configurations can grant excessive privileges, violate least-privilege principles, and create security vulnerabilities in custom resource access control.`
+
+	AccessControlDacOverrideCapabilityCheckImpactStatement = `DAC_OVERRIDE capability bypasses file permission checks and typically indicates incorrect image file ownership; it can enable unauthorized file access and privilege escalation.`
+
+	AccessControlDacReadSearchCapabilityCheckImpactStatement = `DAC_READ_SEARCH capability enables open_by_handle_at()-style access and is a known container escape vector that can compromise host isolation.`
 
 	AccessControlIpcLockCapabilityCheckImpactStatement = `IPC_LOCK capability can be exploited to lock system memory, potentially causing denial of service and affecting other workloads on the same node.`
 
@@ -311,6 +339,8 @@ const (
 	AccessControlSshDaemonsImpactStatement = `SSH daemons in containers create additional attack surfaces, violate immutable infrastructure principles, and can be exploited for unauthorized access.`
 
 	AccessControlSysAdminCapabilityCheckImpactStatement = `SYS_ADMIN capability provides extensive privileges that can compromise container isolation, enable host system access, and create serious security vulnerabilities.`
+
+	AccessControlSysModuleCapabilityCheckImpactStatement = `SYS_MODULE capability allows loading kernel modules from a container, which can compromise the host kernel and enable cluster-wide takeover.`
 
 	AccessControlSysNiceRealtimeCapabilityImpactStatement = `Missing SYS_NICE capability on real-time nodes prevents applications from setting appropriate scheduling priorities, causing performance degradation.`
 
