@@ -265,3 +265,17 @@ func TestClassifyExecNoMinVersion(t *testing.T) {
 		t.Errorf("non-TLS should be informational, got compliant=%v isTLS=%v", r.Compliant, r.IsTLS)
 	}
 }
+
+func TestIsPortTLS_HTTPPlaintextNoTLS(t *testing.T) {
+	// What actually happens with plain HTTP - no TLS negotiation
+	mock := newContainsMock(
+		mockPattern{key: "s_client", stdout: "CONNECTED(00000003)\n140703463940416:error:1408F10B:SSL routines:ssl3_get_record:wrong version number:ssl/record/ssl3_record.c:331:\n---\nno peer certificate available\n---\nNo client certificate CA names sent\n---\nSSL handshake has read 7 bytes and written 176 bytes\nVerification: OK\n---\nNew, (NONE), Cipher is (NONE)\nSecure Renegotiation IS NOT supported\nCompression: NONE\nExpansion: NONE\nNo ALPN negotiated\nEarly data was not sent\nVerify return code: 0 (ok)\n---", err: fmt.Errorf("exit status 1")},
+	)
+	isTLS, reachable, reason := IsPortTLS(context.Background(), mock, probePod(), "10.0.0.1", 8080)
+	if isTLS {
+		t.Errorf("expected plaintext (wrong version number), got isTLS=true reason=%s", reason)
+	}
+	if !reachable {
+		t.Error("expected reachable")
+	}
+}

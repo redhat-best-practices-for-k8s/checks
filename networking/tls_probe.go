@@ -34,6 +34,12 @@ const (
 	opensslConnected        = "CONNECTED"
 	opensslConnErrno        = "errno"
 
+	// Non-TLS error patterns (plaintext services, protocol mismatch)
+	opensslWrongVersion  = "wrong version number"
+	opensslUnknownProto  = "unknown protocol"
+	opensslBadHandshake  = "ssl handshake failure"
+	opensslProtoMismatch = "unsupported protocol"
+
 	reasonPortUnreachable = "port unreachable"
 	reasonUnknown         = "unknown"
 )
@@ -106,9 +112,18 @@ func IsPortTLS(ctx context.Context, executor checks.ProbeExecutor, probePod *cor
 		return false, false, "no recognizable openssl output"
 	}
 
+	// Check for common plaintext/protocol mismatch errors FIRST
+	// These indicate openssl tried to speak TLS to a non-TLS server
+	if strings.Contains(stdout, opensslWrongVersion) ||
+		strings.Contains(stdout, opensslUnknownProto) ||
+		strings.Contains(stdout, opensslProtoMismatch) {
+		return false, true, "plaintext service (protocol mismatch)"
+	}
+
+	// TLS alert messages indicate a real TLS server (server sent proper TLS alert)
+	// These only appear when openssl successfully negotiated TLS handshake and server rejected
 	if strings.Contains(stdout, opensslAlertProtoVer) ||
-		strings.Contains(stdout, opensslAlertHandshake) ||
-		strings.Contains(stdout, opensslHandshakeFailure) {
+		strings.Contains(stdout, opensslAlertHandshake) {
 		return true, true, "TLS server detected (handshake alert)"
 	}
 
