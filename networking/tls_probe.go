@@ -35,10 +35,12 @@ const (
 	opensslConnErrno        = "errno"
 
 	// Non-TLS error patterns (plaintext services, protocol mismatch)
-	opensslWrongVersion  = "wrong version number"
-	opensslUnknownProto  = "unknown protocol"
-	opensslBadHandshake  = "ssl handshake failure"
-	opensslProtoMismatch = "unsupported protocol"
+	opensslWrongVersion   = "wrong version number"
+	opensslUnknownProto   = "unknown protocol"
+	opensslBadHandshake   = "ssl handshake failure"
+	opensslProtoMismatch  = "unsupported protocol"
+	opensslPacketTooLong  = "packet length too long"
+	opensslRecordFailure  = "record layer failure"
 
 	reasonPortUnreachable = "port unreachable"
 	reasonUnknown         = "unknown"
@@ -122,7 +124,9 @@ func IsPortTLS(ctx context.Context, executor checks.ProbeExecutor, probePod *cor
 	// These indicate openssl tried to speak TLS to a non-TLS server
 	if strings.Contains(stdout, opensslWrongVersion) ||
 		strings.Contains(stdout, opensslUnknownProto) ||
-		strings.Contains(stdout, opensslProtoMismatch) {
+		strings.Contains(stdout, opensslProtoMismatch) ||
+		strings.Contains(stdout, opensslPacketTooLong) ||
+		strings.Contains(stdout, opensslRecordFailure) {
 		result := "plaintext service (protocol mismatch)"
 		fmt.Printf("[TLS-DEBUG] Port %s:%d detected as plaintext (matched error pattern)\n", address, port)
 		return false, true, result
@@ -134,6 +138,14 @@ func IsPortTLS(ctx context.Context, executor checks.ProbeExecutor, probePod *cor
 		strings.Contains(stdout, opensslAlertHandshake) {
 		result := "TLS server detected (handshake alert)"
 		fmt.Printf("[TLS-DEBUG] Port %s:%d detected as TLS (handshake alert)\n", address, port)
+		return true, true, result
+	}
+
+	// Check for successful TLS negotiation via certificate exchange
+	// OpenSSL shows "Server certificate" or "Certificate chain" for successful TLS
+	if strings.Contains(stdout, "Server certificate") || strings.Contains(stdout, "Certificate chain") {
+		result := "TLS server detected (certificate exchanged)"
+		fmt.Printf("[TLS-DEBUG] Port %s:%d detected as TLS (certificate found)\n", address, port)
 		return true, true, result
 	}
 
