@@ -166,6 +166,19 @@ func TestIsPortTLS_ExecFailed(t *testing.T) {
 	}
 }
 
+func TestIsPortTLS_Timeout(t *testing.T) {
+	mock := newContainsMock(
+		mockPattern{key: "s_client", stdout: "", err: fmt.Errorf("command terminated with exit code 124")},
+	)
+	isTLS, reachable, reason := IsPortTLS(context.Background(), mock, probePod(), "10.0.0.1", 8080)
+	if isTLS || !reachable {
+		t.Errorf("timeout should be reachable plaintext, isTLS=%v reachable=%v reason=%s", isTLS, reachable, reason)
+	}
+	if !strings.Contains(reason, "timed out") {
+		t.Errorf("expected timeout in reason, got %s", reason)
+	}
+}
+
 func TestIsPortTLS_IPv6Address(t *testing.T) {
 	mock := newContainsMock(
 		mockPattern{key: "s_client", stdout: "CONNECTED(00000003)\n---\nProtocol  : TLSv1.3\nCipher    : TLS_AES_256_GCM_SHA384\n---"},

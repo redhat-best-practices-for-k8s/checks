@@ -35,12 +35,12 @@ const (
 	opensslConnErrno        = "errno"
 
 	// Non-TLS error patterns (plaintext services, protocol mismatch)
-	opensslWrongVersion   = "wrong version number"
-	opensslUnknownProto   = "unknown protocol"
-	opensslBadHandshake   = "ssl handshake failure"
-	opensslProtoMismatch  = "unsupported protocol"
-	opensslPacketTooLong  = "packet length too long"
-	opensslRecordFailure  = "record layer failure"
+	opensslWrongVersion  = "wrong version number"
+	opensslUnknownProto  = "unknown protocol"
+	opensslBadHandshake  = "ssl handshake failure"
+	opensslProtoMismatch = "unsupported protocol"
+	opensslPacketTooLong = "packet length too long"
+	opensslRecordFailure = "record layer failure"
 
 	reasonPortUnreachable = "port unreachable"
 	reasonUnknown         = "unknown"
@@ -109,6 +109,9 @@ func IsPortTLS(ctx context.Context, executor checks.ProbeExecutor, probePod *cor
 	}
 
 	if err != nil && !hasOpensslOutput(stdout) {
+		if isOpenSSLProbeTimeout(err) {
+			return false, true, "openssl probe timed out (likely plaintext)"
+		}
 		return false, false, fmt.Sprintf("exec probe failed: %v", err)
 	}
 
@@ -117,6 +120,9 @@ func IsPortTLS(ctx context.Context, executor checks.ProbeExecutor, probePod *cor
 	}
 
 	if !hasOpensslOutput(stdout) {
+		if err != nil && isOpenSSLProbeTimeout(err) {
+			return false, true, "openssl probe timed out (likely plaintext)"
+		}
 		return false, false, "no recognizable openssl output"
 	}
 
@@ -160,6 +166,16 @@ func IsPortTLS(ctx context.Context, executor checks.ProbeExecutor, probePod *cor
 
 	fmt.Printf("[TLS-DEBUG] Port %s:%d detected as plaintext (no TLS indicators)\n", address, port)
 	return false, true, "plaintext service (no TLS)"
+}
+
+func isOpenSSLProbeTimeout(err error) bool {
+	if err == nil {
+		return false
+	}
+	msg := err.Error()
+	return strings.Contains(msg, "exit code 124") ||
+		strings.Contains(msg, "terminated with exit code 124") ||
+		strings.Contains(strings.ToLower(msg), "timed out")
 }
 
 func hasOpensslOutput(stdout string) bool {

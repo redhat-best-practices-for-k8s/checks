@@ -128,13 +128,13 @@ func CheckOneProcess(resources *checks.DiscoveredResources) checks.CheckResult {
 func CheckNoSSHD(resources *checks.DiscoveredResources) checks.CheckResult {
 	result := checks.CheckResult{ComplianceStatus: checks.StatusCompliant}
 	if resources.ProbeExecutor == nil || len(resources.ProbePods) == 0 {
-		result.ComplianceStatus = checks.StatusCompliant
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "Probe pods not available"
 		return result
 	}
 
 	if len(resources.Pods) == 0 {
-		result.ComplianceStatus = checks.StatusCompliant
+		result.ComplianceStatus = checks.StatusSkipped
 		result.Reason = "No pods found"
 		return result
 	}
@@ -171,15 +171,20 @@ func CheckNoSSHD(resources *checks.DiscoveredResources) checks.CheckResult {
 			continue
 		}
 
-		ssCmd := fmt.Sprintf("nsenter -t %s -n ss -tpln", pid)
+		ssCmd := fmt.Sprintf("nsenter -t %s -n sh -c 'ss -tpln | grep sshd | head -1 || true'", pid)
 		stdout, _, err := resources.ProbeExecutor.ExecCommand(ctx, probePod, ssCmd)
 		cancel()
 		if err != nil {
-			// If the command fails, we cannot determine compliance
+			count++
+			result.Details = append(result.Details, checks.ResourceDetail{
+				Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,
+				Compliant: false,
+				Message:   fmt.Sprintf("Failed to check for SSH daemon: %v", err),
+			})
 			continue
 		}
 
-		if strings.Contains(stdout, "sshd") {
+		if strings.TrimSpace(stdout) != "" {
 			count++
 			result.Details = append(result.Details, checks.ResourceDetail{
 				Kind: "Pod", Name: pod.Name, Namespace: pod.Namespace,

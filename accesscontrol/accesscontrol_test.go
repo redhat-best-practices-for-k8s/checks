@@ -1478,7 +1478,7 @@ func TestCheckNoSSHD_Compliant(t *testing.T) {
 		ProbeExecutor: &mockProbeExecutor{
 			responses: map[string]mockProbeResponse{
 				"chroot /host crictl inspect --output go-template --template '{{.info.pid}}' abc123 2>/dev/null": {stdout: "12345"},
-				"nsenter -t 12345 -n ss -tpln": {stdout: "State  Recv-Q Send-Q Local Address:Port  Peer Address:Port\nLISTEN 0      128    0.0.0.0:8080         0.0.0.0:*     users:((\"myapp\",pid=12345,fd=3))\n"},
+				"nsenter -t 12345 -n sh -c 'ss -tpln | grep sshd | head -1 || true'": {stdout: ""},
 			},
 		},
 	}
@@ -1501,7 +1501,7 @@ func TestCheckNoSSHD_NonCompliant(t *testing.T) {
 		ProbeExecutor: &mockProbeExecutor{
 			responses: map[string]mockProbeResponse{
 				"chroot /host crictl inspect --output go-template --template '{{.info.pid}}' abc123 2>/dev/null": {stdout: "12345"},
-				"nsenter -t 12345 -n ss -tpln": {stdout: "State  Recv-Q Send-Q Local Address:Port  Peer Address:Port\nLISTEN 0      128    0.0.0.0:22           0.0.0.0:*     users:((\"sshd\",pid=12345,fd=3))\n"},
+				"nsenter -t 12345 -n sh -c 'ss -tpln | grep sshd | head -1 || true'": {stdout: "LISTEN 0 128 0.0.0.0:22 0.0.0.0:* users:((\"sshd\",pid=12345,fd=3))\n"},
 			},
 		},
 	}
