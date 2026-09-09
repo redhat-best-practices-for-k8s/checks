@@ -2,8 +2,6 @@ module github.com/redhat-best-practices-for-k8s/checks
 
 go 1.27.1
 
-toolchain go1.27.1
-
 require (
 	github.com/blang/semver/v4 v4.0.0
 	github.com/k8snetworkplumbingwg/network-attachment-definition-client v1.7.7
