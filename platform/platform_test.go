@@ -292,8 +292,9 @@ func TestCheckHugepages_Compliant(t *testing.T) {
 		ProbePods: map[string]*corev1.Pod{"node1": makeProbePod("node1")},
 		ProbeExecutor: &mockProbeExecutor{
 			responses: map[string]mockProbeResponse{
-				"cat /host/proc/cmdline": {stdout: "BOOT_IMAGE=/vmlinuz hugepagesz=1G"},
-				"cat /host/sys/kernel/mm/hugepages/hugepages-2048kB/nr_hugepages 2>/dev/null": {stdout: "1024"},
+				"cat /host/proc/cmdline": {stdout: "BOOT_IMAGE=/vmlinuz hugepagesz=2M hugepages=1024"},
+				// Batched command returns all hugepage allocations
+				`cd /host/sys/kernel/mm/hugepages 2>/dev/null && for dir in hugepages-*kB; do [ -f "$dir/nr_hugepages" ] && echo "$dir:$(cat $dir/nr_hugepages)"; done`: {stdout: "hugepages-2048kB:1024"},
 			},
 		},
 	}
@@ -309,7 +310,8 @@ func TestCheckHugepages_NonCompliant(t *testing.T) {
 		ProbeExecutor: &mockProbeExecutor{
 			responses: map[string]mockProbeResponse{
 				"cat /host/proc/cmdline": {stdout: "BOOT_IMAGE=/vmlinuz hugepagesz=1G"},
-				"cat /host/sys/kernel/mm/hugepages/hugepages-2048kB/nr_hugepages 2>/dev/null": {stdout: "0"},
+				// 1G = 1048576kB - configured but not allocated
+				`cd /host/sys/kernel/mm/hugepages 2>/dev/null && for dir in hugepages-*kB; do [ -f "$dir/nr_hugepages" ] && echo "$dir:$(cat $dir/nr_hugepages)"; done`: {stdout: "hugepages-1048576kB:0"},
 			},
 		},
 	}
