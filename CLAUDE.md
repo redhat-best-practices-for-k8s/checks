@@ -98,7 +98,7 @@ Each category package follows the same structure:
 
 ## Requirements
 
-- Go 1.26.3+ (toolchain 1.26.4)
+- Go 1.27+
 - golangci-lint for linting
 
 ## Code Style
