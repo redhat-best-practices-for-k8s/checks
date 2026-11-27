@@ -8,7 +8,7 @@ require (
 	github.com/blang/semver/v4 v4.0.0
 	github.com/k8snetworkplumbingwg/network-attachment-definition-client v1.7.7
 	github.com/openshift/api v0.0.0-20260204104751-e09e5a4ebcd0
-	github.com/operator-framework/api v0.46.0
+	github.com/operator-framework/api v0.47.1
 	github.com/operator-framework/operator-lifecycle-manager v0.46.0
 	k8s.io/api v0.37.2
 	k8s.io/apiextensions-apiserver v0.37.2
